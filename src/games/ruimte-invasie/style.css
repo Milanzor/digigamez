@@ -1,0 +1,21 @@
+.ri-stage {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: #0b1042;
+}
+
+.ri-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.ri-split-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.15);
+  z-index: 5;
+}
