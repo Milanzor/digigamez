@@ -1,0 +1,63 @@
+.tk-stage {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: #ffffff;
+}
+
+.tk-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.tk-toolbar {
+  position: absolute;
+  bottom: 1.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  background: white;
+  padding: 0.8rem 1.2rem;
+  border-radius: 999px;
+  box-shadow: var(--shadow-soft);
+  z-index: 20;
+  max-width: 92%;
+  overflow-x: auto;
+}
+
+.tk-swatch {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 4px solid transparent;
+  flex-shrink: 0;
+}
+
+.tk-swatch.active {
+  border-color: var(--color-text);
+}
+
+.tk-tool {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #f1f2fb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  flex-shrink: 0;
+}
+
+.tk-tool.active {
+  background: var(--color-accent);
+}
+
+.tk-divider {
+  width: 2px;
+  height: 40px;
+  background: #e2e4f3;
+  flex-shrink: 0;
+}

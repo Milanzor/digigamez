@@ -9,8 +9,9 @@ export const LOGICAL_HEIGHT = 1080;
 // Sets up a canvas to render crisply at any physical size: internal pixel
 // buffer matches devicePixelRatio * displayed CSS size, while game code keeps
 // working in LOGICAL_WIDTH x LOGICAL_HEIGHT units via ctx transform.
-export function setupCanvas(canvas) {
-  const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+export function setupCanvas(canvas, { alpha = false } = {}) {
+  const ctx = canvas.getContext('2d', { alpha, desynchronized: true });
+  let scale = 1, offsetX = 0, offsetY = 0;
 
   function resize() {
     const rect = canvas.parentElement.getBoundingClientRect();
@@ -19,17 +20,28 @@ export function setupCanvas(canvas) {
     canvas.height = Math.round(rect.height * dpr);
     canvas.style.width = rect.width + 'px';
     canvas.style.height = rect.height + 'px';
-    const scale = Math.min(canvas.width / LOGICAL_WIDTH, canvas.height / LOGICAL_HEIGHT);
-    const offsetX = (canvas.width - LOGICAL_WIDTH * scale) / 2;
-    const offsetY = (canvas.height - LOGICAL_HEIGHT * scale) / 2;
+    scale = Math.min(canvas.width / LOGICAL_WIDTH, canvas.height / LOGICAL_HEIGHT);
+    offsetX = (canvas.width - LOGICAL_WIDTH * scale) / 2;
+    offsetY = (canvas.height - LOGICAL_HEIGHT * scale) / 2;
     ctx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
+  }
+
+  // Converts a client-space (viewport) coordinate to this canvas's logical
+  // (LOGICAL_WIDTH x LOGICAL_HEIGHT) coordinate space, accounting for the
+  // devicePixelRatio buffer scaling and the letterboxing offset above.
+  function toLogical(clientX, clientY) {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const px = (clientX - rect.left) * dpr;
+    const py = (clientY - rect.top) * dpr;
+    return { x: (px - offsetX) / scale, y: (py - offsetY) / scale };
   }
 
   resize();
   const ro = new ResizeObserver(resize);
   ro.observe(canvas.parentElement);
 
-  return { ctx, resize, disconnect: () => ro.disconnect() };
+  return { ctx, resize, toLogical, disconnect: () => ro.disconnect() };
 }
 
 // Simple object pool to avoid GC churn for short-lived entities
