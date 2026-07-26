@@ -1,0 +1,60 @@
+.mg-stage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #ffe3ec 0%, #ffd4e2 100%);
+  padding: 2rem;
+}
+
+.mg-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.6rem;
+  width: min(90%, 1100px);
+}
+
+.mg-card {
+  aspect-ratio: 1;
+  perspective: 800px;
+  touch-action: manipulation;
+}
+
+.mg-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.45s cubic-bezier(.2,.9,.3,1.2);
+  transform-style: preserve-3d;
+}
+
+.mg-card.flipped .mg-card-inner,
+.mg-card.matched .mg-card-inner {
+  transform: rotateY(180deg);
+}
+
+.mg-face {
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3.5rem;
+  backface-visibility: hidden;
+  box-shadow: var(--shadow-soft);
+}
+
+.mg-face.back {
+  background: linear-gradient(145deg, #4c5fe8, #7c8cf5);
+}
+
+.mg-face.front {
+  background: white;
+  transform: rotateY(180deg);
+}
+
+.mg-card.matched .mg-face.front {
+  background: #d3fbe9;
+}

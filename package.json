@@ -1,0 +1,15 @@
+{
+  "name": "digigamez",
+  "version": "1.0.0",
+  "description": "Nederlandse spellenbundel voor kinderen (2-7 jaar) op een 75-inch digibord",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^6.0.0"
+  }
+}
