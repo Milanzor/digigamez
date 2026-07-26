@@ -11,17 +11,17 @@
 
 .pipe-grid {
   display: grid;
-  gap: clamp(3px, 0.5vmin, 10px);
-  padding: clamp(6px, 1vmin, 20px);
+  gap: 0.5vmin;
+  padding: 1vmin;
   border-radius: var(--r-md);
   background: rgba(6, 10, 36, 0.72);
-  border: clamp(3px, 0.55vmin, 12px) solid var(--bezel);
-  box-shadow: var(--shadow-panel), inset 0 0 clamp(14px, 3vmin, 60px) rgba(0, 0, 0, 0.7);
+  border: 0.55vmin solid var(--bezel);
+  box-shadow: var(--shadow-panel), inset 0 0 3vmin rgba(0, 0, 0, 0.7);
 }
 
 .pipe-tile {
   position: relative;
-  border-radius: clamp(4px, 0.7vmin, 14px);
+  border-radius: 0.7vmin;
   background: linear-gradient(160deg, #1b2a63, #141f4c);
   box-shadow: inset 0 0 0 1px rgba(124, 196, 255, 0.1);
   overflow: hidden;
@@ -30,7 +30,10 @@
 
 .pipe-tile__art {
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   transition: transform 0.16s cubic-bezier(0.3, 0.9, 0.3, 1.3);
 }
 
@@ -43,7 +46,7 @@
 
 .pipe-tile.is-wet .pipe-pipe {
   fill: var(--teal);
-  filter: drop-shadow(0 0 clamp(4px, 0.9vmin, 18px) var(--teal));
+  filter: drop-shadow(0 0 0.9vmin var(--teal));
 }
 
 .pipe-tile.is-locked {
@@ -54,7 +57,10 @@
 .pipe-tile.is-locked::after {
   content: '';
   position: absolute;
-  inset: clamp(3px, 0.5vmin, 10px);
+  top: 0.5vmin;
+  right: 0.5vmin;
+  bottom: 0.5vmin;
+  left: 0.5vmin;
   border-radius: inherit;
   pointer-events: none;
   background-image: radial-gradient(circle, rgba(255, 255, 255, 0.35) 42%, transparent 46%);
@@ -65,12 +71,12 @@
 .pipe-tile--endpoint {
   display: grid;
   place-items: center;
-  font-size: clamp(18px, 3.4vmin, 72px);
+  font-size: 3.4vmin;
   background: linear-gradient(160deg, #2b3a7e, #1a2454);
 }
 
-.pipe-tile--source { box-shadow: inset 0 0 0 clamp(2px, 0.35vmin, 7px) var(--sun); }
-.pipe-tile--drain { box-shadow: inset 0 0 0 clamp(2px, 0.35vmin, 7px) var(--leaf); }
+.pipe-tile--source { box-shadow: inset 0 0 0 0.35vmin var(--sun); }
+.pipe-tile--drain { box-shadow: inset 0 0 0 0.35vmin var(--leaf); }
 
 .pipe-tile--source.is-wet,
 .pipe-tile--drain.is-wet {

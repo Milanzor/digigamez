@@ -9,14 +9,12 @@
   padding: calc(var(--touch) + var(--sp-5)) var(--sp-4) var(--sp-4);
 }
 
+/* Sized explicitly in JS from the available box: aspect-ratio is Chromium
+   88+ and the target board doesn't have it. */
 .mem-grid {
   display: grid;
-  gap: clamp(8px, 1.4vmin, 30px);
-  flex: 1;
-  min-height: 0;
-  aspect-ratio: var(--grid-ratio, 1);
-  max-width: 100%;
-  max-height: 100%;
+  gap: 1.4vmin;
+  flex: 0 0 auto;
 }
 
 .mem-card {
@@ -41,7 +39,10 @@
 
 .mem-face {
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   border-radius: var(--r-md);
   display: grid;
   place-items: center;
@@ -55,22 +56,22 @@
   background:
     radial-gradient(circle at 50% 42%, rgba(124, 196, 255, 0.28) 0 18%, transparent 22%),
     linear-gradient(160deg, var(--panel-hi), var(--panel) 70%, #14204d);
-  border: clamp(2px, 0.3vmin, 7px) solid var(--panel-line);
-  font-size: clamp(22px, 4.5vmin, 96px);
+  border: 0.3vmin solid var(--panel-line);
+  font-size: 4.5vmin;
   color: rgba(124, 196, 255, 0.75);
 }
 
 .mem-face--front {
   background: linear-gradient(170deg, #f4f0e2, #d9d2be);
-  border: clamp(2px, 0.3vmin, 7px) solid var(--bezel-sh);
+  border: 0.3vmin solid var(--bezel-sh);
   transform: rotateY(180deg);
-  font-size: clamp(26px, 6vmin, 130px);
+  font-size: 6vmin;
 }
 
 .mem-card.is-matched .mem-face--front {
   background: linear-gradient(170deg, #d8f8e4, #a9ebc4);
   border-color: var(--leaf);
-  box-shadow: 0 0 clamp(10px, 2vmin, 44px) rgba(110, 232, 122, 0.55);
+  box-shadow: 0 0 2vmin rgba(110, 232, 122, 0.55);
 }
 
 .mem-card.is-bonus.is-matched .mem-face--front {

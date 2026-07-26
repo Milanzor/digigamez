@@ -281,6 +281,61 @@ te bewijzen. Drie echte bugs kwamen hieruit:
    in één pad worden door een lijn verbonden, waardoor kraters en
    alien-ogen aan elkaar plakten. Elk cirkeltje krijgt nu zijn eigen pad.
 
+## 7c. Browsercompatibiliteit: wat het digibord écht draait
+
+Het digibord meldt een **gespoofde user agent**:
+`Mozilla/5.0 (Windows NT 6.1; WOW64) ... Chrome/22.0.1207.1`. Dat is niet
+echt: `navigator.platform` op hetzelfde apparaat geeft **Linux aarch64**, en
+Chrome 22 (2012) zou geen ES modules of dynamische `import()` ondersteunen —
+die werken wél. De user agent is dus waardeloos als bron.
+
+Op basis van de **feature-vingerafdruk** (`/check.html`) zit de echte engine
+in de **Chromium 64–78**-reeks:
+
+| Functie | Chromium | Op het bord |
+|---|---|---|
+| Dynamische `import()` | 63 | ✅ |
+| `ResizeObserver` | 64 | ✅ |
+| `Array.flatMap` | 69 | ? (binnen marge) |
+| CSS `clamp()` / `min()` | 79 | ❌ |
+| Optional chaining `?.` / `??` | 80 | ❌ |
+| Flexbox `gap` | 84 | ❌ |
+| Wake Lock | 84 | ❌ |
+| `Element.replaceChildren()` | 86 | ❌ |
+| CSS `inset` (afkorting) | 87 | ❌ |
+| CSS `aspect-ratio` | 88 | ❌ |
+
+Multi-touch werkt (`maxTouchPoints ≥ 2`), dus de gelijktijdige 2-speler-modi
+kunnen gewoon gebruikt worden. Fullscreen werkt, Wake Lock niet — het scherm
+kan dus zelf gaan dimmen.
+
+### Wat daarvoor is aangepast
+- **Build target `chrome64`** (`vite.config.js`): esbuild verlaagt `?.`, `??`
+  en optional catch binding naar oudere syntax.
+- **Geen `clamp()`/`min()`/`max()` meer**: alle 115 gevallen zijn vervangen
+  door de vloeiende `vmin`-waarde zelf. De schaalregel voor grote schermen
+  blijft daarmee intact (`vmin` bestaat al sinds Chromium 20); alleen de
+  boven- en ondergrenzen op extreme venstermaten vallen weg, wat voor een
+  vast digibord niet uitmaakt.
+- **`inset:` uitgeschreven** naar `top/right/bottom/left`.
+- **`aspect-ratio` weg**: de patrijspoort en crewkaarten krijgen een expliciete
+  hoogte, het geheugenraster wordt in JS in pixels berekend.
+- **Flexbox `gap`**: `main.js` meet of flex-gap werkt (kan niet met `@supports`,
+  want `gap` is ook geldig op grid) en zet zo nodig `.no-flexgap` op `<html>`;
+  daaronder herstellen marge-regels de tussenruimte in alle 23 betrokken
+  flex-containers.
+- **`replaceChildren()` en `flatMap()`** vervangen door eigen helpers in
+  `src/shared/dom.js`.
+- **Fullscreen** met `webkit`-prefix als terugval; **Wake Lock** blijft een
+  nette no-op.
+- `ctx.roundRect()` was nooit in gebruik — alle afgeronde vormen liepen al via
+  een eigen `arcTo`-implementatie.
+
+### Compatibiliteitspoort in de build
+`npm run build` draait daarna `scripts/check-compat.mjs`, dat `dist/` scant op
+syntax en CSS-functies die nieuwer zijn dan Chromium 64. Een regressie laat de
+build dus falen in plaats van een zwart scherm op te leveren aan de muur.
+
 ## 8. Deployment via GitHub Actions → GitHub Pages
 
 1. Repo `milanzor/digigamez` op GitHub (via `gh repo create`).

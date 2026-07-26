@@ -39,32 +39,32 @@
   --font-display: 'Baloo 2', 'Comic Sans MS', 'Trebuchet MS', system-ui, sans-serif;
   --font-mono: 'Space Mono', ui-monospace, 'Courier New', monospace;
 
-  --fs-hero: clamp(38px, 10vmin, 220px);
-  --fs-h1: clamp(26px, 5.4vmin, 118px);
-  --fs-h2: clamp(21px, 3.7vmin, 82px);
-  --fs-body: clamp(16px, 2.5vmin, 54px);
-  --fs-label: clamp(12px, 1.75vmin, 38px);
-  --fs-icon: clamp(30px, 6.5vmin, 140px);
+  --fs-hero: 10vmin;
+  --fs-h1: 5.4vmin;
+  --fs-h2: 3.7vmin;
+  --fs-body: 2.5vmin;
+  --fs-label: 1.75vmin;
+  --fs-icon: 6.5vmin;
 
   /* --- Space & shape --- */
-  --sp-1: clamp(4px, 0.6vmin, 14px);
-  --sp-2: clamp(8px, 1.2vmin, 26px);
-  --sp-3: clamp(12px, 1.9vmin, 42px);
-  --sp-4: clamp(18px, 2.8vmin, 62px);
-  --sp-5: clamp(26px, 4.2vmin, 94px);
+  --sp-1: 0.6vmin;
+  --sp-2: 1.2vmin;
+  --sp-3: 1.9vmin;
+  --sp-4: 2.8vmin;
+  --sp-5: 4.2vmin;
 
-  --r-sm: clamp(6px, 1vmin, 22px);
-  --r-md: clamp(12px, 1.9vmin, 42px);
-  --r-lg: clamp(18px, 2.9vmin, 64px);
+  --r-sm: 1vmin;
+  --r-md: 1.9vmin;
+  --r-lg: 2.9vmin;
   --r-pill: 9999px;
 
   /* Minimum comfortable touch target for a child's hand at arm's length
      from a wall-mounted screen — deliberately well above the 44px
      desktop guideline. */
-  --touch: clamp(64px, 11vmin, 250px);
+  --touch: 11vmin;
 
-  --bezel-w: clamp(6px, 1.1vmin, 24px);
-  --glow-sun: 0 0 clamp(10px, 2vmin, 44px) rgba(255, 178, 36, 0.55);
-  --shadow-panel: 0 clamp(4px, 0.8vmin, 18px) clamp(14px, 2.6vmin, 58px) rgba(3, 6, 22, 0.55);
-  --inset-panel: inset 0 clamp(2px, 0.35vmin, 8px) 0 rgba(255, 255, 255, 0.14);
+  --bezel-w: 1.1vmin;
+  --glow-sun: 0 0 2vmin rgba(255, 178, 36, 0.55);
+  --shadow-panel: 0 0.8vmin 2.6vmin rgba(3, 6, 22, 0.55);
+  --inset-panel: inset 0 0.35vmin 0 rgba(255, 255, 255, 0.14);
 }

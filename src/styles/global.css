@@ -21,7 +21,10 @@ body {
 
 #app {
   position: fixed;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: 1;
   display: flex;
   flex-direction: column;
@@ -44,7 +47,10 @@ canvas {
    ───────────────────────────────────────────────────────────── */
 .space-bg {
   position: fixed;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: 0;
   pointer-events: none;
   background:
@@ -155,8 +161,8 @@ button {
 }
 
 button:focus-visible {
-  outline: clamp(3px, 0.5vmin, 10px) solid var(--sun);
-  outline-offset: clamp(2px, 0.4vmin, 8px);
+  outline: 0.5vmin solid var(--sun);
+  outline-offset: 0.4vmin;
 }
 
 .btn {
@@ -169,20 +175,20 @@ button:focus-visible {
   color: var(--ink);
   background: linear-gradient(180deg, var(--enamel), var(--bezel));
   box-shadow:
-    0 clamp(4px, 0.7vmin, 16px) 0 var(--bezel-sh),
+    0 0.7vmin 0 var(--bezel-sh),
     var(--shadow-panel);
   transition: transform 0.09s ease, box-shadow 0.09s ease;
 }
 
 .btn:active {
-  transform: translateY(clamp(3px, 0.55vmin, 12px));
+  transform: translateY(0.55vmin);
   box-shadow: 0 0 0 var(--bezel-sh), var(--shadow-panel);
 }
 
 .btn--go {
   background: linear-gradient(180deg, #ffd469, var(--sun));
   box-shadow:
-    0 clamp(4px, 0.7vmin, 16px) 0 #c47f0c,
+    0 0.7vmin 0 #c47f0c,
     var(--glow-sun),
     var(--shadow-panel);
 }
@@ -202,13 +208,13 @@ button:focus-visible {
   color: var(--ink);
   background: linear-gradient(180deg, var(--enamel), var(--bezel));
   box-shadow:
-    0 clamp(3px, 0.6vmin, 14px) 0 var(--bezel-sh),
+    0 0.6vmin 0 var(--bezel-sh),
     var(--shadow-panel);
   transition: transform 0.09s ease, box-shadow 0.09s ease;
 }
 
 .key:active {
-  transform: translateY(clamp(3px, 0.5vmin, 11px));
+  transform: translateY(0.5vmin);
   box-shadow: 0 0 0 var(--bezel-sh), var(--shadow-panel);
 }
 
@@ -216,15 +222,15 @@ button:focus-visible {
   color: var(--enamel);
   background: linear-gradient(180deg, var(--panel-hi), var(--panel));
   box-shadow:
-    0 clamp(3px, 0.6vmin, 14px) 0 #0a1136,
+    0 0.6vmin 0 #0a1136,
     var(--shadow-panel);
 }
 
 /* Slightly smaller key for use inside a console strip, so it sits within
    the bar instead of bulging past it. Still clears a 90px+ touch target. */
 .key--bar {
-  width: clamp(58px, 9vmin, 200px);
-  height: clamp(58px, 9vmin, 200px);
+  width: 9vmin;
+  height: 9vmin;
   font-size: var(--fs-body);
 }
 
@@ -237,7 +243,7 @@ button:focus-visible {
   text-transform: uppercase;
   color: var(--sun);
   background: rgba(6, 10, 36, 0.72);
-  border: clamp(1px, 0.2vmin, 4px) solid var(--panel-line);
+  border: 0.2vmin solid var(--panel-line);
   border-radius: var(--r-pill);
   padding: var(--sp-2) var(--sp-3);
   white-space: nowrap;
@@ -282,7 +288,7 @@ button:focus-visible {
   text-transform: uppercase;
   color: var(--enamel);
   background: rgba(6, 10, 36, 0.66);
-  border: clamp(1px, 0.2vmin, 4px) solid var(--panel-line);
+  border: 0.2vmin solid var(--panel-line);
   border-radius: var(--r-pill);
   padding: var(--sp-2) var(--sp-4);
 }
@@ -344,7 +350,7 @@ button:focus-visible {
 
 .banner--hint {
   background: rgba(6, 10, 36, 0.86);
-  border: clamp(1px, 0.2vmin, 4px) solid var(--panel-line);
+  border: 0.2vmin solid var(--panel-line);
   color: var(--enamel);
   box-shadow: var(--shadow-panel);
   font-size: var(--fs-h2);
@@ -358,8 +364,43 @@ button:focus-visible {
   text-transform: uppercase;
   color: var(--ice);
   background: rgba(6, 10, 36, 0.6);
-  border: clamp(1px, 0.2vmin, 4px) solid var(--panel-line);
+  border: 0.2vmin solid var(--panel-line);
   border-radius: var(--r-pill);
   padding: var(--sp-2) var(--sp-4);
   text-align: center;
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Flexbox gap fallback (Chromium < 84)
+   main.js feature-tests flex gap and sets .no-flexgap on <html>.
+   These rules re-create the spacing with margins on the affected
+   flex containers. Grid containers are unaffected — grid gap has
+   been supported since Chromium 57.
+   ───────────────────────────────────────────────────────────── */
+
+/* Column stacks */
+.no-flexgap .launch__inner > * + * { margin-top: var(--sp-3); }
+.no-flexgap .crew > * + * { margin-top: var(--sp-5); }
+.no-flexgap .crew__card > * + * { margin-top: var(--sp-3); }
+.no-flexgap .missions > * + * { margin-top: var(--sp-3); }
+.no-flexgap .mission > * + * { margin-top: var(--sp-2); }
+.no-flexgap .dock-stage > * + * { margin-top: var(--sp-3); }
+.no-flexgap .mem-stage > * + * { margin-top: var(--sp-3); }
+.no-flexgap .jig-stage > * + * { margin-top: var(--sp-3); }
+.no-flexgap .pipe-stage > * + * { margin-top: var(--sp-3); }
+.no-flexgap .fuel-stage > * + * { margin-top: var(--sp-4); }
+
+/* Horizontal rows */
+.no-flexgap .crew__options > * + * { margin-left: var(--sp-5); }
+.no-flexgap .hud > * + * { margin-left: var(--sp-3); }
+.no-flexgap .hud__scores > * + * { margin-left: var(--sp-2); }
+.no-flexgap .missions__bar > * + * { margin-left: var(--sp-3); }
+.no-flexgap .mission__meta > * + * { margin-left: var(--sp-2); }
+.no-flexgap .lamps > * + * { margin-left: 0.5vmin; }
+.no-flexgap .dock-row > * + * { margin-left: var(--sp-3); }
+.no-flexgap .jig-tray > * + * { margin-left: 1.1vmin; }
+.no-flexgap .jig-tools > * + * { margin-left: var(--sp-3); }
+.no-flexgap .pipe-taps > * + * { margin-left: var(--sp-3); }
+.no-flexgap .fuel-row > * + * { margin-left: 2vmin; }
+.no-flexgap .fuel-tools > * + * { margin-left: var(--sp-3); }
+.no-flexgap .draw-bar > * + * { margin-left: 1.1vmin; }

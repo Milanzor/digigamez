@@ -2,6 +2,7 @@ import './style.css';
 import { createHud } from '../../shared/ui-components.js';
 import { sfx } from '../../shell/audio.js';
 import { setLevel } from '../../shell/progress.js';
+import { setChildren } from '../../shared/dom.js';
 
 // "Zuurstofleidingen" — rotate the pipe tiles so oxygen reaches the tank.
 //
@@ -258,7 +259,7 @@ function startRound() {
     }
   }
 
-  stage.replaceChildren(grid, hint);
+  setChildren(stage, grid, hint);
 
   let done = false;
 

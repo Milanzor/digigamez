@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Digigamez — browsercheck</title>
-<!-- Relative so it resolves under whatever base the site is deployed at. -->
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <!--
   Deliberately written in ES5 with no modules, no CSS custom properties, no
@@ -16,20 +15,23 @@
   body{margin:0;background:#0e1741;color:#f9f4e7;
        font-family:Arial,Helvetica,sans-serif;font-size:22px;padding:24px}
   h1{font-size:34px;margin:0 0 4px}
+  h2{font-size:26px;margin:26px 0 8px}
   p.sub{margin:0 0 20px;color:#9fb0e8;font-size:20px}
-  #verdict{padding:18px 22px;border-radius:14px;font-size:30px;font-weight:bold;margin-bottom:22px}
+  .card{padding:18px 22px;border-radius:14px;font-size:30px;font-weight:bold;margin-bottom:18px}
   .ok{background:#1c6b3a;color:#d8f8e4}
   .bad{background:#7d2020;color:#ffdede}
-  table{border-collapse:collapse;width:100%;max-width:1100px}
+  .note{background:#1d2650;color:#cfe;font-size:24px;font-weight:normal;line-height:1.4}
+  table{border-collapse:collapse;width:100%;max-width:1150px}
   td{padding:8px 10px;border-bottom:1px solid #2b3a7e;vertical-align:top}
-  td.k{color:#9fb0e8;width:320px}
+  td.k{color:#9fb0e8;width:340px}
   td.v{font-family:"Courier New",monospace;word-break:break-all}
   .pass{color:#6ee87a;font-weight:bold}
   .fail{color:#ff8a7a;font-weight:bold}
+  .dim{color:#9fb0e8}
   #ua{background:#060a24;padding:14px;border-radius:10px;
       font-family:"Courier New",monospace;font-size:20px;word-break:break-all;
-      max-width:1100px;margin-bottom:24px}
-  h2{font-size:26px;margin:26px 0 8px}
+      max-width:1150px;margin-bottom:10px}
+  .big{font-size:30px;font-weight:bold;color:#ffb224}
 </style>
 </head>
 <body>
@@ -37,7 +39,7 @@
 <p class="sub">Open deze pagina op het digibord zelf. Maak er een foto van of lees de regels voor.</p>
 
 <noscript>
-  <div id="verdict" class="bad">JavaScript staat UIT in deze browser.<br>
+  <div class="card bad">JavaScript staat UIT in deze browser.<br>
   Digigamez kan dan niet werken. Zet JavaScript aan en herlaad de pagina.</div>
 </noscript>
 
@@ -48,129 +50,167 @@
 
 <script>
 (function () {
-  var need = [];   // features the game actually depends on
-  var info = [];
-
   function esc(s) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
-  function add(k, v) { info.push([k, v]); }
-  function req(k, ok) { need.push([k, !!ok]); return !!ok; }
-
   function cssSupports(prop, val) {
     try {
       if (typeof window.CSS !== 'undefined' && CSS.supports) return CSS.supports(prop, val);
     } catch (e) {}
     return false;
   }
+  function canParse(src) {
+    try { new Function(src); return true; } catch (e) { return false; }
+  }
 
-  // --- identity -----------------------------------------------------------
-  var ua = navigator.userAgent;
-  var m = ua.match(/(Edg|EdgA|OPR|Chrome|CriOS|Firefox|Version)\/(\d+)/);
-  var engine = m ? m[1] : 'onbekend';
-  var major = m ? parseInt(m[2], 10) : 0;
-  if (/Edg/.test(ua)) engine = 'Edge';
-  else if (/OPR/.test(ua)) engine = 'Opera';
-  else if (/Chrome|CriOS/.test(ua)) engine = 'Chrome';
-  else if (/Firefox/.test(ua)) engine = 'Firefox';
-  else if (/Safari/.test(ua) && /Version/.test(ua)) engine = 'Safari';
+  // Flex gap can't be feature-detected with @supports (gap is valid on grid,
+  // so @supports reports true even where flex ignores it). Measure instead.
+  function flexGapSupported() {
+    var p = document.createElement('div');
+    p.style.display = 'flex';
+    p.style.flexDirection = 'row';
+    p.style.gap = '20px';
+    p.style.position = 'absolute';
+    p.style.visibility = 'hidden';
+    p.appendChild(document.createElement('i'));
+    p.appendChild(document.createElement('i'));
+    document.body.appendChild(p);
+    var ok = p.scrollWidth >= 20;
+    if (p.parentNode) p.parentNode.removeChild(p);
+    return ok;
+  }
 
-  add('Browser (geraden)', engine + ' ' + (major || '?'));
-  add('Platform', navigator.platform || '—');
-  add('Taal', navigator.language || '—');
-  add('Schermgrootte (screen)', screen.width + ' x ' + screen.height);
-  add('Venstergrootte (viewport)', (window.innerWidth || 0) + ' x ' + (window.innerHeight || 0));
-  add('devicePixelRatio', typeof window.devicePixelRatio === 'undefined' ? '—' : window.devicePixelRatio);
-  add('Kleurdiepte', screen.colorDepth + ' bit');
-  add('Touch-punten (maxTouchPoints)',
-      typeof navigator.maxTouchPoints === 'undefined' ? '—' : navigator.maxTouchPoints);
-  add('Touch events aanwezig', ('ontouchstart' in window) ? 'ja' : 'nee');
-  add('CPU-kernen', navigator.hardwareConcurrency || '—');
+  var F = {
+    modules:      'noModule' in document.createElement('script'),
+    dynImport:    canParse('return import("")'),
+    optCatch:     canParse('try{}catch{}'),
+    arrowClass:   canParse('const a=(x=1)=>`${x}`; class B{}'),
+    optChain:     canParse('var o={};o?.a; var c=null??2;'),
+    flatMap:      typeof Array.prototype.flatMap === 'function',
+    replaceKids:  typeof Element.prototype.replaceChildren === 'function',
+    customProps:  cssSupports('--a', '0'),
+    cssGrid:      cssSupports('display', 'grid'),
+    cssClamp:     cssSupports('width', 'clamp(1px, 1vmin, 2px)'),
+    cssMin:       cssSupports('width', 'min(1px, 2px)'),
+    cssInset:     cssSupports('inset', '0px'),
+    aspectRatio:  cssSupports('aspect-ratio', '1 / 1'),
+    flexGap:      flexGapSupported(),
+    pointer:      !!window.PointerEvent,
+    resizeObs:    typeof window.ResizeObserver !== 'undefined',
+    canvas2d:     (function(){ try { return !!document.createElement('canvas').getContext('2d'); } catch(e){ return false; } })(),
+    roundRect:    (function(){ try { var c=document.createElement('canvas').getContext('2d'); return typeof c.roundRect==='function'; } catch(e){ return false; } })(),
+    webAudio:     !!(window.AudioContext || window.webkitAudioContext),
+    storage:      (function(){ try { localStorage.setItem('_t','1'); localStorage.removeItem('_t'); return true; } catch(e){ return false; } })(),
+    fullscreenStd:!!document.documentElement.requestFullscreen,
+    fullscreenAny:!!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen),
+    wakeLock:     typeof navigator.wakeLock !== 'undefined',
+    multiTouch:   (navigator.maxTouchPoints || 0) >= 2
+  };
 
-  // --- hard requirements --------------------------------------------------
-  // If any of these fail the app cannot run at all.
-  req('ES modules (<script type=module>)',
-      'noModule' in document.createElement('script'));
+  // Chromium milestones, oldest first. The first one that FAILS puts an upper
+  // bound on the version; the last one that PASSES puts a lower bound.
+  var LADDER = [
+    [61, F.modules],      [63, F.dynImport],    [64, F.resizeObs],
+    [66, F.optCatch],     [69, F.flatMap],      [79, F.cssClamp],
+    [80, F.optChain],     [84, F.flexGap],      [86, F.replaceKids],
+    [87, F.cssInset],     [88, F.aspectRatio],  [99, F.roundRect]
+  ];
+  var lower = 0, upper = 0;
+  for (var i = 0; i < LADDER.length; i++) {
+    if (LADDER[i][1]) lower = LADDER[i][0];
+    else { upper = LADDER[i][0]; break; }
+  }
+  var estimate = upper
+    ? (lower ? 'Chromium ' + lower + '–' + (upper - 1) : 'ouder dan Chromium ' + upper)
+    : 'Chromium ' + lower + ' of nieuwer';
 
-  var dynImport = false;
-  try { new Function('return import("")'); dynImport = true; } catch (e) { dynImport = false; }
-  req('Dynamische import() — lazy loading per spel', dynImport);
-
-  var modernSyntax = false;
-  try { new Function('const a=(x=1)=>`${x}`; class B{}; a?.(); let c=null??2;'); modernSyntax = true; }
-  catch (e) { modernSyntax = false; }
-  req('Moderne JS-syntax (arrow, class, ?., ??)', modernSyntax);
-
-  req('CSS custom properties (--var)', cssSupports('--a', '0'));
-  req('CSS clamp() — schaalt de UI op groot scherm', cssSupports('width', 'clamp(1px, 1vmin, 2px)'));
-  req('CSS grid', cssSupports('display', 'grid'));
-  req('CSS aspect-ratio', cssSupports('aspect-ratio', '1 / 1'));
-  req('Pointer Events — alle bediening', !!window.PointerEvent);
-  req('ResizeObserver — canvas meeschalen', typeof window.ResizeObserver !== 'undefined');
-  req('Canvas 2D', (function () {
-    try { return !!document.createElement('canvas').getContext('2d'); } catch (e) { return false; }
-  })());
-  req('Canvas roundRect() — afgeronde vormen', (function () {
-    try {
-      var c = document.createElement('canvas').getContext('2d');
-      return typeof c.roundRect === 'function';
-    } catch (e) { return false; }
-  })());
-  req('Web Audio — alle geluidseffecten',
-      !!(window.AudioContext || window.webkitAudioContext));
-  req('localStorage — levelvoortgang bewaren', (function () {
-    try { localStorage.setItem('_t', '1'); localStorage.removeItem('_t'); return true; }
-    catch (e) { return false; }
-  })());
-
-  // --- nice to have -------------------------------------------------------
-  var optional = [
-    ['Fullscreen API (kioskmodus)',
-      !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen)],
-    ['Wake Lock (scherm niet laten dimmen)', typeof navigator.wakeLock !== 'undefined'],
-    ['Meerdere vingers tegelijk (multi-touch 2 spelers)',
-      (navigator.maxTouchPoints || 0) >= 2]
+  // Only these have no workaround in the app.
+  var REQUIRED = [
+    ['ES modules', F.modules],
+    ['Dynamische import() — spellen los laden', F.dynImport],
+    ['Arrow functions en classes', F.arrowClass],
+    ['CSS custom properties (--var)', F.customProps],
+    ['CSS grid', F.cssGrid],
+    ['Pointer Events — alle bediening', F.pointer],
+    ['ResizeObserver — canvas meeschalen', F.resizeObs],
+    ['Canvas 2D', F.canvas2d],
+    ['Web Audio — geluidseffecten', F.webAudio],
+    ['localStorage — levelvoortgang', F.storage]
   ];
 
-  // --- render -------------------------------------------------------------
-  var failed = [];
-  for (var i = 0; i < need.length; i++) if (!need[i][1]) failed.push(need[i][0]);
+  // Present on new browsers, absent here — the app ships a fallback for each.
+  var HANDLED = [
+    ['Optional chaining / ?? ', F.optChain, 'build transpileert naar ES2019'],
+    ['Array.flatMap()', F.flatMap, 'eigen flatMap-helper'],
+    ['Element.replaceChildren()', F.replaceKids, 'eigen setChildren-helper'],
+    ['CSS clamp()', F.cssClamp, 'vaste vmin-waarden'],
+    ['CSS min() / max()', F.cssMin, 'enkele vw/vmin-waarde'],
+    ['CSS inset (afkorting)', F.cssInset, 'top/right/bottom/left uitgeschreven'],
+    ['CSS aspect-ratio', F.aspectRatio, 'hoogte in JS/CSS berekend'],
+    ['Flexbox gap', F.flexGap, 'marges via .no-flexgap'],
+    ['Canvas roundRect()', F.roundRect, 'eigen arcTo-versie'],
+    ['Fullscreen zonder prefix', F.fullscreenStd, 'webkit-prefix'],
+    ['Wake Lock', F.wakeLock, 'geen — scherm kan dimmen']
+  ];
+
+  var missing = [];
+  for (i = 0; i < REQUIRED.length; i++) if (!REQUIRED[i][1]) missing.push(REQUIRED[i][0]);
 
   var html = '';
-  html += '<div id="verdict" class="' + (failed.length ? 'bad' : 'ok') + '">';
-  if (failed.length) {
-    html += 'Deze browser kan Digigamez NIET draaien.<br>' +
-            '<span style="font-size:22px;font-weight:normal">' +
-            failed.length + ' van de ' + need.length +
-            ' vereiste functies ontbreken (zie rood hieronder).</span>';
-  } else {
-    html += 'Deze browser kan Digigamez draaien.<br>' +
-            '<span style="font-size:22px;font-weight:normal">Alle ' + need.length +
-            ' vereiste functies zijn aanwezig.</span>';
-  }
+  html += '<div class="card ' + (missing.length ? 'bad' : 'ok') + '">';
+  html += missing.length
+    ? 'Deze browser kan Digigamez NIET draaien.<br><span style="font-size:22px;font-weight:normal">' +
+      missing.length + ' van de ' + REQUIRED.length + ' onmisbare functies ontbreken.</span>'
+    : 'Deze browser kan Digigamez draaien.<br><span style="font-size:22px;font-weight:normal">Alle ' +
+      REQUIRED.length + ' onmisbare functies zijn aanwezig.</span>';
   html += '</div>';
 
-  html += '<h2>User agent</h2><div id="ua">' + esc(ua) + '</div>';
+  html += '<div class="card note">Geschatte engine: <span class="big">' + esc(estimate) + '</span><br>' +
+          'Geschat op basis van welke functies wel en niet werken — niet op de user agent, ' +
+          'want die kan gespoofd zijn.</div>';
+
+  html += '<h2>User agent</h2><div id="ua">' + esc(navigator.userAgent) + '</div>';
+  html += '<p class="dim" style="font-size:19px;max-width:1150px">' +
+          'Let op: als de user agent Windows noemt maar het platform hieronder Linux, ' +
+          'dan is de user agent niet echt.</p>';
+
+  var INFO = [
+    ['Platform (niet te spoofen via UA)', navigator.platform || '—'],
+    ['Taal', navigator.language || '—'],
+    ['Schermgrootte (screen)', screen.width + ' x ' + screen.height],
+    ['Venstergrootte (viewport)', (window.innerWidth || 0) + ' x ' + (window.innerHeight || 0)],
+    ['devicePixelRatio', typeof window.devicePixelRatio === 'undefined' ? '—' : window.devicePixelRatio],
+    ['Kleurdiepte', screen.colorDepth + ' bit'],
+    ['Touch-punten (maxTouchPoints)', typeof navigator.maxTouchPoints === 'undefined' ? '—' : navigator.maxTouchPoints],
+    ['Touch events aanwezig', ('ontouchstart' in window) ? 'ja' : 'nee'],
+    ['CPU-kernen', navigator.hardwareConcurrency || '—'],
+    ['Geheugen (GB, ruw)', navigator.deviceMemory || navigator.deviceMemory === 0 ? navigator.deviceMemory : '—']
+  ];
 
   html += '<h2>Scherm en apparaat</h2><table>';
-  for (i = 0; i < info.length; i++) {
-    html += '<tr><td class="k">' + esc(info[i][0]) + '</td><td class="v">' + esc(info[i][1]) + '</td></tr>';
+  for (i = 0; i < INFO.length; i++) {
+    html += '<tr><td class="k">' + esc(INFO[i][0]) + '</td><td class="v">' + esc(INFO[i][1]) + '</td></tr>';
   }
   html += '</table>';
 
-  html += '<h2>Vereist voor Digigamez</h2><table>';
-  for (i = 0; i < need.length; i++) {
-    html += '<tr><td class="k">' + esc(need[i][0]) + '</td><td class="v ' +
-            (need[i][1] ? 'pass">OK' : 'fail">ONTBREEKT') + '</td></tr>';
+  html += '<h2>Onmisbaar — geen terugval mogelijk</h2><table>';
+  for (i = 0; i < REQUIRED.length; i++) {
+    html += '<tr><td class="k">' + esc(REQUIRED[i][0]) + '</td><td class="v ' +
+            (REQUIRED[i][1] ? 'pass">OK' : 'fail">ONTBREEKT') + '</td></tr>';
   }
   html += '</table>';
 
-  html += '<h2>Handig, maar niet verplicht</h2><table>';
-  for (i = 0; i < optional.length; i++) {
-    html += '<tr><td class="k">' + esc(optional[i][0]) + '</td><td class="v ' +
-            (optional[i][1] ? 'pass">OK' : 'fail">ontbreekt') + '</td></tr>';
+  html += '<h2>Ontbreekt hier, maar opgevangen</h2><table>';
+  for (i = 0; i < HANDLED.length; i++) {
+    html += '<tr><td class="k">' + esc(HANDLED[i][0]) + '</td><td class="v ' +
+            (HANDLED[i][1] ? 'pass">aanwezig' : 'dim">ontbreekt → ' + esc(HANDLED[i][2])) +
+            '</td></tr>';
   }
   html += '</table>';
+
+  html += '<h2>2 spelers tegelijk</h2><table><tr><td class="k">Meerdere vingers tegelijk</td>' +
+          '<td class="v ' + (F.multiTouch ? 'pass">OK — samen spelen werkt' :
+          'fail">ontbreekt → alleen om de beurt') + '</td></tr></table>';
 
   document.getElementById('out').innerHTML = html;
 })();

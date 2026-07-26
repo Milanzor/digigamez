@@ -2,6 +2,7 @@ import { navigate } from '../shell/router.js';
 import { getItem } from '../shell/storage.js';
 import { getGame } from '../games/game-registry.js';
 import { getLevel } from '../shell/progress.js';
+import { setChildren } from '../shared/dom.js';
 
 export async function renderGameLoaderView(container, params) {
   const game = getGame(params.slug);
@@ -40,7 +41,7 @@ export async function renderGameLoaderView(container, params) {
 
   const view = document.createElement('div');
   view.className = 'game-view';
-  container.replaceChildren(view);
+  setChildren(container, view);
 
   const players = getItem('playerCount', 1);
   const onExit = () => navigate('/rooster');
