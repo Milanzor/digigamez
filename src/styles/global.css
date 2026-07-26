@@ -1,29 +1,10 @@
-@font-face {
-  font-family: 'system-rounded';
-  src: local('Comic Sans MS');
-}
-
-:root {
-  --color-bg: #eef1ff;
-  --color-primary: #4c5fe8;
-  --color-primary-dark: #3646b8;
-  --color-accent: #ffd166;
-  --color-accent-2: #ef476f;
-  --color-accent-3: #06d6a0;
-  --color-text: #1f2547;
-  --color-card: #ffffff;
-  --radius-lg: 28px;
-  --radius-md: 18px;
-  --shadow-soft: 0 10px 30px rgba(31, 37, 71, 0.15);
-  --touch-min: 96px;
-}
-
 * {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
 }
 
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   width: 100%;
@@ -31,75 +12,19 @@ html, body {
   overflow: hidden;
   overscroll-behavior: none;
   touch-action: none;
-  background: var(--color-bg);
-  color: var(--color-text);
-  font-family: 'Baloo 2', 'Comic Sans MS', system-ui, sans-serif;
-  font-size: 20px;
+  background: var(--void-deep);
+  color: var(--enamel);
+  font-family: var(--font-display);
+  font-size: var(--fs-body);
   user-select: none;
 }
 
 #app {
   position: fixed;
   inset: 0;
-  width: 100%;
-  height: 100%;
+  z-index: 1;
   display: flex;
   flex-direction: column;
-}
-
-button {
-  font-family: inherit;
-  border: none;
-  cursor: pointer;
-  touch-action: manipulation;
-}
-
-button:focus-visible {
-  outline: 4px solid var(--color-accent);
-  outline-offset: 2px;
-}
-
-.btn {
-  min-height: var(--touch-min);
-  min-width: var(--touch-min);
-  border-radius: var(--radius-md);
-  font-size: 1.4rem;
-  font-weight: 700;
-  padding: 1rem 2rem;
-  background: var(--color-primary);
-  color: white;
-  box-shadow: var(--shadow-soft);
-  transition: transform 0.08s ease;
-}
-
-.btn:active {
-  transform: scale(0.94);
-}
-
-.btn.secondary {
-  background: white;
-  color: var(--color-primary);
-}
-
-.icon-btn {
-  min-height: var(--touch-min);
-  min-width: var(--touch-min);
-  border-radius: 50%;
-  background: white;
-  box-shadow: var(--shadow-soft);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2rem;
-  transition: transform 0.08s ease;
-}
-
-.icon-btn:active {
-  transform: scale(0.9);
-}
-
-.hidden {
-  display: none !important;
 }
 
 canvas {
@@ -111,103 +36,330 @@ canvas {
   background: transparent;
 }
 
-/* Shared in-game chrome */
+/* ─────────────────────────────────────────────────────────────
+   Starfield backdrop
+   Three tiled gradient layers drifting at different speeds for
+   parallax. Pure CSS transforms — GPU-composited, zero JS, zero
+   repaint, so it costs nothing while a game runs its own loop.
+   ───────────────────────────────────────────────────────────── */
+.space-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 78% 18%, rgba(176, 107, 255, 0.20), transparent 45%),
+    radial-gradient(circle at 12% 82%, rgba(47, 217, 198, 0.14), transparent 50%),
+    linear-gradient(170deg, var(--void) 0%, var(--void-deep) 70%);
+  overflow: hidden;
+}
+
+.space-bg__stars {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  will-change: transform;
+}
+
+.space-bg__stars--far {
+  background-image:
+    radial-gradient(1.5px 1.5px at 24px 38px, rgba(255, 255, 255, 0.75), transparent),
+    radial-gradient(1.5px 1.5px at 132px 96px, rgba(190, 220, 255, 0.65), transparent),
+    radial-gradient(1px 1px at 78px 156px, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 176px 22px, rgba(255, 240, 200, 0.6), transparent);
+  background-size: 210px 210px;
+  animation: drift-far 240s linear infinite;
+}
+
+.space-bg__stars--mid {
+  background-image:
+    radial-gradient(2.5px 2.5px at 60px 70px, rgba(255, 255, 255, 0.9), transparent),
+    radial-gradient(2px 2px at 190px 140px, rgba(124, 196, 255, 0.8), transparent),
+    radial-gradient(2px 2px at 240px 40px, rgba(255, 200, 150, 0.7), transparent);
+  background-size: 320px 320px;
+  animation: drift-mid 150s linear infinite;
+}
+
+.space-bg__stars--near {
+  background-image:
+    radial-gradient(3.5px 3.5px at 120px 90px, rgba(255, 255, 255, 1), transparent),
+    radial-gradient(3px 3px at 380px 260px, rgba(255, 178, 36, 0.85), transparent);
+  background-size: 520px 520px;
+  animation: drift-near 90s linear infinite;
+}
+
+@keyframes drift-far {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-210px, 105px, 0); }
+}
+@keyframes drift-mid {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-320px, 160px, 0); }
+}
+@keyframes drift-near {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-520px, 260px, 0); }
+}
+
+/* A single drifting planet gives the void a sense of scale. */
+.space-bg__planet {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(0.4px);
+  animation: planet-float 40s ease-in-out infinite;
+}
+
+.space-bg__planet--a {
+  width: 26vmin;
+  height: 26vmin;
+  right: -7vmin;
+  bottom: -9vmin;
+  background:
+    radial-gradient(circle at 32% 28%, #ffd98a 0%, #ff9b3d 40%, #c4571f 78%, #7d2f10 100%);
+  box-shadow: inset -2vmin -2vmin 4vmin rgba(0, 0, 0, 0.5);
+}
+
+.space-bg__planet--b {
+  width: 9vmin;
+  height: 9vmin;
+  left: 4vmin;
+  bottom: 22vmin;
+  background: radial-gradient(circle at 35% 30%, #b9e7ff 0%, #5aa7d8 55%, #2b5f8f 100%);
+  box-shadow: inset -1vmin -1vmin 2vmin rgba(0, 0, 0, 0.45);
+  animation-delay: -12s;
+}
+
+@keyframes planet-float {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -2.2vmin, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .space-bg__stars,
+  .space-bg__planet {
+    animation: none !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Controls — chunky enamel instrument buttons
+   ───────────────────────────────────────────────────────────── */
+button {
+  font-family: inherit;
+  border: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  color: inherit;
+}
+
+button:focus-visible {
+  outline: clamp(3px, 0.5vmin, 10px) solid var(--sun);
+  outline-offset: clamp(2px, 0.4vmin, 8px);
+}
+
+.btn {
+  min-height: var(--touch);
+  padding: var(--sp-3) var(--sp-5);
+  border-radius: var(--r-pill);
+  font-size: var(--fs-h2);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--enamel), var(--bezel));
+  box-shadow:
+    0 clamp(4px, 0.7vmin, 16px) 0 var(--bezel-sh),
+    var(--shadow-panel);
+  transition: transform 0.09s ease, box-shadow 0.09s ease;
+}
+
+.btn:active {
+  transform: translateY(clamp(3px, 0.55vmin, 12px));
+  box-shadow: 0 0 0 var(--bezel-sh), var(--shadow-panel);
+}
+
+.btn--go {
+  background: linear-gradient(180deg, #ffd469, var(--sun));
+  box-shadow:
+    0 clamp(4px, 0.7vmin, 16px) 0 #c47f0c,
+    var(--glow-sun),
+    var(--shadow-panel);
+}
+
+.btn--go:active {
+  box-shadow: 0 0 0 #c47f0c, var(--glow-sun), var(--shadow-panel);
+}
+
+/* Round instrument key (back, mute, tools) */
+.key {
+  width: var(--touch);
+  height: var(--touch);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: var(--fs-h2);
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--enamel), var(--bezel));
+  box-shadow:
+    0 clamp(3px, 0.6vmin, 14px) 0 var(--bezel-sh),
+    var(--shadow-panel);
+  transition: transform 0.09s ease, box-shadow 0.09s ease;
+}
+
+.key:active {
+  transform: translateY(clamp(3px, 0.5vmin, 11px));
+  box-shadow: 0 0 0 var(--bezel-sh), var(--shadow-panel);
+}
+
+.key--dark {
+  color: var(--enamel);
+  background: linear-gradient(180deg, var(--panel-hi), var(--panel));
+  box-shadow:
+    0 clamp(3px, 0.6vmin, 14px) 0 #0a1136,
+    var(--shadow-panel);
+}
+
+/* Slightly smaller key for use inside a console strip, so it sits within
+   the bar instead of bulging past it. Still clears a 90px+ touch target. */
+.key--bar {
+  width: clamp(58px, 9vmin, 200px);
+  height: clamp(58px, 9vmin, 200px);
+  font-size: var(--fs-body);
+}
+
+/* Mono readout chip — scores, levels, mission codes */
+.readout {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--fs-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sun);
+  background: rgba(6, 10, 36, 0.72);
+  border: clamp(1px, 0.2vmin, 4px) solid var(--panel-line);
+  border-radius: var(--r-pill);
+  padding: var(--sp-2) var(--sp-3);
+  white-space: nowrap;
+}
+
+.readout--p1 { color: var(--p1); border-color: var(--p1); }
+.readout--p2 { color: var(--p2); border-color: var(--p2); }
+
+.hidden { display: none !important; }
+
+/* ─────────────────────────────────────────────────────────────
+   Shared in-game shell
+   ───────────────────────────────────────────────────────────── */
 .game-view {
   position: relative;
   width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: var(--color-bg);
 }
 
-.game-stage {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-}
-
-.game-chrome {
+.hud {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  z-index: 20;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  z-index: 30;
   pointer-events: none;
 }
 
-.game-chrome > * {
-  pointer-events: auto;
-}
+.hud > * { pointer-events: auto; }
 
-.game-back-btn {
-  font-size: 2rem;
-}
-
-.game-title {
-  background: white;
-  border-radius: 999px;
-  padding: 0.6rem 1.6rem;
-  font-weight: 800;
-  font-size: 1.3rem;
-  box-shadow: var(--shadow-soft);
-}
-
-.turn-banner {
-  position: absolute;
-  top: 1rem;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 0.8rem 2rem;
-  border-radius: 999px;
-  font-weight: 800;
-  font-size: 1.4rem;
-  color: white;
-  z-index: 21;
-  box-shadow: var(--shadow-soft);
-}
-
-.scoreboard {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  display: flex;
-  gap: 0.6rem;
-  z-index: 20;
-}
-
-.score-entry {
-  background: white;
-  border-radius: 999px;
-  padding: 0.6rem 1.4rem;
-  font-weight: 800;
-  box-shadow: var(--shadow-soft);
-}
-
-.score-entry.player-1 { border: 4px solid var(--color-accent-2); }
-.score-entry.player-2 { border: 4px solid #3a86ff; }
-
-.confirm-toast {
-  position: absolute;
-  bottom: 2rem;
-  left: 50%;
-  transform: translateX(-50%) translateY(20px);
-  background: var(--color-text);
-  color: white;
-  padding: 1rem 2rem;
-  border-radius: var(--radius-md);
+.hud__title {
+  font-family: var(--font-mono);
   font-weight: 700;
-  font-size: 1.3rem;
-  opacity: 0;
-  transition: opacity 0.25s ease, transform 0.25s ease;
-  z-index: 30;
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--enamel);
+  background: rgba(6, 10, 36, 0.66);
+  border: clamp(1px, 0.2vmin, 4px) solid var(--panel-line);
+  border-radius: var(--r-pill);
+  padding: var(--sp-2) var(--sp-4);
 }
 
-.confirm-toast.visible {
+.hud__spacer { flex: 1; }
+
+.hud__scores {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+/* Turn indicator for 2-player, turn-based games. Sits in the HUD row so it
+   can never overlap a game's own board or hint strip. */
+.hud__turn {
+  font-weight: 800;
+  font-size: var(--fs-body);
+  color: var(--ink);
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-pill);
+  box-shadow: var(--shadow-panel);
+  white-space: nowrap;
+}
+
+/* Mission banner — success / hint messages */
+.banner {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0.82);
+  z-index: 40;
+  text-align: center;
+  font-weight: 800;
+  font-size: var(--fs-h1);
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--enamel), var(--bezel));
+  border-radius: var(--r-lg);
+  padding: var(--sp-4) var(--sp-5);
+  box-shadow: var(--shadow-panel), var(--glow-sun);
+  opacity: 0;
+  transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.35);
+  pointer-events: none;
+  max-width: 80vw;
+}
+
+.banner.is-visible {
   opacity: 1;
-  transform: translateX(-50%) translateY(0);
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.banner__sub {
+  display: block;
+  margin-top: var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.banner--hint {
+  background: rgba(6, 10, 36, 0.86);
+  border: clamp(1px, 0.2vmin, 4px) solid var(--panel-line);
+  color: var(--enamel);
+  box-shadow: var(--shadow-panel);
+  font-size: var(--fs-h2);
+}
+
+/* Instructional strip inside puzzle games */
+.hint-strip {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ice);
+  background: rgba(6, 10, 36, 0.6);
+  border: clamp(1px, 0.2vmin, 4px) solid var(--panel-line);
+  border-radius: var(--r-pill);
+  padding: var(--sp-2) var(--sp-4);
+  text-align: center;
 }

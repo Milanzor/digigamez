@@ -1,228 +1,305 @@
 import './style.css';
-import { createGameChrome } from '../../shared/ui-components.js';
+import { createHud } from '../../shared/ui-components.js';
 import { sfx } from '../../shell/audio.js';
+import { setLevel } from '../../shell/progress.js';
 
-const ROWS = 4;
-const INTERIOR_COLS = 3;
-const TOTAL_COLS = INTERIOR_COLS + 2;
-const SOURCE_COL = 0;
-const DRAIN_COL = TOTAL_COLS - 1;
+// "Zuurstofleidingen" — rotate the pipe tiles so oxygen reaches the tank.
+//
+// Puzzles are generated solvable-by-construction: a path is walked from the
+// source column to the drain column first, and only then are the tiles
+// scrambled, so a solution always exists.
+//
+// Depth: the grid grows with the level, and from level 4 there are two
+// independent networks to complete on one board (generated in separate row
+// bands so they can never collide).
 
-// Direction encoding: N=0, E=1, S=2, W=3 (clockwise), matching CSS rotate().
-const DIR_VECTOR = { 0: [-1, 0], 1: [0, 1], 2: [1, 0], 3: [0, -1] };
-const OPPOSITE = (d) => (d + 2) % 4;
-const BASE_CONNECTIONS = { straight: [0, 2], elbow: [0, 1] };
+// Directions, clockwise: N=0 E=1 S=2 W=3. Matches CSS rotate() order.
+const DIR = { N: 0, E: 1, S: 2, W: 3 };
+const VEC = { 0: [-1, 0], 1: [0, 1], 2: [1, 0], 3: [0, -1] };
+const OPP = (d) => (d + 2) % 4;
+const BASE = { straight: [DIR.N, DIR.S], elbow: [DIR.N, DIR.E] };
 
-let stage, cleanupFns = [];
+const LEVELS = [
+  { cols: 3, rows: 3, nets: 1 },
+  { cols: 4, rows: 3, nets: 1 },
+  { cols: 4, rows: 4, nets: 1 },
+  { cols: 5, rows: 4, nets: 2 },
+  { cols: 5, rows: 5, nets: 2 },
+  { cols: 6, rows: 6, nets: 2 },
+];
 
-function rotateSet(base, rotation) {
-  return base.map((d) => (d + rotation) % 4);
+let hud = null;
+let stage = null;
+let level = 1;
+let slug = 'leidingen';
+let listeners = [];
+let timers = [];
+
+const rotSet = (base, rot) => base.map((d) => (d + rot) % 4);
+const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+function later(fn, ms) {
+  const id = setTimeout(fn, ms);
+  timers.push(id);
+  return id;
 }
 
-function rotationForConnections(type, wantedSet) {
-  const base = BASE_CONNECTIONS[type];
-  for (let k = 0; k < 4; k++) {
-    const rotated = rotateSet(base, k);
-    if (wantedSet.every((d) => rotated.includes(d)) && rotated.every((d) => wantedSet.includes(d))) {
-      return k;
-    }
+// Which rotation of `type` produces exactly the wanted connection pair?
+function rotationFor(type, wanted) {
+  for (let r = 0; r < 4; r++) {
+    const s = rotSet(BASE[type], r);
+    if (wanted.every((d) => s.includes(d)) && s.every((d) => wanted.includes(d))) return r;
   }
   return 0;
 }
 
-function randomInt(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+function typeFor(conns) {
+  return conns[0] === OPP(conns[1]) ? 'straight' : 'elbow';
 }
 
-function generatePuzzle() {
-  const sourceRow = randomInt(0, ROWS - 1);
-  const drainRow = randomInt(0, ROWS - 1);
-
-  // grid[row][col] holds interior tile data; col indices 1..INTERIOR_COLS map to columns 1..INTERIOR_COLS
-  const grid = Array.from({ length: ROWS }, () => Array(TOTAL_COLS).fill(null));
-
-  let currentRow = sourceRow;
-  for (let c = 1; c <= INTERIOR_COLS; c++) {
-    const isLastInterior = c === INTERIOR_COLS;
-    const nextRow = isLastInterior ? drainRow : Math.max(0, Math.min(ROWS - 1, currentRow + randomInt(-1, 1)));
-
-    if (nextRow === currentRow) {
-      // Pass straight through: enters from West, exits East.
-      grid[currentRow][c] = { conns: [3, 1] };
-    } else {
-      const step = nextRow > currentRow ? 1 : -1;
-      // Entry cell: from West, turns toward next row (South or North).
-      const turnDir = step === 1 ? 2 : 0;
-      grid[currentRow][c] = { conns: [3, turnDir] };
-      // Intermediate straight-vertical cells.
-      for (let r = currentRow + step; r !== nextRow; r += step) {
-        grid[r][c] = { conns: [0, 2] };
-      }
-      // Exit cell: from vertical direction, turns East.
-      const enterDir = step === 1 ? 0 : 2;
-      grid[nextRow][c] = { conns: [enterDir, 1] };
-    }
-    currentRow = nextRow;
-  }
-
-  // Fill remaining interior cells with decoy tiles.
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 1; c <= INTERIOR_COLS; c++) {
-      if (!grid[r][c]) {
-        const type = Math.random() < 0.5 ? 'straight' : 'elbow';
-        grid[r][c] = { type, rotation: randomInt(0, 3), decoy: true };
-      } else {
-        const conns = grid[r][c].conns;
-        const type = (conns[0] === OPPOSITE(conns[1])) ? 'straight' : 'elbow';
-        const solvedRotation = rotationForConnections(type, conns);
-        grid[r][c] = { type, rotation: randomInt(0, 3), decoy: false, solvedRotation };
-      }
-    }
-  }
-
-  return { grid, sourceRow, drainRow };
-}
-
-function getTileConnections(tile) {
-  return rotateSet(BASE_CONNECTIONS[tile.type], tile.rotation);
-}
-
-function checkFlow(puzzle) {
-  const { grid, sourceRow, drainRow } = puzzle;
+// Walks a path from the source column across every interior column, staying
+// inside [rowStart, rowEnd]. Returns the tiles it laid down.
+function carvePath(grid, cols, rowStart, rowEnd) {
+  const sourceRow = randInt(rowStart, rowEnd);
+  const drainRow = randInt(rowStart, rowEnd);
   let row = sourceRow;
-  let col = SOURCE_COL + 1;
-  let cameFromDir = 3; // entering first interior cell from the West
-  const visited = new Set();
-  const wetCells = [];
 
-  while (col >= 1 && col <= INTERIOR_COLS && row >= 0 && row < ROWS) {
-    const key = row + ',' + col;
-    if (visited.has(key)) return { solved: false, wetCells };
-    visited.add(key);
+  for (let c = 1; c <= cols; c++) {
+    const isLast = c === cols;
+    const nextRow = isLast
+      ? drainRow
+      : Math.max(rowStart, Math.min(rowEnd, row + randInt(-1, 1)));
 
-    const tile = grid[row][col];
-    const conns = getTileConnections(tile);
-    const neededIncoming = OPPOSITE(cameFromDir);
-    if (!conns.includes(neededIncoming)) return { solved: false, wetCells };
+    if (nextRow === row) {
+      grid[row][c] = { conns: [DIR.W, DIR.E] };
+    } else {
+      const step = nextRow > row ? 1 : -1;
+      grid[row][c] = { conns: [DIR.W, step === 1 ? DIR.S : DIR.N] };
+      for (let r = row + step; r !== nextRow; r += step) {
+        grid[r][c] = { conns: [DIR.N, DIR.S] };
+      }
+      grid[nextRow][c] = { conns: [step === 1 ? DIR.N : DIR.S, DIR.E] };
+    }
+    row = nextRow;
+  }
+  return { sourceRow, drainRow };
+}
 
-    wetCells.push(key);
-    const outDir = conns.find((d) => d !== neededIncoming);
-    const [dr, dc] = DIR_VECTOR[outDir];
+function buildPuzzle(cfg) {
+  const { cols, rows, nets } = cfg;
+  const totalCols = cols + 2;
+  const grid = Array.from({ length: rows }, () => Array(totalCols).fill(null));
+  const endpoints = [];
+
+  if (nets === 1) {
+    endpoints.push(carvePath(grid, cols, 0, rows - 1));
+  } else {
+    const mid = Math.floor(rows / 2);
+    endpoints.push(carvePath(grid, cols, 0, mid - 1));
+    endpoints.push(carvePath(grid, cols, mid, rows - 1));
+  }
+
+  // Convert carved connection pairs into rotatable tiles, then scramble.
+  for (let r = 0; r < rows; r++) {
+    for (let c = 1; c <= cols; c++) {
+      const cell = grid[r][c];
+      if (cell) {
+        const type = typeFor(cell.conns);
+        grid[r][c] = {
+          type,
+          rotation: randInt(0, 3),
+          solved: rotationFor(type, cell.conns),
+          locked: false,
+        };
+      } else {
+        // Decoy tile. From level 3 some decoys are welded shut so the board
+        // reads as real machinery rather than a uniform field of knobs.
+        const type = Math.random() < 0.5 ? 'straight' : 'elbow';
+        grid[r][c] = {
+          type,
+          rotation: randInt(0, 3),
+          solved: null,
+          locked: level >= 3 && Math.random() < 0.25,
+        };
+      }
+    }
+  }
+
+  return { grid, endpoints, cols, rows, totalCols };
+}
+
+function connsOf(tile) {
+  return rotSet(BASE[tile.type], tile.rotation);
+}
+
+// Walks the oxygen from one source and reports which cells it fills and
+// whether it reached that network's drain.
+function traceFlow(puzzle, endpoint) {
+  const { grid, cols, totalCols } = puzzle;
+  const wet = new Set();
+  let row = endpoint.sourceRow;
+  let col = 1;
+  let from = DIR.W;
+  const seen = new Set();
+
+  while (col >= 1 && col <= cols && row >= 0 && row < puzzle.rows) {
+    const key = `${row},${col}`;
+    if (seen.has(key)) return { solved: false, wet };
+    seen.add(key);
+
+    const conns = connsOf(grid[row][col]);
+    const incoming = OPP(from);
+    if (!conns.includes(incoming)) return { solved: false, wet };
+
+    wet.add(key);
+    const out = conns.find((d) => d !== incoming);
+    const [dr, dc] = VEC[out];
     row += dr;
     col += dc;
-    cameFromDir = OPPOSITE(outDir);
+    from = OPP(out);
 
-    if (col === DRAIN_COL) {
-      return { solved: row === drainRow && cameFromDir === 3, wetCells };
+    if (col === totalCols - 1) {
+      return { solved: row === endpoint.drainRow && from === DIR.W, wet };
     }
   }
-  return { solved: false, wetCells };
-}
-
-export function init(container, { title, onExit }) {
-  cleanupFns = [];
-  const chrome = createGameChrome({ title, onExit });
-  stage = document.createElement('div');
-  stage.className = 'ld-stage';
-  container.appendChild(chrome);
-  container.appendChild(stage);
-  startRound();
+  return { solved: false, wet };
 }
 
 function pipeSvg(type) {
   if (type === 'straight') {
-    return `<svg class="ld-tile-pipe" viewBox="0 0 100 100"><rect class="ld-pipe-fill" x="42" y="0" width="16" height="100" fill="#b9c2e0"/></svg>`;
+    return `<svg viewBox="0 0 100 100"><rect class="pipe-pipe" x="41" y="-1" width="18" height="102" rx="4"/></svg>`;
   }
-  return `<svg class="ld-tile-pipe" viewBox="0 0 100 100"><path class="ld-pipe-fill" d="M42,0 L58,0 L58,42 L100,42 L100,58 L42,58 Z" fill="#b9c2e0"/></svg>`;
+  return `<svg viewBox="0 0 100 100"><path class="pipe-pipe" d="M41,-1 h18 V41 h42 v18 H41 Z"/></svg>`;
+}
+
+export function init(container, opts) {
+  slug = opts.slug;
+  level = opts.startLevel || 1;
+  listeners = [];
+  timers = [];
+
+  hud = createHud(container, { title: opts.title, onExit: opts.onExit, level });
+
+  stage = document.createElement('div');
+  stage.className = 'pipe-stage';
+  container.appendChild(stage);
+
+  startRound();
 }
 
 function startRound() {
-  const puzzle = generatePuzzle();
+  const cfg = LEVELS[Math.min(level, LEVELS.length) - 1];
+  hud.setLevel(level);
 
-  const hint = document.createElement('div');
-  hint.className = 'ld-hint';
-  hint.textContent = 'Draai de tegels zodat het water kan stromen! 🔧';
+  const puzzle = buildPuzzle(cfg);
+  const { rows, totalCols } = puzzle;
+
+  // Fit tiles to whatever room is left after the HUD and hint strip.
+  const availW = window.innerWidth * 0.88;
+  const availH = window.innerHeight * 0.62;
+  const tile = Math.floor(Math.min(availW / totalCols, availH / rows));
 
   const grid = document.createElement('div');
-  grid.className = 'ld-grid';
-  grid.style.gridTemplateColumns = `repeat(${TOTAL_COLS}, 120px)`;
-  grid.style.gridTemplateRows = `repeat(${ROWS}, 120px)`;
+  grid.className = 'pipe-grid';
+  grid.style.gridTemplateColumns = `repeat(${totalCols}, ${tile}px)`;
+  grid.style.gridTemplateRows = `repeat(${rows}, ${tile}px)`;
 
-  const tileEls = [];
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < TOTAL_COLS; c++) {
-      const tileEl = document.createElement('div');
-      tileEl.className = 'ld-tile';
-      if (c === SOURCE_COL) {
-        if (r === puzzle.sourceRow) {
-          tileEl.classList.add('source');
-          tileEl.innerHTML = '🚿';
-          tileEl.style.display = 'flex';
-          tileEl.style.alignItems = 'center';
-          tileEl.style.justifyContent = 'center';
-          tileEl.style.fontSize = '2.5rem';
+  const hint = document.createElement('div');
+  hint.className = 'hint-strip';
+  hint.textContent = cfg.nets === 2
+    ? 'Tik om te draaien — er zijn twee leidingen!'
+    : 'Tik op een buis om hem te draaien';
+
+  const sourceRows = new Set(puzzle.endpoints.map((e) => e.sourceRow));
+  const drainRows = new Set(puzzle.endpoints.map((e) => e.drainRow));
+
+  const tileEls = new Map();
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < totalCols; c++) {
+      const el = document.createElement('div');
+      el.className = 'pipe-tile';
+
+      if (c === 0) {
+        if (sourceRows.has(r)) {
+          el.classList.add('pipe-tile--endpoint', 'pipe-tile--source');
+          el.textContent = '💨';
+        } else {
+          el.style.visibility = 'hidden';
         }
-      } else if (c === DRAIN_COL) {
-        if (r === puzzle.drainRow) {
-          tileEl.classList.add('drain');
-          tileEl.innerHTML = '🪣';
-          tileEl.style.display = 'flex';
-          tileEl.style.alignItems = 'center';
-          tileEl.style.justifyContent = 'center';
-          tileEl.style.fontSize = '2.5rem';
+      } else if (c === totalCols - 1) {
+        if (drainRows.has(r)) {
+          el.classList.add('pipe-tile--endpoint', 'pipe-tile--drain');
+          el.textContent = '🫙';
+        } else {
+          el.style.visibility = 'hidden';
         }
       } else {
-        const tile = puzzle.grid[r][c];
-        tileEl.innerHTML = pipeSvg(tile.type);
-        const pipeEl = tileEl.querySelector('.ld-tile-pipe');
-        pipeEl.style.transform = `rotate(${tile.rotation * 90}deg)`;
-        const onRotate = () => {
-          tile.rotation = (tile.rotation + 1) % 4;
-          pipeEl.style.transform = `rotate(${tile.rotation * 90}deg)`;
-          sfx.click();
-          evaluate();
-        };
-        tileEl.addEventListener('pointerup', onRotate);
-        tileEl._tile = tile;
+        const tileData = puzzle.grid[r][c];
+        if (tileData.locked) el.classList.add('is-locked');
+        el.innerHTML = `<div class="pipe-tile__art">${pipeSvg(tileData.type)}</div>`;
+        const art = el.querySelector('.pipe-tile__art');
+        art.style.transform = `rotate(${tileData.rotation * 90}deg)`;
+
+        if (!tileData.locked) {
+          const onTap = () => {
+            tileData.rotation = (tileData.rotation + 1) % 4;
+            art.style.transform = `rotate(${tileData.rotation * 90}deg)`;
+            sfx.blip();
+            evaluate();
+          };
+          el.addEventListener('pointerup', onTap);
+          listeners.push(() => el.removeEventListener('pointerup', onTap));
+        }
       }
-      grid.appendChild(tileEl);
-      tileEls.push(tileEl);
+
+      tileEls.set(`${r},${c}`, el);
+      grid.appendChild(el);
     }
   }
 
-  stage.replaceChildren(hint, grid);
+  stage.replaceChildren(grid, hint);
+
+  let done = false;
 
   function evaluate() {
-    const { solved, wetCells } = checkFlow(puzzle);
-    const wetSet = new Set(wetCells);
-    tileEls.forEach((el, i) => {
-      const r = Math.floor(i / TOTAL_COLS);
-      const c = i % TOTAL_COLS;
-      el.classList.toggle('wet', wetSet.has(r + ',' + c));
+    const results = puzzle.endpoints.map((e) => traceFlow(puzzle, e));
+    const wetAll = new Set();
+    results.forEach((res) => res.wet.forEach((k) => wetAll.add(k)));
+
+    tileEls.forEach((el, key) => el.classList.toggle('is-wet', wetAll.has(key)));
+
+    // Light the endpoints of any network that is fully connected.
+    results.forEach((res, i) => {
+      const e = puzzle.endpoints[i];
+      tileEls.get(`${e.sourceRow},0`)?.classList.toggle('is-wet', res.wet.size > 0);
+      tileEls.get(`${e.drainRow},${totalCols - 1}`)?.classList.toggle('is-wet', res.solved);
     });
-    if (solved) celebrate();
+
+    if (!done && results.every((r) => r.solved)) {
+      done = true;
+      finishRound();
+    }
   }
 
   evaluate();
 }
 
-function celebrate() {
-  sfx.celebrate();
-  const toast = document.createElement('div');
-  toast.className = 'confirm-toast visible';
-  toast.style.position = 'absolute';
-  toast.style.bottom = '2rem';
-  toast.style.left = '50%';
-  toast.style.transform = 'translateX(-50%)';
-  toast.textContent = 'Het water stroomt! 🎉';
-  stage.appendChild(toast);
-  setTimeout(() => {
-    toast.remove();
-    startRound();
-  }, 1500);
+function finishRound() {
+  sfx.flow();
+  later(() => sfx.missionComplete(), 350);
+  level += 1;
+  setLevel(slug, level);
+  hud.banner('Zuurstof stroomt! 💨', { sub: `Level ${level} vrijgespeeld`, ms: 2000 });
+  later(startRound, 2100);
 }
 
 export function destroy() {
-  cleanupFns.forEach((fn) => fn());
-  cleanupFns = [];
+  timers.forEach(clearTimeout);
+  timers = [];
+  listeners.forEach((off) => off());
+  listeners = [];
+  hud?.destroy();
+  hud = null;
+  stage = null;
 }

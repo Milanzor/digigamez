@@ -1,50 +1,78 @@
 import { navigate } from '../shell/router.js';
 import { getItem } from '../shell/storage.js';
 import { GAMES } from '../games/game-registry.js';
-import { sfx } from '../shell/audio.js';
+import { sfx, toggleMuted, isMuted } from '../shell/audio.js';
+import { getLamps, MAX_LAMPS } from '../shell/progress.js';
+import { lampRow } from '../shared/ui-components.js';
 
 export function renderGameGridView(container) {
   const playerCount = getItem('playerCount', 1);
 
-  const cardsHtml = GAMES.map(
-    (g) => `
-    <button class="game-card" data-slug="${g.slug}" style="--card-color:${g.color}">
-      <div class="game-card-icon">${g.icon}</div>
-      <div class="game-card-title">${g.title}</div>
-      <div class="game-card-age">${g.ageLabel}</div>
-      ${g.supportsTwoPlayers ? '<div class="game-card-badge">2 spelers</div>' : ''}
-    </button>
-  `
-  ).join('');
+  const cards = GAMES.map((g) => {
+    const crewBadge = g.supportsTwoPlayers
+      ? '<span class="mission__crew">2P</span>'
+      : '';
+    return `
+      <button class="mission" data-slug="${g.slug}" style="--mission-color:${g.color}">
+        <div class="mission__icon">${g.icon}</div>
+        <div class="mission__name">${g.title}</div>
+        <div class="mission__meta">
+          <span>${g.ageLabel}</span>
+          ${crewBadge}
+        </div>
+        ${lampRow(getLamps(g.slug), MAX_LAMPS)}
+      </button>
+    `;
+  }).join('');
 
   container.innerHTML = `
-    <div class="grid-view">
-      <div class="grid-header">
-        <button class="icon-btn grid-back-btn" id="grid-back">⬅️</button>
-        <h1 class="section-title">Kies een spel</h1>
-        <button class="icon-btn grid-players-btn" id="grid-players">${playerCount === 2 ? '🧒🧒' : '🧒'}</button>
+    <div class="missions">
+      <div class="missions__bar">
+        <button class="key key--bar" id="grid-back" aria-label="Terug naar crewkeuze">◀</button>
+        <h1 class="missions__heading">Kies je missie</h1>
+        <div class="missions__spacer"></div>
+        <div class="readout" id="crew-readout">
+          ${playerCount === 2 ? '👨‍🚀👩‍🚀 2 astronauten' : '👨‍🚀 1 astronaut'}
+        </div>
+        <button class="key key--bar" id="grid-mute" aria-label="Geluid aan of uit">${isMuted() ? '🔇' : '🔊'}</button>
       </div>
-      <div class="game-grid">${cardsHtml}</div>
+      <div class="missions__grid">${cards}</div>
     </div>
   `;
 
   const backBtn = container.querySelector('#grid-back');
-  const playersBtn = container.querySelector('#grid-players');
-  const onBack = () => navigate('/spelers');
-  backBtn.addEventListener('pointerup', onBack);
-  playersBtn.addEventListener('pointerup', onBack);
+  const muteBtn = container.querySelector('#grid-mute');
+  const crewReadout = container.querySelector('#crew-readout');
 
-  const cards = container.querySelectorAll('.game-card');
-  const onPick = (e) => {
-    sfx.tap();
-    const slug = e.currentTarget.dataset.slug;
-    navigate(`/spel/${slug}`);
+  const onBack = () => {
+    sfx.back();
+    navigate('/spelers');
   };
-  cards.forEach((c) => c.addEventListener('pointerup', onPick));
+  const onCrew = () => {
+    sfx.select();
+    navigate('/spelers');
+  };
+  const onMute = () => {
+    const nowMuted = toggleMuted();
+    muteBtn.textContent = nowMuted ? '🔇' : '🔊';
+    if (!nowMuted) sfx.blip();
+  };
+
+  backBtn.addEventListener('pointerup', onBack);
+  crewReadout.addEventListener('pointerup', onCrew);
+  muteBtn.addEventListener('pointerup', onMute);
+
+  const missionBtns = container.querySelectorAll('.mission');
+  const onPick = (e) => {
+    sfx.select();
+    navigate(`/spel/${e.currentTarget.dataset.slug}`);
+  };
+  missionBtns.forEach((c) => c.addEventListener('pointerup', onPick));
 
   return () => {
     backBtn.removeEventListener('pointerup', onBack);
-    playersBtn.removeEventListener('pointerup', onBack);
-    cards.forEach((c) => c.removeEventListener('pointerup', onPick));
+    crewReadout.removeEventListener('pointerup', onCrew);
+    muteBtn.removeEventListener('pointerup', onMute);
+    missionBtns.forEach((c) => c.removeEventListener('pointerup', onPick));
   };
 }

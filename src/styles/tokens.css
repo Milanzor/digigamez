@@ -1,0 +1,70 @@
+/* Digigamez design tokens — "retro-futurist mission console".
+   Deep indigo space (never pure black) behind warm Apollo-era enamel
+   panels, so the chrome reads as painted metal instrumentation rather
+   than flat dark-neon UI.
+
+   CRITICAL: every size is expressed in vmin (with clamp guards), never
+   raw px. A 75" digiboard typically reports 3840x2160 at devicePixelRatio
+   1, which makes px-based UI roughly half the physical size it would be
+   on a 1080p panel. vmin keeps the proportions identical on both. */
+
+:root {
+  /* --- Space --- */
+  --void-deep: #060a24;
+  --void: #0e1741;
+  --panel: #1a2a63;
+  --panel-hi: #274088;
+  --panel-line: #3a57a8;
+
+  /* --- Enamel instrument panel --- */
+  --bezel: #e7dfcb;
+  --bezel-sh: #a89f88;
+  --enamel: #f9f4e7;
+  --ink: #121634;
+  --ink-soft: #46507e;
+
+  /* --- Instrument accents (mid-century space-poster saturation) --- */
+  --sun: #ffb224;
+  --mars: #ff5f4d;
+  --teal: #2fd9c6;
+  --nebula: #b06bff;
+  --leaf: #6ee87a;
+  --ice: #7cc4ff;
+
+  /* --- Player identity --- */
+  --p1: #ff5f4d;
+  --p2: #2fd9c6;
+
+  /* --- Type --- */
+  --font-display: 'Baloo 2', 'Comic Sans MS', 'Trebuchet MS', system-ui, sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, 'Courier New', monospace;
+
+  --fs-hero: clamp(38px, 10vmin, 220px);
+  --fs-h1: clamp(26px, 5.4vmin, 118px);
+  --fs-h2: clamp(21px, 3.7vmin, 82px);
+  --fs-body: clamp(16px, 2.5vmin, 54px);
+  --fs-label: clamp(12px, 1.75vmin, 38px);
+  --fs-icon: clamp(30px, 6.5vmin, 140px);
+
+  /* --- Space & shape --- */
+  --sp-1: clamp(4px, 0.6vmin, 14px);
+  --sp-2: clamp(8px, 1.2vmin, 26px);
+  --sp-3: clamp(12px, 1.9vmin, 42px);
+  --sp-4: clamp(18px, 2.8vmin, 62px);
+  --sp-5: clamp(26px, 4.2vmin, 94px);
+
+  --r-sm: clamp(6px, 1vmin, 22px);
+  --r-md: clamp(12px, 1.9vmin, 42px);
+  --r-lg: clamp(18px, 2.9vmin, 64px);
+  --r-pill: 9999px;
+
+  /* Minimum comfortable touch target for a child's hand at arm's length
+     from a wall-mounted screen — deliberately well above the 44px
+     desktop guideline. */
+  --touch: clamp(64px, 11vmin, 250px);
+
+  --bezel-w: clamp(6px, 1.1vmin, 24px);
+  --glow-sun: 0 0 clamp(10px, 2vmin, 44px) rgba(255, 178, 36, 0.55);
+  --shadow-panel: 0 clamp(4px, 0.8vmin, 18px) clamp(14px, 2.6vmin, 58px) rgba(3, 6, 22, 0.55);
+  --inset-panel: inset 0 clamp(2px, 0.35vmin, 8px) 0 rgba(255, 255, 255, 0.14);
+}

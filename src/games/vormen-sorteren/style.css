@@ -1,65 +1,89 @@
-.vs-stage {
+.dock-stage {
   width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
-  padding: 7rem 3rem 3rem;
-  background: linear-gradient(180deg, #fff7e0 0%, #ffe9b3 100%);
-}
-
-.vs-slots {
-  display: flex;
-  justify-content: center;
-  gap: 3rem;
-  margin-bottom: 4rem;
-}
-
-.vs-slot {
-  width: 160px;
-  height: 160px;
-  border-radius: 24px;
-  border: 6px dashed rgba(31, 37, 71, 0.25);
-  display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.4);
-  transition: background 0.2s ease, border-color 0.2s ease;
+  gap: var(--sp-3);
+  padding: calc(var(--touch) + var(--sp-4)) var(--sp-4) var(--sp-4);
 }
 
-.vs-slot.filled {
-  border-style: solid;
-  border-color: var(--color-accent-3);
-  background: rgba(6, 214, 160, 0.15);
-}
-
-.vs-slot svg {
-  width: 70%;
-  height: 70%;
-  opacity: 0.35;
-}
-
-.vs-tray {
+/* Spread the ports and cargo across the full width: on a 75" screen a
+   centred huddle wastes the space and puts drop targets close together,
+   which makes mis-drops more likely for small hands. */
+.dock-row {
+  width: min(92vw, 1700px);
   display: flex;
-  justify-content: center;
-  gap: 2.5rem;
+  justify-content: space-evenly;
+  align-items: center;
+  gap: var(--sp-3);
   flex-wrap: wrap;
 }
 
-.vs-piece {
-  width: 150px;
-  height: 150px;
+/* An airlock port: the silhouette the cargo must be docked into. */
+.dock-port {
+  width: clamp(90px, 18vmin, 380px);
+  height: clamp(90px, 18vmin, 380px);
+  border-radius: var(--r-md);
+  display: grid;
+  place-items: center;
+  background: rgba(8, 13, 42, 0.55);
+  border: clamp(3px, 0.5vmin, 11px) dashed rgba(124, 196, 255, 0.45);
+  box-shadow: inset 0 0 clamp(10px, 2vmin, 40px) rgba(0, 0, 0, 0.6);
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+
+.dock-port svg {
+  width: 68%;
+  height: 68%;
+  opacity: 0.32;
+}
+
+.dock-port.is-hot {
+  border-color: var(--sun);
+  background: rgba(255, 178, 36, 0.16);
+  transform: scale(1.06);
+}
+
+.dock-port.is-filled {
+  border-style: solid;
+  border-color: var(--leaf);
+  background: rgba(110, 232, 122, 0.14);
+}
+
+/* Cargo pieces waiting to be docked */
+.cargo {
+  width: clamp(86px, 17vmin, 360px);
+  height: clamp(86px, 17vmin, 360px);
   touch-action: none;
-  cursor: grab;
-  filter: drop-shadow(0 6px 10px rgba(31, 37, 71, 0.25));
-  will-change: transform;
+  filter: drop-shadow(0 clamp(3px, 0.7vmin, 14px) clamp(6px, 1.4vmin, 28px) rgba(0, 0, 0, 0.55));
+  transition: transform 0.16s ease;
 }
 
-.vs-piece.dragging {
-  z-index: 50;
+.cargo:not(.is-docked) {
+  animation: cargo-drift 4.5s ease-in-out infinite;
 }
 
-.vs-piece.placed {
+.cargo:nth-child(2n):not(.is-docked) { animation-delay: -1.4s; }
+.cargo:nth-child(3n):not(.is-docked) { animation-delay: -2.7s; }
+
+@keyframes cargo-drift {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(calc(var(--sp-2) * -1)) rotate(3deg); }
+}
+
+.cargo.is-dragging {
+  z-index: 60;
+  animation: none;
+  filter: drop-shadow(0 clamp(8px, 1.6vmin, 34px) clamp(12px, 2.4vmin, 50px) rgba(0, 0, 0, 0.7));
+}
+
+.cargo.is-docked {
   pointer-events: none;
-  opacity: 0.9;
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cargo { animation: none !important; }
 }

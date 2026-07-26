@@ -4,18 +4,23 @@ import { unlockAudio, sfx } from '../shell/audio.js';
 
 export function renderStartView(container) {
   container.innerHTML = `
-    <div class="start-view">
-      <div class="start-logo">🎨🚀🧩</div>
-      <h1 class="start-title">Digigamez</h1>
-      <p class="start-subtitle">Leuke spelletjes voor kinderen!</p>
-      <button class="btn start-btn" id="start-btn">▶️ Start</button>
+    <div class="launch">
+      <div class="porthole">
+        <div class="launch__inner">
+          <div class="launch__eyebrow">Missiecontrole</div>
+          <div class="launch__rocket">🚀</div>
+          <h1 class="launch__title">Digi<em>gamez</em></h1>
+          <p class="launch__sub">Klaar voor de ruimtereis?</p>
+          <button class="btn btn--go launch__btn" id="start-btn">Start de raket</button>
+        </div>
+      </div>
     </div>
   `;
 
   const btn = container.querySelector('#start-btn');
   const onStart = async () => {
     unlockAudio();
-    sfx.success();
+    sfx.launch();
     await enterFullscreen();
     await requestWakeLock();
     navigate('/spelers');

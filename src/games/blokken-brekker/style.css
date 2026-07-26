@@ -1,11 +1,11 @@
-.bb-stage {
+.ast-stage {
   width: 100%;
   height: 100%;
   position: relative;
-  background: #12163a;
+  background: var(--void-deep);
 }
 
-.bb-canvas {
+.ast-canvas {
   width: 100%;
   height: 100%;
 }

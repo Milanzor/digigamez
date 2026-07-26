@@ -1,19 +1,35 @@
 import './style.css';
-import { createGameChrome } from '../../shared/ui-components.js';
+import { createHud } from '../../shared/ui-components.js';
 import { sfx } from '../../shell/audio.js';
+import { setLevel } from '../../shell/progress.js';
+
+// "Sterrenvormen" — dock cargo modules into the matching airlock port.
+//
+// Depth comes from three stacked difficulty dials driven by the level:
+//   1. how many pieces are in play (3 -> 6)
+//   2. whether colour has to match as well as silhouette (level 5+)
+//   3. whether the ports drift while you aim (level 3+)
+// Levels are unlimited; the difficulty dials cap so it never gets unfair.
 
 const SHAPES = [
-  { id: 'circle', color: '#EF476F', svg: '<circle cx="50" cy="50" r="42" fill="currentColor"/>' },
-  { id: 'square', color: '#3A86FF', svg: '<rect x="10" y="10" width="80" height="80" rx="10" fill="currentColor"/>' },
-  { id: 'triangle', color: '#06D6A0', svg: '<polygon points="50,8 92,88 8,88" fill="currentColor"/>' },
-  { id: 'star', color: '#FFD166', svg: '<polygon points="50,5 61,37 96,37 68,58 79,91 50,70 21,91 32,58 4,37 39,37" fill="currentColor"/>' },
-  { id: 'heart', color: '#FF6B6B', svg: '<path d="M50 88 10 52a22 22 0 0 1 31-31l9 9 9-9a22 22 0 0 1 31 31Z" fill="currentColor"/>' },
-  { id: 'moon', color: '#8338EC', svg: '<path d="M62 10a42 42 0 1 0 28 66A34 34 0 0 1 62 10Z" fill="currentColor"/>' },
+  { id: 'circle', svg: '<circle cx="50" cy="50" r="42"/>' },
+  { id: 'square', svg: '<rect x="10" y="10" width="80" height="80" rx="12"/>' },
+  { id: 'triangle', svg: '<polygon points="50,8 92,88 8,88"/>' },
+  { id: 'star', svg: '<polygon points="50,5 61,37 96,37 68,58 79,91 50,70 21,91 32,58 4,37 39,37"/>' },
+  { id: 'hexagon', svg: '<polygon points="50,6 88,28 88,72 50,94 12,72 12,28"/>' },
+  { id: 'moon', svg: '<path d="M62 10a42 42 0 1 0 28 66A34 34 0 0 1 62 10Z"/>' },
+  { id: 'rocket', svg: '<path d="M50 6c14 14 20 30 20 48l-10 8H40l-10-8c0-18 6-34 20-48Z"/><circle cx="50" cy="38" r="8" fill="#0e1741"/>' },
+  { id: 'diamond', svg: '<polygon points="50,6 92,50 50,94 8,50"/>' },
 ];
 
-function shapeSvg(shape) {
-  return `<svg viewBox="0 0 100 100" style="color:${shape.color}">${shape.svg}</svg>`;
-}
+const COLORS = ['#ffb224', '#ff5f4d', '#2fd9c6', '#b06bff', '#7cc4ff', '#6ee87a'];
+
+let hud = null;
+let stage = null;
+let level = 1;
+let slug = 'vormen-sorteren';
+let listeners = [];
+let driftRaf = null;
 
 function shuffle(arr) {
   const a = [...arr];
@@ -24,136 +40,217 @@ function shuffle(arr) {
   return a;
 }
 
-let stage, cleanupFns = [];
+function levelConfig(l) {
+  return {
+    count: Math.min(3 + Math.floor((l - 1) / 1.5), 6),
+    matchColor: l >= 5,
+    drift: l >= 3,
+  };
+}
 
-export function init(container, { title, onExit }) {
-  cleanupFns = [];
-  const chrome = createGameChrome({ title, onExit });
+function shapeSvg(shape, color) {
+  return `<svg viewBox="0 0 100 100" fill="${color}">${shape.svg}</svg>`;
+}
+
+export function init(container, opts) {
+  slug = opts.slug;
+  level = opts.startLevel || 1;
+  listeners = [];
+
+  hud = createHud(container, {
+    title: opts.title,
+    onExit: opts.onExit,
+    level,
+  });
+
   stage = document.createElement('div');
-  stage.className = 'vs-stage';
-  container.appendChild(chrome);
+  stage.className = 'dock-stage';
   container.appendChild(stage);
 
+  // No intro banner here: the hint strip inside the round already says this,
+  // and stacking both just covers the board.
   startRound();
 }
 
 function startRound() {
-  const count = 4;
-  const roundShapes = shuffle(SHAPES).slice(0, count);
-  const slotOrder = shuffle(roundShapes);
+  const cfg = levelConfig(level);
+  hud.setLevel(level);
+
+  const picked = shuffle(SHAPES).slice(0, cfg.count);
+  // Each piece gets a colour. When colour matters we deliberately reuse
+  // colours across shapes so colour alone can't identify the port.
+  const pieces = picked.map((shape, i) => ({
+    shape,
+    color: COLORS[i % COLORS.length],
+    key: cfg.matchColor ? `${shape.id}|${COLORS[i % COLORS.length]}` : shape.id,
+  }));
+
+  const portOrder = shuffle(pieces);
 
   stage.innerHTML = `
-    <div class="vs-slots">
-      ${slotOrder.map((s) => `<div class="vs-slot" data-shape="${s.id}">${shapeSvg(s)}</div>`).join('')}
+    <div class="dock-row" id="ports">
+      ${portOrder.map((p) => `
+        <div class="dock-port" data-key="${p.key}">
+          ${shapeSvg(p.shape, cfg.matchColor ? p.color : '#7cc4ff')}
+        </div>
+      `).join('')}
     </div>
-    <div class="vs-tray">
-      ${roundShapes.map((s) => `<div class="vs-piece" data-shape="${s.id}">${shapeSvg(s)}</div>`).join('')}
+    <div class="hint-strip">${cfg.matchColor ? 'Let op: vorm én kleur moeten kloppen' : 'Sleep elke vorm naar zijn plek'}</div>
+    <div class="dock-row" id="cargo">
+      ${shuffle(pieces).map((p) => `
+        <div class="cargo" data-key="${p.key}">${shapeSvg(p.shape, p.color)}</div>
+      `).join('')}
     </div>
   `;
 
-  const slots = [...stage.querySelectorAll('.vs-slot')];
-  const pieces = [...stage.querySelectorAll('.vs-piece')];
-  let filledCount = 0;
+  const ports = [...stage.querySelectorAll('.dock-port')];
+  const cargos = [...stage.querySelectorAll('.cargo')];
+  let docked = 0;
 
-  pieces.forEach((piece) => setupDrag(piece, slots, () => {
-    filledCount++;
-    if (filledCount === pieces.length) {
-      celebrate();
-    }
+  cargos.forEach((cargo) => attachDrag(cargo, ports, () => {
+    docked++;
+    if (docked === cargos.length) finishRound();
   }));
+
+  stopDrift();
+  if (cfg.drift) startDrift(ports);
 }
 
-function setupDrag(piece, slots, onPlaced) {
-  let startRect, offsetX, offsetY, dragging = false;
+// Ports gently slide side to side at higher levels, which turns a pure
+// shape-recognition task into one that also needs timing and tracking.
+function startDrift(ports) {
+  const t0 = performance.now();
+  const amp = 14 + Math.min(level, 8) * 3;
+  const step = (now) => {
+    const t = (now - t0) / 1000;
+    ports.forEach((p, i) => {
+      if (p.classList.contains('is-filled')) {
+        p.style.transform = '';
+        return;
+      }
+      p.style.transform = `translateX(${Math.sin(t * 0.7 + i * 1.3) * amp}px)`;
+    });
+    driftRaf = requestAnimationFrame(step);
+  };
+  driftRaf = requestAnimationFrame(step);
+}
 
-  function pointerDown(e) {
-    if (piece.classList.contains('placed')) return;
-    piece.setPointerCapture(e.pointerId);
-    startRect = piece.getBoundingClientRect();
+function stopDrift() {
+  if (driftRaf) cancelAnimationFrame(driftRaf);
+  driftRaf = null;
+}
+
+function attachDrag(cargo, ports, onDocked) {
+  let startRect = null;
+  let offsetX = 0;
+  let offsetY = 0;
+  let dragging = false;
+  let hotPort = null;
+
+  const portUnder = (x, y) => ports.find((port) => {
+    if (port.classList.contains('is-filled')) return false;
+    const r = port.getBoundingClientRect();
+    // Generous padding: a child aiming at a wall-sized screen from close up
+    // is far less precise than a mouse user.
+    const pad = r.width * 0.18;
+    return x > r.left - pad && x < r.right + pad && y > r.top - pad && y < r.bottom + pad;
+  });
+
+  const onDown = (e) => {
+    if (cargo.classList.contains('is-docked')) return;
+    cargo.setPointerCapture(e.pointerId);
+    startRect = cargo.getBoundingClientRect();
     offsetX = e.clientX - startRect.left;
     offsetY = e.clientY - startRect.top;
-    piece.style.position = 'fixed';
-    piece.style.left = startRect.left + 'px';
-    piece.style.top = startRect.top + 'px';
-    piece.style.width = startRect.width + 'px';
-    piece.style.height = startRect.height + 'px';
-    piece.style.margin = '0';
-    piece.classList.add('dragging');
+    Object.assign(cargo.style, {
+      position: 'fixed',
+      left: `${startRect.left}px`,
+      top: `${startRect.top}px`,
+      width: `${startRect.width}px`,
+      height: `${startRect.height}px`,
+      margin: '0',
+    });
+    cargo.classList.add('is-dragging');
     dragging = true;
-    sfx.tap();
-  }
+    sfx.blip();
+  };
 
-  function pointerMove(e) {
+  const onMove = (e) => {
     if (!dragging) return;
-    piece.style.left = e.clientX - offsetX + 'px';
-    piece.style.top = e.clientY - offsetY + 'px';
-  }
+    cargo.style.left = `${e.clientX - offsetX}px`;
+    cargo.style.top = `${e.clientY - offsetY}px`;
 
-  function pointerUp(e) {
+    const r = cargo.getBoundingClientRect();
+    const next = portUnder(r.left + r.width / 2, r.top + r.height / 2);
+    if (next !== hotPort) {
+      hotPort?.classList.remove('is-hot');
+      next?.classList.add('is-hot');
+      hotPort = next;
+    }
+  };
+
+  const release = () => {
+    Object.assign(cargo.style, {
+      position: '', left: '', top: '', width: '', height: '', margin: '', transition: '',
+    });
+  };
+
+  const onUp = () => {
     if (!dragging) return;
     dragging = false;
-    piece.classList.remove('dragging');
-    const pieceRect = piece.getBoundingClientRect();
-    const cx = pieceRect.left + pieceRect.width / 2;
-    const cy = pieceRect.top + pieceRect.height / 2;
+    cargo.classList.remove('is-dragging');
+    hotPort?.classList.remove('is-hot');
 
-    const targetSlot = slots.find((slot) => {
-      if (slot.classList.contains('filled')) return false;
-      const r = slot.getBoundingClientRect();
-      return cx > r.left && cx < r.right && cy > r.top && cy < r.bottom;
-    });
+    const r = cargo.getBoundingClientRect();
+    const target = portUnder(r.left + r.width / 2, r.top + r.height / 2);
+    hotPort = null;
 
-    if (targetSlot && targetSlot.dataset.shape === piece.dataset.shape) {
-      const r = targetSlot.getBoundingClientRect();
-      piece.style.transition = 'left 0.25s ease, top 0.25s ease, transform 0.25s ease';
-      piece.style.left = r.left + (r.width - pieceRect.width) / 2 + 'px';
-      piece.style.top = r.top + (r.height - pieceRect.height) / 2 + 'px';
-      piece.classList.add('placed');
-      targetSlot.classList.add('filled');
-      sfx.success();
-      onPlaced();
+    if (target && target.dataset.key === cargo.dataset.key) {
+      const pr = target.getBoundingClientRect();
+      cargo.style.transition = 'left 0.2s ease, top 0.2s ease, width 0.2s ease, height 0.2s ease';
+      cargo.style.left = `${pr.left + (pr.width - r.width) / 2}px`;
+      cargo.style.top = `${pr.top + (pr.height - r.height) / 2}px`;
+      cargo.classList.add('is-docked');
+      target.classList.add('is-filled');
+      target.style.transform = '';
+      sfx.dock();
+      onDocked();
     } else {
-      piece.style.transition = 'left 0.3s ease, top 0.3s ease';
-      piece.style.left = startRect.left + 'px';
-      piece.style.top = startRect.top + 'px';
-      setTimeout(() => {
-        piece.style.position = '';
-        piece.style.left = '';
-        piece.style.top = '';
-        piece.style.width = '';
-        piece.style.height = '';
-        piece.style.transition = '';
-      }, 320);
+      // Wrong port (or empty space): float back, never a penalty.
+      if (target) sfx.deny();
+      cargo.style.transition = 'left 0.28s ease, top 0.28s ease';
+      cargo.style.left = `${startRect.left}px`;
+      cargo.style.top = `${startRect.top}px`;
+      setTimeout(release, 300);
     }
-  }
+  };
 
-  piece.addEventListener('pointerdown', pointerDown);
-  piece.addEventListener('pointermove', pointerMove);
-  piece.addEventListener('pointerup', pointerUp);
-  cleanupFns.push(() => {
-    piece.removeEventListener('pointerdown', pointerDown);
-    piece.removeEventListener('pointermove', pointerMove);
-    piece.removeEventListener('pointerup', pointerUp);
+  cargo.addEventListener('pointerdown', onDown);
+  cargo.addEventListener('pointermove', onMove);
+  cargo.addEventListener('pointerup', onUp);
+  cargo.addEventListener('pointercancel', onUp);
+  listeners.push(() => {
+    cargo.removeEventListener('pointerdown', onDown);
+    cargo.removeEventListener('pointermove', onMove);
+    cargo.removeEventListener('pointerup', onUp);
+    cargo.removeEventListener('pointercancel', onUp);
   });
 }
 
-function celebrate() {
-  sfx.celebrate();
-  const toast = document.createElement('div');
-  toast.className = 'confirm-toast visible';
-  toast.textContent = 'Goed gedaan! 🎉';
-  toast.style.position = 'absolute';
-  toast.style.bottom = '2rem';
-  toast.style.left = '50%';
-  toast.style.transform = 'translateX(-50%)';
-  stage.appendChild(toast);
-  setTimeout(() => {
-    toast.remove();
-    startRound();
-  }, 1500);
+function finishRound() {
+  sfx.missionComplete();
+  level += 1;
+  setLevel(slug, level);
+  hud.banner('Alle vracht gedockt! 🛰️', { sub: `Level ${level} vrijgespeeld`, ms: 1800 });
+  stopDrift();
+  setTimeout(startRound, 1900);
 }
 
 export function destroy() {
-  cleanupFns.forEach((fn) => fn());
-  cleanupFns = [];
+  stopDrift();
+  listeners.forEach((off) => off());
+  listeners = [];
+  hud?.destroy();
+  hud = null;
+  stage = null;
 }

@@ -1,5 +1,9 @@
+import '../styles/tokens.css';
+import '../styles/global.css';
 import '../portal/portal.css';
+
 import { registerRoute, startRouter } from './router.js';
+import { mountStarfield } from './starfield.js';
 import { renderStartView } from '../portal/start-view.js';
 import { renderPlayerSelectView } from '../portal/player-select-view.js';
 import { renderGameGridView } from '../portal/game-grid-view.js';
@@ -10,10 +14,12 @@ registerRoute('/spelers', renderPlayerSelectView);
 registerRoute('/rooster', renderGameGridView);
 registerRoute('/spel/:slug', renderGameLoaderView);
 
-const app = document.getElementById('app');
-startRouter(app);
+mountStarfield();
+startRouter(document.getElementById('app'));
 
-// Prevent iOS/Android-style pull-to-refresh & pinch-zoom gestures that would
-// break the kiosk experience on a touchscreen.
+// Kiosk hygiene: suppress the browser gestures that would otherwise break a
+// wall-mounted touchscreen (pull-to-refresh, pinch-zoom, long-press menus).
 document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
 document.addEventListener('contextmenu', (e) => e.preventDefault());
+document.addEventListener('gesturestart', (e) => e.preventDefault());
+document.addEventListener('dblclick', (e) => e.preventDefault());

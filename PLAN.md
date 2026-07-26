@@ -47,6 +47,39 @@ de DOM-boom. Vanilla JS + Vite geeft de kleinste bundel en de meeste controle
 over `requestAnimationFrame`-timing, wat cruciaal is voor "soepel draaien" op
 een touchscreen.
 
+## 2b. Visuele richting: "retro-futuristisch missieconsole"
+
+Het hele pakket zit in één ruimtethema. Het uitgangspunt is niet de
+standaard "zwarte ruimte met één neonkleur", maar een **Apollo-achtig
+instrumentenpaneel**: diep indigo (nooit puur zwart) achter warm
+emaille-wit, met verzadigde accentkleuren uit mid-century ruimteposters.
+Het digibord is de patrijspoort van een ruimteschip; de spellen zijn
+"missies" op verlichte consoleknoppen.
+
+- **Palet**: `--void-deep #060a24`, `--void #0e1741`, `--panel #1a2a63`,
+  emaille `#f9f4e7` / `#e7dfcb`, accenten `--sun #ffb224`,
+  `--mars #ff5f4d`, `--teal #2fd9c6`, `--nebula #b06bff`, `--leaf #6ee87a`.
+- **Typografie**: `Baloo 2` (800) als display — rond, stevig, kindvriendelijk
+  en met goede Nederlandse diakritieken. `Space Mono` (700) uitsluitend voor
+  uitleesvelden (level, score, missietitels), zoals de tekst op een echt
+  instrumentpaneel.
+- **Signatuur**: de patrijspoort met emaille-rand op het startscherm, en
+  de missieknoppen met een gekleurde lichtbalk plus **levellampjes**
+  (`●●●○○`) die echte voortgang tonen — geen decoratie.
+- **Sterrenveld**: drie getilede gradient-lagen die met CSS-transforms
+  driften (parallax). Puur compositor-werk, dus het kost geen main-thread
+  tijd terwijl een spel zijn eigen renderloop draait.
+
+### Schaalregel voor grote touchscreens (belangrijkste les)
+Een 75" digibord rapporteert vaak 3840×2160 op `devicePixelRatio` 1.
+Alles wat in `px` is opgemaakt wordt daardoor ongeveer half zo groot als op
+een 1080p-paneel. Daarom is **elke maat in `vmin` met `clamp()`-grenzen**
+uitgedrukt, nooit in vaste pixels. Gemeten resultaat: het missierooster
+beslaat 79% van het scherm op zowel 1920×1080 als 3840×2160, en alle
+maten verdubbelen exact. Minimale aanraakdoelen zijn `11vmin`
+(≈120px op 1080p, ≈240px op 4K) — ruim boven de gangbare 44px-richtlijn,
+want een kind staat dicht op een wandscherm.
+
 ## 3. Performance-aanpak ("highly optimised, soepel")
 
 - **Eén globale render-loop** per actief spel via `requestAnimationFrame`,
@@ -153,20 +186,47 @@ kleuters (Sago Mini, Toca Boca, Lingokids, ElePant, jigsaw/matching-apps zoals
 tastbare elementen, direct visueel/auditief succesgevoel, geen faalstatus die
 als "verlies" aanvoelt, korte sessies. Zie bronnen onderaan dit document.
 
-| Spel (NL)                | Genre                          | Leeftijd | 1P / 2P | Kern-mechaniek |
-|---------------------------|--------------------------------|----------|---------|----------------|
-| **Vormen Sorteren**       | Shape-sort                     | 2–4      | 1P      | Sleep vormen naar de juiste silhouet-opening; grote drag-targets, geen tijdsdruk, altijd positieve feedback. |
-| **Geheugenspel**          | Matching / memory              | 3–6      | 1P & 2P | Omgedraaide kaarten, tik om 2 om te draaien, gelijke paren verdwijnen; 2P om de beurt met scorebord. |
-| **Legpuzzel**             | Jigsaw                         | 3–7      | 1P & 2P | Sleep puzzelstukjes (4/9/16/25 stukjes naar leeftijd) in een frame; magnetisch "snappen" bij bijna-juiste positie. |
-| **Tekenen**               | Creatief / vrij tekenen         | 2–7      | 1P & 2P | Vinger-tekenen met kleuren/dikte-keuze, stempels, wis-knop, "opslaan als sticker"-gevoel (lokaal, geen echte export nodig voor MVP). |
-| **Leidingen Verbinden**   | Pipe-connect puzzel            | 4–7      | 1P      | Draai buis-tegels zodat water van bron naar afvoer kan stromen vóór de tijd om is (zachte, niet-straffende timer). |
-| **Water Puzzel**          | Water-sort puzzel               | 5–7      | 1P      | Giet gekleurd water tussen buisjes tot elke buis één kleur bevat; klassiek "water sort"-mechaniek, populair op iOS/Android. |
-| **Ruimte Invasie**        | Space-Invaders-achtig           | 5–7      | 1P & 2P | Simpel schieten op vriendelijke buitenaardse vormen die langzaam zakken; 2P = twee schepen naast elkaar op hetzelfde scherm, aparte score. |
-| **Blokken Brekker**       | Breakout/Arkanoid               | 6–7      | 1P & 2P | Bal + paddle(s), blokken kapot maken; 2P = twee paddles (boven/onder of links/rechts gesplitst scherm) coöperatief de bal in het spel houden. |
+Alle acht spellen zitten in hetzelfde ruimtethema en hebben een
+**levelprogressie** die lokaal wordt opgeslagen (zie §6b).
+
+| Spel (NL)                 | Genre                | Leeftijd | 1P / 2P | Kern-mechaniek en diepte |
+|---------------------------|----------------------|----------|---------|--------------------------|
+| **Sterrenvormen**         | Shape-sort           | 2–4      | 1P      | Sleep vracht naar de bijpassende luchtsluis. Diepte via drie knoppen: aantal stukken 3→6, vanaf level 3 driften de sluizen zijwaarts, vanaf level 5 moet ook de **kleur** kloppen. |
+| **Ruimtegeheugen**        | Memory / matching    | 3–6      | 1P & 2P | Kaarten met planeten en aliens. Bord groeit 4→12 paren; vanaf level 2 is er één gouden **komeetpaar** dat dubbel telt. 2P om de beurt met scores. |
+| **Sterrenpuzzel**         | Jigsaw               | 3–7      | 1P & 2P | Ruimtescènes (inline SVG, dus scherp op 4K) in stukjes. 4→20 stukjes; **👁️-knop** ghost het voorbeeld over het bord als hint in plaats van een moeilijkheidsmuur. |
+| **Ruimtetekenen**         | Creatief             | 2–7      | 1P & 2P | Vrij tekenen op een sterrenveld. Diepte in het gereedschap: **gloeistift**, **spiegelmodus** (scribbels worden symmetrische wezens), stempels, gum, undo. Multi-touch: twee kinderen tekenen gelijktijdig. |
+| **Zuurstofleidingen**     | Pipe-connect         | 4–7      | 1P      | Draai buizen zodat zuurstof de tank haalt. Puzzels zijn **solvable-by-construction** (pad eerst uitgelopen, dan geschud). Raster groeit 3×3→6×6; vanaf level 3 zitten er dichtgesoldeerde tegels in, vanaf level 4 zijn er **twee onafhankelijke netwerken**. |
+| **Brandstof Sorteren**    | Water-sort           | 5–7      | 1P      | Giet raketbrandstof tot elke tank één kleur is. Kleuren 3→7 en reservetanks 2→1 met het level. **Undo** altijd beschikbaar, want de puzzel kan doodlopen en dan moet een kind niet opnieuw hoeven beginnen. |
+| **Ruimte Invasie**        | Space Invaders       | 5–7      | 1P & 2P | Drie alientypes (drifter / zigzagger / gepanzerd), **eindboss elke 5e golf** met health bar, en op te vangen **power-ups** (drievoudig schot, sneller vuren). Aliens schieten niet en er zijn geen levens. |
+| **Asteroïdenveld**        | Breakout             | 6–7      | 1P & 2P | Asteroïden met 1–3 hits, vier **veldpatronen** (vol / schaakbord / piramide / kloof), power-ups (brede vanger, multi-bal, trage bal). 2P = paddles boven én onder, coöperatief. |
+
+### Ontwerpkeuze: geen verliesstatus
+Geen van de acht spellen kent "game over". Aliens die de onderkant halen
+trekken zich terug naar boven; een verloren bal komt gewoon terug in het
+midden; een verkeerd geplaatst puzzelstuk zweeft terug. Er is dus altijd
+vooruitgang en nooit een moment waarop een kind te horen krijgt dat het
+verloren heeft. Score en level gaan alleen omhoog.
 
 **Uitbreidingen (post-MVP, alvast in registry-structuur voorzien)**:
 kleurplaten-only modus, bubble-pop reflex-spel, eenvoudig ritme-/muziekspel,
 tel-/rekenspelletje, "verstop-en-zoek" (Sago Mini-stijl).
+
+## 6b. Progressie en geluid
+
+**Progressie** (`src/shell/progress.js`): elk spel schrijft het hoogst
+bereikte level naar `localStorage`. Het portaal leest dat terug als
+levellampjes op de missieknop, zodat een kind ziet hoe ver het in elk spel
+is — de hub voelt daardoor als één geheel in plaats van acht losse spellen
+die elke sessie op nul beginnen.
+
+**Geluid** (`src/shell/audio.js`): volledig procedureel gesynthetiseerd via
+de Web Audio API — oscillatoren voor tonen en arpeggio's, één gedeelde
+noise-buffer met filters voor stuwraketten, inslagen en whooshes. Geen
+audiobestanden betekent geen downloadkosten, geen licenties en nul
+decode-latency. De keten eindigt op een limiter zodat snel vuren niet
+gaat clippen op harde digibord-speakers. De kit is ruimte-specifiek:
+`launch`, `thruster`, `laser`, `explode`, `impact`, `dock`, `pour`, `flow`,
+`powerup`, `levelUp`, `missionComplete`. Mute-knop zit in de portaalbalk.
 
 ### 2-speler aanpak per spel
 - **Om-de-beurt** (Geheugenspel, Legpuzzel-race): duidelijke "Speler 1 / Speler
@@ -190,6 +250,36 @@ tel-/rekenspelletje, "verstop-en-zoek" (Sago Mini-stijl).
   altijd zichtbaar in de shell-header.
 - Kleurenpalet met voldoende contrast; geen fel knipperende content (i.v.m.
   fotosensitiviteit bij jonge kinderen).
+
+## 7b. Verificatie
+
+Het geheel is geautomatiseerd nagelopen met een headless Chromium
+(puppeteer-core tegen de systeem-Chromium) die de echte build bedient:
+portaalflow doorlopen, alle acht spellen openen, tikken én slepen
+simuleren, en per spel controleren op:
+
+- console- en `pageerror`-meldingen (nul);
+- aanraakdoelen kleiner dan 88px (nul);
+- horizontale/verticale paginaoverflow (nergens);
+- een canvas dat uniform van kleur is, d.w.z. niets getekend;
+- correcte opruiming bij terugnavigatie (geen achterblijvend canvas of
+  lopende renderloop).
+
+Alles is op zowel 1920×1080 als 3840×2160 gemeten om de vmin-schaalregel
+te bewijzen. Drie echte bugs kwamen hieruit:
+
+1. **Leeg tekencanvas** — `ResizeObserver` vuurt altijd één keer bij
+   `observe()`, en het zetten van `canvas.width` wist de bitmap. Het
+   tekenscherm schilderde zijn achtergrond precies één keer en werd daarna
+   meteen leeggeveegd. Opgelost met een `preserveOnResize`-optie in
+   `setupCanvas()` die de bitmap over een resize heen tilt.
+2. **Platgedrukt puzzelbord** — het bord kreeg zijn maat in JS maar zat in
+   een flex-kolom, waardoor flex-shrink de 4:3-verhouding sloopte (720×540
+   werd 715×210) en de gesneden afbeelding niet meer klopte. Opgelost met
+   `flex: 0 0 auto` plus een expliciete verticale ruimteberekening.
+3. **Samengeklonterde vormen op canvas** — opeenvolgende `arc()`-aanroepen
+   in één pad worden door een lijn verbonden, waardoor kraters en
+   alien-ogen aan elkaar plakten. Elk cirkeltje krijgt nu zijn eigen pad.
 
 ## 8. Deployment via GitHub Actions → GitHub Pages
 

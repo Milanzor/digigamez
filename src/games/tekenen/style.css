@@ -1,63 +1,79 @@
-.tk-stage {
+.draw-stage {
   width: 100%;
   height: 100%;
   position: relative;
-  background: #ffffff;
 }
 
-.tk-canvas {
+.draw-canvas {
   width: 100%;
   height: 100%;
 }
 
-.tk-toolbar {
+.draw-bar {
   position: absolute;
-  bottom: 1.2rem;
+  bottom: var(--sp-3);
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 0.8rem;
-  background: white;
-  padding: 0.8rem 1.2rem;
-  border-radius: 999px;
-  box-shadow: var(--shadow-soft);
+  gap: clamp(6px, 1.1vmin, 22px);
+  padding: clamp(8px, 1.3vmin, 26px) clamp(12px, 1.8vmin, 36px);
+  border-radius: var(--r-pill);
+  background: rgba(8, 13, 42, 0.88);
+  border: clamp(2px, 0.3vmin, 7px) solid var(--panel-line);
+  box-shadow: var(--shadow-panel);
   z-index: 20;
-  max-width: 92%;
+  max-width: 96vw;
   overflow-x: auto;
+  scrollbar-width: none;
 }
 
-.tk-swatch {
-  width: 56px;
-  height: 56px;
+.draw-bar::-webkit-scrollbar { display: none; }
+
+.swatch {
+  width: clamp(48px, 7.4vmin, 160px);
+  height: clamp(48px, 7.4vmin, 160px);
   border-radius: 50%;
-  border: 4px solid transparent;
+  border: clamp(3px, 0.45vmin, 10px) solid rgba(255, 255, 255, 0.2);
   flex-shrink: 0;
+  transition: transform 0.1s ease, border-color 0.1s ease;
 }
 
-.tk-swatch.active {
-  border-color: var(--color-text);
+.swatch:active { transform: scale(0.9); }
+
+.swatch.is-active {
+  border-color: var(--enamel);
+  box-shadow: 0 0 clamp(8px, 1.6vmin, 32px) currentColor;
+  transform: scale(1.08);
 }
 
-.tk-tool {
-  width: 56px;
-  height: 56px;
+.tool {
+  width: clamp(48px, 7.4vmin, 160px);
+  height: clamp(48px, 7.4vmin, 160px);
   border-radius: 50%;
-  background: #f1f2fb;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.6rem;
+  display: grid;
+  place-items: center;
+  font-size: clamp(20px, 3.2vmin, 68px);
+  background: linear-gradient(180deg, var(--panel-hi), var(--panel));
+  border: clamp(2px, 0.3vmin, 7px) solid var(--panel-line);
+  color: var(--enamel);
   flex-shrink: 0;
+  transition: transform 0.1s ease, border-color 0.1s ease, background 0.1s ease;
 }
 
-.tk-tool.active {
-  background: var(--color-accent);
+.tool:active { transform: scale(0.9); }
+
+.tool.is-active {
+  border-color: var(--sun);
+  background: linear-gradient(180deg, #ffd469, var(--sun));
+  color: var(--ink);
+  box-shadow: var(--glow-sun);
 }
 
-.tk-divider {
-  width: 2px;
-  height: 40px;
-  background: #e2e4f3;
+.bar-sep {
+  width: clamp(2px, 0.3vmin, 6px);
+  height: clamp(34px, 5vmin, 100px);
+  background: var(--panel-line);
+  border-radius: var(--r-pill);
   flex-shrink: 0;
 }

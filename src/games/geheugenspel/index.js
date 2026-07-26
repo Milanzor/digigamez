@@ -1,11 +1,33 @@
 import './style.css';
-import { createGameChrome, createTurnBanner, setTurnBanner, createScoreboard } from '../../shared/ui-components.js';
+import { createHud } from '../../shared/ui-components.js';
 import { sfx } from '../../shell/audio.js';
+import { setLevel } from '../../shell/progress.js';
 
-const ICONS = ['🐶', '🐱', '🐸', '🦋', '🐢', '🐝', '🦁', '🐘', '🐬', '🦊'];
-const TURN_COLORS = ['#EF476F', '#3A86FF'];
+// "Ruimtegeheugen" — match pairs of space objects.
+//
+// Depth: the board grows with the level (4 -> 12 pairs) and from level 2 a
+// single golden comet pair is worth double, which gives older children
+// something to strategise about while the base game stays toddler-simple.
 
-let stage, cleanupFns = [];
+const ICONS = ['🪐', '🚀', '🛸', '👽', '🌍', '🌙', '⭐', '🛰️', '🔭', '👨‍🚀', '🌌', '🪨'];
+const BONUS_ICON = '☄️';
+
+// pairs per level, then the grid shape that fits them
+const LEVELS = [
+  { pairs: 4, cols: 4 },
+  { pairs: 6, cols: 4 },
+  { pairs: 8, cols: 4 },
+  { pairs: 10, cols: 5 },
+  { pairs: 12, cols: 6 },
+];
+
+let hud = null;
+let stage = null;
+let level = 1;
+let slug = 'geheugenspel';
+let players = 1;
+let listeners = [];
+let timers = [];
 
 function shuffle(arr) {
   const a = [...arr];
@@ -16,121 +38,157 @@ function shuffle(arr) {
   return a;
 }
 
-export function init(container, { title, onExit, players }) {
-  cleanupFns = [];
-  const chrome = createGameChrome({ title, onExit });
-  stage = document.createElement('div');
-  stage.className = 'mg-stage';
-
-  let turnBanner, scoreboard;
-  if (players === 2) {
-    turnBanner = createTurnBanner();
-    scoreboard = createScoreboard([1, 2]);
-  }
-
-  container.appendChild(chrome);
-  if (turnBanner) container.appendChild(turnBanner);
-  if (scoreboard) container.appendChild(scoreboard.el);
-  container.appendChild(stage);
-
-  startRound(players, turnBanner, scoreboard);
+function later(fn, ms) {
+  const id = setTimeout(fn, ms);
+  timers.push(id);
+  return id;
 }
 
-function startRound(playerCount, turnBanner, scoreboard) {
-  const pairCount = 6;
-  const chosen = shuffle(ICONS).slice(0, pairCount);
-  const deck = shuffle([...chosen, ...chosen]);
+export function init(container, opts) {
+  slug = opts.slug;
+  level = opts.startLevel || 1;
+  players = opts.players || 1;
+  listeners = [];
+  timers = [];
 
-  let currentPlayer = 0;
+  hud = createHud(container, {
+    title: opts.title,
+    onExit: opts.onExit,
+    level,
+    players,
+    showScore: true,
+    showTurn: players > 1,
+  });
+
+  stage = document.createElement('div');
+  stage.className = 'mem-stage';
+  container.appendChild(stage);
+
+  startRound();
+}
+
+function startRound() {
+  const cfg = LEVELS[Math.min(level, LEVELS.length) - 1];
+  hud.setLevel(level);
+
+  const useBonus = level >= 2;
+  const normalPairs = useBonus ? cfg.pairs - 1 : cfg.pairs;
+  const chosen = shuffle(ICONS).slice(0, normalPairs);
+
+  const deck = shuffle([
+    ...chosen.flatMap((icon) => [
+      { icon, bonus: false },
+      { icon, bonus: false },
+    ]),
+    ...(useBonus
+      ? [{ icon: BONUS_ICON, bonus: true }, { icon: BONUS_ICON, bonus: true }]
+      : []),
+  ]);
+
+  const cols = cfg.cols;
+  const rows = Math.ceil(deck.length / cols);
+
+  let current = 0;
   const scores = [0, 0];
   let flipped = [];
-  let matchedCount = 0;
+  let matched = 0;
   let locked = false;
 
-  if (turnBanner) setTurnBanner(turnBanner, currentPlayer, TURN_COLORS);
+  players > 1 && hud.setTurn(current);
+  scores.forEach((s, i) => i < players && hud.setScore(i, 0));
 
   const grid = document.createElement('div');
-  grid.className = 'mg-grid';
-  stage.replaceChildren(grid);
+  grid.className = 'mem-grid';
+  grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+  grid.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+  grid.style.setProperty('--grid-ratio', String(cols / rows));
 
-  const cards = deck.map((icon) => {
+  const hint = document.createElement('div');
+  hint.className = 'hint-strip';
+  hint.textContent = useBonus
+    ? 'Vind de paren — de komeet ☄️ is dubbele punten'
+    : 'Draai twee kaarten om en zoek de paren';
+
+  const cards = deck.map((entry) => {
     const card = document.createElement('div');
-    card.className = 'mg-card';
+    card.className = `mem-card${entry.bonus ? ' is-bonus' : ''}`;
+    card.dataset.icon = entry.icon;
     card.innerHTML = `
-      <div class="mg-card-inner">
-        <div class="mg-face back">❓</div>
-        <div class="mg-face front">${icon}</div>
+      <div class="mem-card__inner">
+        <div class="mem-face mem-face--back">✦</div>
+        <div class="mem-face mem-face--front">${entry.icon}</div>
       </div>
     `;
-    card.dataset.icon = icon;
     grid.appendChild(card);
     return card;
   });
 
-  function onCardTap(e) {
+  stage.replaceChildren(hint, grid);
+
+  const onTap = (e) => {
     if (locked) return;
     const card = e.currentTarget;
-    if (card.classList.contains('flipped') || card.classList.contains('matched')) return;
+    if (card.classList.contains('is-flipped') || card.classList.contains('is-matched')) return;
 
-    card.classList.add('flipped');
-    sfx.pop();
+    card.classList.add('is-flipped');
+    sfx.flip();
     flipped.push(card);
+    if (flipped.length < 2) return;
 
-    if (flipped.length === 2) {
-      locked = true;
-      const [a, b] = flipped;
-      if (a.dataset.icon === b.dataset.icon) {
-        setTimeout(() => {
-          a.classList.add('matched');
-          b.classList.add('matched');
-          matchedCount++;
-          scores[currentPlayer]++;
-          if (scoreboard) scoreboard.update(currentPlayer, scores[currentPlayer]);
-          sfx.success();
-          flipped = [];
-          locked = false;
-          if (matchedCount === pairCount) {
-            setTimeout(() => celebrate(playerCount, turnBanner, scoreboard, scores), 400);
-          }
-        }, 500);
-      } else {
-        setTimeout(() => {
-          a.classList.remove('flipped');
-          b.classList.remove('flipped');
-          flipped = [];
-          locked = false;
-          if (playerCount === 2) {
-            currentPlayer = 1 - currentPlayer;
-            if (turnBanner) setTurnBanner(turnBanner, currentPlayer, TURN_COLORS);
-          }
-        }, 800);
-      }
+    locked = true;
+    const [a, b] = flipped;
+
+    if (a.dataset.icon === b.dataset.icon) {
+      later(() => {
+        const isBonus = a.classList.contains('is-bonus');
+        a.classList.add('is-matched');
+        b.classList.add('is-matched');
+        matched++;
+        scores[current] += isBonus ? 2 : 1;
+        hud.setScore(current, scores[current]);
+        isBonus ? sfx.powerup() : sfx.match();
+        flipped = [];
+        locked = false;
+        if (matched === deck.length / 2) later(() => finishRound(scores), 500);
+      }, 460);
+    } else {
+      later(() => {
+        a.classList.remove('is-flipped');
+        b.classList.remove('is-flipped');
+        flipped = [];
+        locked = false;
+        if (players > 1) {
+          current = 1 - current;
+          hud.setTurn(current);
+        }
+      }, 850);
     }
-  }
+  };
 
-  cards.forEach((card) => card.addEventListener('pointerup', onCardTap));
-  cleanupFns.push(() => cards.forEach((card) => card.removeEventListener('pointerup', onCardTap)));
+  cards.forEach((c) => c.addEventListener('pointerup', onTap));
+  listeners.push(() => cards.forEach((c) => c.removeEventListener('pointerup', onTap)));
 }
 
-function celebrate(playerCount, turnBanner, scoreboard, scores) {
-  sfx.celebrate();
-  const toast = document.createElement('div');
-  toast.className = 'confirm-toast visible';
-  toast.style.position = 'absolute';
-  toast.style.bottom = '2rem';
-  toast.style.left = '50%';
-  toast.style.transform = 'translateX(-50%)';
-  toast.textContent = playerCount === 2
-    ? (scores[0] === scores[1] ? 'Gelijkspel! 🎉' : `Speler ${scores[0] > scores[1] ? 1 : 2} wint! 🎉`)
-    : 'Goed gedaan! 🎉';
-  stage.appendChild(toast);
-  setTimeout(() => {
-    toast.remove();
-    startRound(playerCount, turnBanner, scoreboard);
-  }, 2000);
+function finishRound(scores) {
+  sfx.missionComplete();
+  level += 1;
+  setLevel(slug, level);
+
+  let text = 'Alle paren gevonden! 🪐';
+  if (players > 1) {
+    if (scores[0] === scores[1]) text = 'Gelijkspel! 🤝';
+    else text = `Astronaut ${scores[0] > scores[1] ? 1 : 2} wint! 🏆`;
+  }
+  hud.banner(text, { sub: `Level ${level} vrijgespeeld`, ms: 2100 });
+  later(startRound, 2200);
 }
 
 export function destroy() {
-  cleanupFns.forEach((fn) => fn());
-  cleanupFns = [];
+  timers.forEach(clearTimeout);
+  timers = [];
+  listeners.forEach((off) => off());
+  listeners = [];
+  hud?.destroy();
+  hud = null;
+  stage = null;
 }
