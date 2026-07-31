@@ -1,39 +1,84 @@
-/* Digigamez design tokens — "retro-futurist mission console".
-   Deep indigo space (never pure black) behind warm Apollo-era enamel
-   panels, so the chrome reads as painted metal instrumentation rather
-   than flat dark-neon UI.
+/* Digigamez design tokens — "observatorium + cockpit".
+   The void is now genuinely dark (a near-black indigo lit from one corner by
+   a nebula) and the chrome floating on it is drawn with 1px cream hairlines
+   instead of solid enamel slabs. That inversion is the whole point: the
+   painted-metal panels competed with the games for attention, whereas a
+   hairline reads as instrument glass and lets the mission colour be the only
+   bright thing on screen.
 
-   CRITICAL: every size is expressed in vmin (with clamp guards), never
-   raw px. A 75" digiboard typically reports 3840x2160 at devicePixelRatio
-   1, which makes px-based UI roughly half the physical size it would be
-   on a 1080p panel. vmin keeps the proportions identical on both. */
+   Amber is the single action colour — buttons, progress, active state, and
+   nothing else. Copper is reserved for the small mono headings. The eight
+   play colours identify a mission and appear only as a glow inside its
+   porthole, never as a second accent inside a control.
+
+   CRITICAL: every size is expressed in vmin (with clamp guards), never raw
+   px. A 75" digiboard typically reports 3840x2160 at devicePixelRatio 1,
+   which makes px-based UI roughly half the physical size it would be on a
+   1080p panel. vmin keeps the proportions identical on both. */
 
 :root {
   /* --- Space --- */
-  --void-deep: #060a24;
-  --void: #0e1741;
-  --panel: #1a2a63;
-  --panel-hi: #274088;
-  --panel-line: #3a57a8;
+  --void-deep: #05070f;
+  --void: #0d0c22;
+  --nebula-lit: #2a1f4d;
 
-  /* --- Enamel instrument panel --- */
-  --bezel: #e7dfcb;
-  --bezel-sh: #a89f88;
-  --enamel: #f9f4e7;
-  --ink: #121634;
-  --ink-soft: #46507e;
+  /* --- Chrome: translucent glass over the void, not painted metal ---
+     Panels are a wash of white so whatever nebula sits behind them still
+     shows through; the hairline does the shape-defining work. */
+  --panel: rgba(255, 255, 255, 0.03);
+  --panel-hi: rgba(255, 255, 255, 0.06);
+  --panel-press: rgba(255, 255, 255, 0.1);
+  --panel-sel: rgba(255, 255, 255, 0.055);
 
-  /* --- Instrument accents (mid-century space-poster saturation) --- */
-  --sun: #ffb224;
-  --mars: #ff5f4d;
-  --teal: #2fd9c6;
-  --nebula: #b06bff;
-  --leaf: #6ee87a;
-  --ice: #7cc4ff;
+  /* Cream rules at three strengths: quiet divider, control edge, active edge. */
+  --rule: rgba(232, 217, 176, 0.14);
+  --rule-mid: rgba(232, 217, 176, 0.22);
+  --rule-strong: rgba(232, 217, 176, 0.3);
+  --hair: clamp(1px, 0.14vmin, 3px);
+
+  /* --- Type colours --- */
+  --cream: #f3ece0;
+  --cream-hi: #fff6e5;
+  --muted: #9a9280;
+  --muted-warm: #c9bda4;
+  --faint: #6b6656;
+  --ink: #2c1c04;
+
+  /* --- The one action colour --- */
+  --amber: #ffc24a;
+  --amber-lo: #f2a52c;
+  --amber-hi: #ffd479;
+  --amber-sh: #b46f13;
+  --copper: #d08c4a;
+
+  /* --- The eight play colours: one per mission, glow only --- */
+  --teal: #5fe3c4;
+  --coral: #ff6b6b;
+  --violet: #b98cff;
+  --pink: #ff8fc7;
+  --sky: #8fd6ff;
+  --green: #7ee787;
+  --flame: #ffa14a;
 
   /* --- Player identity --- */
-  --p1: #ff5f4d;
-  --p2: #2fd9c6;
+  --p1: #ff6b6b;
+  --p2: #5fe3c4;
+
+  /* --- Legacy aliases ---------------------------------------------------
+     The nine game stylesheets were written against the old enamel names.
+     Pointing them at the new palette reskins every game from this one file
+     instead of touching nine of them; the names stay because they still say
+     what the colour is *for*. */
+  --panel-line: var(--rule);
+  --bezel: var(--rule-mid);
+  --bezel-sh: var(--rule-strong);
+  --enamel: var(--cream);
+  --ink-soft: var(--muted);
+  --sun: var(--amber);
+  --mars: var(--coral);
+  --nebula: var(--violet);
+  --leaf: var(--green);
+  --ice: var(--sky);
 
   /* --- Type --- */
   --font-display: 'Baloo 2', 'Comic Sans MS', 'Trebuchet MS', system-ui, sans-serif;
@@ -44,9 +89,11 @@
   --fs-h2: clamp(21px, 3.7vmin, 82px);
   --fs-body: clamp(16px, 2.5vmin, 54px);
   --fs-label: clamp(12px, 1.75vmin, 38px);
+  --fs-micro: clamp(10px, 1.4vmin, 30px);
   --fs-icon: clamp(30px, 6.5vmin, 140px);
 
-  /* --- Space & shape --- */
+  /* --- Space & shape ---
+     The design's 8 · 14 · 18 · 22 · 26 · 34 · 44 rhythm, in vmin. */
   --sp-1: clamp(4px, 0.6vmin, 14px);
   --sp-2: clamp(8px, 1.2vmin, 26px);
   --sp-3: clamp(12px, 1.9vmin, 42px);
@@ -63,8 +110,13 @@
      desktop guideline. */
   --touch: clamp(64px, 11vmin, 250px);
 
-  --bezel-w: clamp(6px, 1.1vmin, 24px);
-  --glow-sun: 0 0 clamp(10px, 2vmin, 44px) rgba(255, 178, 36, 0.55);
-  --shadow-panel: 0 clamp(4px, 0.8vmin, 18px) clamp(14px, 2.6vmin, 58px) rgba(3, 6, 22, 0.55);
-  --inset-panel: inset 0 clamp(2px, 0.35vmin, 8px) 0 rgba(255, 255, 255, 0.14);
+  --bezel-w: var(--hair);
+
+  /* Press easing with a slight overshoot: a console key that snaps back. */
+  --ease-press: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --glow-sun: 0 0 clamp(10px, 2vmin, 44px) rgba(255, 194, 74, 0.4);
+  --glow-amber-text: 0 0 clamp(12px, 2.4vmin, 50px) rgba(255, 194, 74, 0.55);
+  --shadow-panel: 0 clamp(6px, 1.2vmin, 26px) clamp(18px, 3.6vmin, 80px) rgba(0, 0, 0, 0.7);
+  --inset-panel: inset 0 0 0 var(--hair) var(--rule);
 }

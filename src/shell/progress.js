@@ -1,7 +1,7 @@
 // Per-game level progression, persisted locally.
 //
 // Every game reports the highest level a child reached, and the portal
-// renders that back as a row of lamps on the mission button. This is what
+// renders that back as a progress bar on the mission row. This is what
 // gives the hub a sense of progression across sessions instead of every
 // game restarting from scratch.
 
@@ -19,9 +19,18 @@ export function setLevel(slug, level) {
   if (clamped > getLevel(slug)) setItem(`level:${slug}`, clamped);
 }
 
-// Lamp count for the portal display: how many levels are "lit".
+// How much of the five-level ladder is filled in, for the portal progress bar.
 export function getLamps(slug) {
   return Math.min(getLevel(slug), MAX_LAMPS);
+}
+
+// The three reward stars, mapped onto that same ladder. Deliberately not a
+// performance grade: none of these games measures how *well* a level was
+// solved, and inventing a score would make the stars arbitrary. Tying them to
+// progress keeps them honest and still gives a child something to climb.
+export function starsForLevel(level) {
+  const reached = Math.min(Math.max(1, Math.floor(level)), MAX_LAMPS);
+  return Math.max(1, Math.min(3, Math.ceil((reached / MAX_LAMPS) * 3)));
 }
 
 // Wipes everything the children built up: every level, the saved drawing, the

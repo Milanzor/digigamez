@@ -3,37 +3,50 @@ import { getItem } from '../shell/storage.js';
 import { GAMES } from '../games/game-registry.js';
 import { sfx, toggleMuted, isMuted } from '../shell/audio.js';
 import { getLamps, MAX_LAMPS } from '../shell/progress.js';
-import { lampRow } from '../shared/ui-components.js';
+import { progressBar, porthole } from '../shared/ui-components.js';
 
 export function renderGameGridView(container) {
   const playerCount = getItem('playerCount', 1);
+  const recent = getItem('lastGame', null);
 
-  const cards = GAMES.map((g) => {
-    const crewBadge = g.supportsTwoPlayers
-      ? '<span class="mission__crew">2P</span>'
-      : '';
+  const cards = GAMES.map((g, i) => {
+    const crewBadge = g.supportsTwoPlayers ? '<span class="tag">2P</span>' : '';
+    const isRecent = g.slug === recent;
     return `
-      <button class="mission" data-slug="${g.slug}" style="--mission-color:${g.color}">
-        <div class="mission__icon">${g.icon}</div>
-        <div class="mission__name">${g.title}</div>
-        <div class="mission__meta">
-          <span>${g.ageLabel}</span>
-          ${crewBadge}
-        </div>
-        ${lampRow(getLamps(g.slug), MAX_LAMPS)}
+      <button class="mission${isRecent ? ' is-recent' : ''}" data-slug="${g.slug}">
+        ${porthole(g.icon, {
+          className: 'mission__icon',
+          color: g.color,
+          lit: isRecent,
+          // Nine portholes bobbing on the same clock reads as a machine; a
+          // different duration each makes the grid feel alive instead.
+          duration: 5.2 + (i % 5) * 0.5,
+        })}
+        <span class="mission__text">
+          <span class="mission__name">${g.title}</span>
+          <span class="mission__meta">
+            <span>${g.ageLabel}</span>
+            ${crewBadge}
+          </span>
+          ${progressBar(getLamps(g.slug), MAX_LAMPS)}
+        </span>
       </button>
     `;
   }).join('');
 
   container.innerHTML = `
     <div class="missions">
-      <div class="missions__bar">
-        <button class="key key--bar" id="grid-back" aria-label="Terug naar crewkeuze">◀</button>
-        <h1 class="missions__heading">Kies je missie</h1>
-        <div class="missions__spacer"></div>
-        <div class="readout" id="crew-readout">
-          ${playerCount === 2 ? '👨‍🚀👩‍🚀 2 astronauten' : '👨‍🚀 1 astronaut'}
+      <div class="bar-top">
+        <button class="key key--bar key--back" id="grid-back" aria-label="Terug naar crewkeuze"></button>
+        <div class="bar-top__titles">
+          <div class="eyebrow">Missiearchief · ${String(GAMES.length).padStart(2, '0')} beschikbaar</div>
+          <h1 class="bar-top__heading">Kies je missie</h1>
         </div>
+        <div class="bar-top__spacer"></div>
+        <button class="readout" id="crew-readout">
+          <span>${playerCount === 2 ? '🧑‍🚀🧑‍🚀' : '🧑‍🚀'}</span>
+          ${playerCount === 2 ? '2 astronauten' : '1 astronaut'}
+        </button>
         <button class="key key--bar" id="grid-mute" aria-label="Geluid aan of uit">${isMuted() ? '🔇' : '🔊'}</button>
         <button class="key key--bar" id="grid-settings" aria-label="Instellingen">⚙️</button>
       </div>

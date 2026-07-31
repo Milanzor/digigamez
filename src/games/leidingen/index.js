@@ -1,7 +1,7 @@
 import './style.css';
-import { createHud } from '../../shared/ui-components.js';
+import { createHud, showMissionComplete } from '../../shared/ui-components.js';
 import { sfx } from '../../shell/audio.js';
-import { setLevel } from '../../shell/progress.js';
+import { setLevel, starsForLevel } from '../../shell/progress.js';
 
 // "Zuurstofleidingen" — rotate the pipe tiles so oxygen reaches the tank.
 //
@@ -32,6 +32,9 @@ let hud = null;
 let stage = null;
 let level = 1;
 let slug = 'leidingen';
+let mission = null;
+let reward = null;
+let onExit = null;
 let listeners = [];
 let timers = [];
 
@@ -197,10 +200,21 @@ function pipeSvg(type) {
 export function init(container, opts) {
   slug = opts.slug;
   level = opts.startLevel || 1;
+  mission = { title: opts.title, icon: opts.icon, color: opts.color };
+  onExit = opts.onExit;
+  reward = null;
   listeners = [];
   timers = [];
 
-  hud = createHud(container, { title: opts.title, onExit: opts.onExit, level });
+  // The pressure meter is the one readout this puzzle can offer: it climbs as
+  // the gas gets further along the run, so a child watching the bar sees they
+  // are making progress before the tank ever fills.
+  hud = createHud(container, {
+    title: opts.title,
+    onExit: opts.onExit,
+    level,
+    meter: 'Druk',
+  });
 
   stage = document.createElement('div');
   stage.className = 'pipe-stage';
@@ -299,12 +313,22 @@ function startRound() {
 
   let done = false;
 
+  // How many tiles the carved run is long, so the pressure meter measures the
+  // gas against the route it actually has to cover rather than the board size.
+  let carved = 0;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 1; c <= puzzle.cols; c++) {
+      if (puzzle.grid[r][c].solved !== null) carved += 1;
+    }
+  }
+
   function evaluate() {
     if (done) return;
     const results = puzzle.endpoints.map((e) => traceFlow(puzzle, e));
 
     if (results.every((r) => r.solved)) {
       done = true;
+      hud.setMeter(1);
       runFlow(results);
       return;
     }
@@ -314,6 +338,7 @@ function startRound() {
     const wetAll = new Set();
     results.forEach((res) => res.path.forEach((k) => wetAll.add(k)));
     tileEls.forEach((el, key) => el.classList.toggle('is-wet', wetAll.has(key)));
+    hud.setMeter(carved ? wetAll.size / carved : 0);
     // On a two-network board one side can be finished while the other is not,
     // and lighting that tank is how a child knows to leave it alone.
     results.forEach((res, i) => {
@@ -361,10 +386,20 @@ function startRound() {
 
 function finishRound() {
   sfx.missionComplete();
+  const cleared = level;
   level += 1;
   setLevel(slug, level);
-  hud.banner('Zuurstof stroomt! 💨', { sub: `Level ${level} vrijgespeeld`, ms: 2000 });
-  later(startRound, 2100);
+  reward = showMissionComplete(stage, {
+    icon: mission.icon,
+    color: mission.color,
+    mission: mission.title,
+    level: cleared,
+    stars: starsForLevel(level),
+    title: 'Zuurstof stroomt! 💨',
+    onNext: () => startRound(),
+    onRetry: () => { level = cleared; hud.setLevel(level); startRound(); },
+    onHome: onExit,
+  });
 }
 
 export function destroy() {
@@ -372,6 +407,8 @@ export function destroy() {
   timers = [];
   listeners.forEach((off) => off());
   listeners = [];
+  reward?.close();
+  reward = null;
   hud?.destroy();
   hud = null;
   stage = null;

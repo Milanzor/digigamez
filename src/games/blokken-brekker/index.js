@@ -24,8 +24,8 @@ const ROCK_W = 148;
 const ROCK_H = 58;
 const GAP = 12;
 
-const HP_COLORS = { 1: '#7cc4ff', 2: '#b06bff', 3: '#ff5f4d' };
-const BURST_COLORS = ['#ffb224', '#7cc4ff', '#ffffff', '#b06bff'];
+const HP_COLORS = { 1: '#8fd6ff', 2: '#b98cff', 3: '#ff6b6b' };
+const BURST_COLORS = ['#ffc24a', '#8fd6ff', '#ffffff', '#b98cff'];
 const POWERS = ['wide', 'multi', 'slow'];
 
 let hud = null;
@@ -63,10 +63,10 @@ export function init(container, opts) {
 
   const paddles = twoP
     ? [
-        { x: LOGICAL_WIDTH / 2, y: LOGICAL_HEIGHT - 74, color: '#ff5f4d', side: 'bottom', wideT: 0 },
-        { x: LOGICAL_WIDTH / 2, y: 74, color: '#2fd9c6', side: 'top', wideT: 0 },
+        { x: LOGICAL_WIDTH / 2, y: LOGICAL_HEIGHT - 74, color: '#ff6b6b', side: 'bottom', wideT: 0 },
+        { x: LOGICAL_WIDTH / 2, y: 74, color: '#5fe3c4', side: 'top', wideT: 0 },
       ]
-    : [{ x: LOGICAL_WIDTH / 2, y: LOGICAL_HEIGHT - 74, color: '#ffb224', side: 'bottom', wideT: 0 }];
+    : [{ x: LOGICAL_WIDTH / 2, y: LOGICAL_HEIGHT - 74, color: '#ffc24a', side: 'bottom', wideT: 0 }];
 
   let score = 0;
   let t = 0;
@@ -290,7 +290,7 @@ export function init(container, opts) {
 
     for (const rock of rocks) {
       if (!rock.alive) continue;
-      const color = HP_COLORS[rock.hp] || '#7cc4ff';
+      const color = HP_COLORS[rock.hp] || '#8fd6ff';
       ctx.save();
       ctx.shadowColor = color;
       ctx.shadowBlur = 14;
@@ -319,13 +319,13 @@ export function init(container, opts) {
       ctx.save();
       ctx.translate(p.x, p.y);
       ctx.rotate(p.spin);
-      ctx.shadowColor = '#6ee87a';
+      ctx.shadowColor = '#7ee787';
       ctx.shadowBlur = 24;
-      ctx.fillStyle = '#6ee87a';
+      ctx.fillStyle = '#7ee787';
       roundRect(ctx, -25, -25, 50, 50, 13);
       ctx.fill();
       ctx.restore();
-      ctx.fillStyle = '#0e1741';
+      ctx.fillStyle = '#0d0c22';
       ctx.font = 'bold 30px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';

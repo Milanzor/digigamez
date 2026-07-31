@@ -29,9 +29,9 @@ const MIN_ZOOM = 0.4;
 const MAX_ZOOM = 4;
 
 const COLORS = [
-  '#ffffff', '#ffe066', '#ffb224', '#ff8a3d', '#ff5f4d', '#ff7ab8',
-  '#b06bff', '#7cc4ff', '#3b6bff', '#2fd9c6', '#6ee87a', '#3aa14a',
-  '#b0764a', '#f4d9b0', '#8ea2d8', '#141a3c',
+  '#fff8ee', '#ffd15c', '#f79a2e', '#ff8a3d', '#ff6b6b', '#ff8fc7',
+  '#b98cff', '#8fd6ff', '#3b6bff', '#5fe3c4', '#7ee787', '#3aa14a',
+  '#a4744a', '#f4d9b0', '#8ea2d8', '#141433',
 ];
 
 const SIZES = [8, 18, 34, 64, 108];
@@ -1043,7 +1043,7 @@ function paintSunset(c, x, y, w, h) {
 
 function paintSpace(c, x, y, w, h) {
   const g = c.createLinearGradient(x, y, x + w * 0.4, y + h);
-  g.addColorStop(0, '#101a4a');
+  g.addColorStop(0, '#12112b');
   g.addColorStop(0.65, '#0a1036');
   g.addColorStop(1, '#060a24');
   c.fillStyle = g;
@@ -1438,7 +1438,7 @@ function paintLava(c, x, y, w, h) {
   c.fill(veins.embers);
 }
 
-const RAINBOW_BANDS = ['#ff5f4d', '#ff8a3d', '#ffd166', '#6ee87a', '#7cc4ff', '#b06bff'];
+const RAINBOW_BANDS = ['#ff6b6b', '#ff8a3d', '#ffd166', '#7ee787', '#8fd6ff', '#b98cff'];
 
 function paintRainbow(c, x, y, w, h) {
   c.fillStyle = skyGradient(c, [[0, '#dff1ff'], [0.55, '#fdf7e8'], [1, '#ffe6f0']]);
@@ -1870,9 +1870,15 @@ function buildToolbar() {
   const bar = document.createElement('div');
   bar.className = 'draw-bar';
 
-  const rowA = row(bar);
-  const rowB = row(bar);
-  const rowC = row(bar);
+  // Four labelled clusters, in the order a drawing is made: pick a colour,
+  // pick how fat, pick what with, then act on the whole picture.
+  // The column counts are chosen so each wrapped row is one category: eleven
+  // puts the brushes on row one and the shapes-plus-extras on row two, which
+  // is the grouping the labels promise.
+  const colourBox = cluster(bar, 'Kleur', 6);
+  const sizeBox = cluster(bar, 'Dikte', 5);
+  const toolBox = cluster(bar, 'Gereedschap', 11);
+  const actionBox = cluster(bar, 'Acties', 5);
 
   // Colours
   const swatches = COLORS.map((color, i) => {
@@ -1889,11 +1895,9 @@ function buildToolbar() {
       if (['erase', 'stamp', 'trail', 'pan'].includes(state.tool)) selectBrush('pen');
       sfx.blip();
     });
-    rowA.appendChild(b);
+    colourBox.appendChild(b);
     return b;
   });
-
-  rowA.appendChild(sep());
 
   const sizeBtns = SIZES.map((value, i) => {
     const b = document.createElement('button');
@@ -1908,13 +1912,12 @@ function buildToolbar() {
       sizeBtns.forEach((s) => s.classList.toggle('is-active', s === b));
       sfx.blip();
     });
-    rowA.appendChild(b);
+    sizeBox.appendChild(b);
     return b;
   });
 
-  // Row B holds everything that makes a mark, row C everything that changes
-  // the board: three shorter rows read better on a wide screen than two long
-  // ones, and a child hunting for the eraser only has to scan one line.
+  // Everything that makes a mark goes in GEREEDSCHAP; everything that acts on
+  // the picture as a whole goes in ACTIES.
   const brushBtns = {};
   const shapeBtns = {};
   let stampBtn = null;
@@ -1946,16 +1949,14 @@ function buildToolbar() {
   }
 
   for (const b of BRUSHES) {
-    brushBtns[b.id] = mkTool(rowB, b.icon, b.label, () => {
+    brushBtns[b.id] = mkTool(toolBox, b.icon, b.label, () => {
       selectBrush(b.id);
       sfx.blip();
     });
   }
 
-  rowB.appendChild(sep());
-
   for (const s of SHAPES) {
-    shapeBtns[s.id] = mkTool(rowB, s.icon, s.label, () => {
+    shapeBtns[s.id] = mkTool(toolBox, s.icon, s.label, () => {
       state.tool = 'shape';
       state.shape = s.id;
       closePops();
@@ -1964,13 +1965,11 @@ function buildToolbar() {
     });
   }
 
-  fillBtn = mkTool(rowB, '🪣', 'Vormen vullen', () => {
+  fillBtn = mkTool(toolBox, '🪣', 'Vormen vullen', () => {
     state.fill = !state.fill;
     refreshTools();
     sfx.select();
   });
-
-  rowB.appendChild(sep());
 
   // Stamps and colouring pages live behind one button each: thirty-two
   // stickers inline would push the row off a laptop screen, and a drawer is
@@ -2055,50 +2054,34 @@ function buildToolbar() {
     }
   }
 
-  stampBtn = mkTool(rowB, state.stamp, 'Stempels', () => togglePop(stampPop));
+  stampBtn = mkTool(toolBox, state.stamp, 'Stempels', () => togglePop(stampPop));
 
-  // --- row C: the board itself
   const symBtns = {};
   const setSym = (mode) => {
     state.sym = state.sym === mode ? 'none' : mode;
     Object.entries(symBtns).forEach(([k, b]) => b.classList.toggle('is-active', state.sym === k));
     sfx.select();
   };
-  symBtns.mirror = mkTool(rowC, '🦋', 'Spiegelen', () => setSym('mirror'));
-  symBtns.quad = mkTool(rowC, '❇️', 'Vier kanten spiegelen', () => setSym('quad'));
-  symBtns.radial = mkTool(rowC, '🌸', 'Caleidoscoop — zes kanten', () => setSym('radial'));
+  symBtns.mirror = mkTool(toolBox, '🦋', 'Spiegelen', () => setSym('mirror'));
+  symBtns.quad = mkTool(toolBox, '❇️', 'Vier kanten spiegelen', () => setSym('quad'));
+  symBtns.radial = mkTool(toolBox, '🌸', 'Caleidoscoop — zes kanten', () => setSym('radial'));
 
-  rowC.appendChild(sep());
-
-  pageBtn = mkTool(rowC, '🖼️', 'Kleurplaat kiezen', () => togglePop(pagePop));
-  backdropBtn = mkTool(rowC, BACKDROPS[state.backdrop].icon, 'Achtergrond kiezen',
+  pageBtn = mkTool(toolBox, '🖼️', 'Kleurplaat kiezen', () => togglePop(pagePop));
+  backdropBtn = mkTool(toolBox, BACKDROPS[state.backdrop].icon, 'Achtergrond kiezen',
     () => togglePop(backdropPop));
 
-  rowC.appendChild(sep());
+  mkTool(actionBox, '↩️', 'Ongedaan maken', undo);
+  mkTool(actionBox, '↪️', 'Opnieuw doen', redo);
 
-  mkTool(rowC, '↩️', 'Ongedaan maken', undo);
-  mkTool(rowC, '↪️', 'Opnieuw doen', redo);
-  mkTool(rowC, '🗑️', 'Alles wissen', () => {
-    if (!G.strokes.length) return sfx.deny();
-    pushHistory();
-    G.strokes = [];
-    G.cacheDirty = true;
-    G.dirty = true;
-    queueSave();
-    sfx.explode();
-  });
-
-  rowC.appendChild(sep());
-
-  panBtn = mkTool(rowC, '✋', 'Schuiven en zoomen', () => {
+  panBtn = mkTool(actionBox, '✋', 'Schuiven en zoomen', () => {
     state.tool = state.tool === 'pan' ? 'pen' : 'pan';
     closePops();
     refreshTools();
     sfx.select();
   });
-  mkTool(rowC, '➖', 'Uitzoomen', () => { zoomCenter(1 / 1.3); sfx.blip(); });
-  mkTool(rowC, '➕', 'Inzoomen', () => { zoomCenter(1.3); sfx.blip(); });
-  mkTool(rowC, '🎯', 'Terug naar het midden', () => {
+  mkTool(actionBox, '➖', 'Uitzoomen', () => { zoomCenter(1 / 1.3); sfx.blip(); });
+  mkTool(actionBox, '➕', 'Inzoomen', () => { zoomCenter(1.3); sfx.blip(); });
+  mkTool(actionBox, '🎯', 'Terug naar het midden', () => {
     G.cam.zoom = 1;
     centerCamera();
     sfx.select();
@@ -2107,10 +2090,19 @@ function buildToolbar() {
   G.zoomReadout = document.createElement('div');
   G.zoomReadout.className = 'draw-zoom';
   G.zoomReadout.textContent = '100%';
-  rowC.appendChild(G.zoomReadout);
+  actionBox.appendChild(G.zoomReadout);
 
-  rowC.appendChild(sep());
-  mkTool(rowC, '💾', 'Tekening bewaren', savePng);
+  // Last, and visibly not paint tools: one wipes the drawing, one keeps it.
+  mkTool(actionBox, '🗑️', 'Alles wissen', () => {
+    if (!G.strokes.length) return sfx.deny();
+    pushHistory();
+    G.strokes = [];
+    G.cacheDirty = true;
+    G.dirty = true;
+    queueSave();
+    sfx.explode();
+  }).classList.add('tool--danger');
+  mkTool(actionBox, '💾', 'Tekening bewaren', savePng).classList.add('tool--keep');
 
   // The drawers hang off the bar, so they sit above whatever height the rows
   // wrap to.
@@ -2119,17 +2111,21 @@ function buildToolbar() {
   refreshTools();
 }
 
-function row(bar) {
-  const r = document.createElement('div');
-  r.className = 'draw-bar__row';
-  bar.appendChild(r);
-  return r;
-}
-
-function sep() {
-  const d = document.createElement('div');
-  d.className = 'bar-sep';
-  return d;
+// A labelled group of controls. `cols` fixes how wide the body is in cells, so
+// the group always wraps at the same place instead of reflowing whenever a
+// tool is added or the board changes size.
+function cluster(bar, label, cols) {
+  const wrap = document.createElement('div');
+  wrap.className = 'draw-cluster';
+  const cap = document.createElement('div');
+  cap.className = 'draw-cluster__label';
+  cap.textContent = label;
+  const body = document.createElement('div');
+  body.className = 'draw-cluster__body';
+  body.style.setProperty('--cols', cols);
+  wrap.append(cap, body);
+  bar.appendChild(wrap);
+  return body;
 }
 
 // Buttons fire on pointerup like the rest of the app, but they must never let

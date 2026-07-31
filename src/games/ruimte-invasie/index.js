@@ -51,16 +51,16 @@ const DIFFICULTIES = [
 // Every species carries its own silhouette. Children pick favourites almost
 // immediately, and a wave of five shapes reads as a crowd instead of a grid.
 const TYPES = {
-  drifter: { w: 92, h: 74, hp: 1, color: '#2fd9c6', score: 1, art: 'squid' },
-  zigzag: { w: 104, h: 66, hp: 1, color: '#b06bff', score: 2, art: 'saucer' },
+  drifter: { w: 92, h: 74, hp: 1, color: '#5fe3c4', score: 1, art: 'squid' },
+  zigzag: { w: 104, h: 66, hp: 1, color: '#b98cff', score: 2, art: 'saucer' },
   armored: { w: 110, h: 82, hp: 3, color: '#ff8a3d', score: 3, art: 'beetle' },
-  splitter: { w: 96, h: 86, hp: 1, color: '#6ee87a', score: 2, art: 'blob', splits: 2 },
+  splitter: { w: 96, h: 86, hp: 1, color: '#7ee787', score: 2, art: 'blob', splits: 2 },
   mini: { w: 54, h: 50, hp: 1, color: '#a9ffd0', score: 1, art: 'blob' },
 };
 
 const BOSSES = [
   {
-    id: 'kwal', name: 'Kwalmonster', w: 300, h: 180, hp: 18, color: '#b06bff',
+    id: 'kwal', name: 'Kwalmonster', w: 300, h: 180, hp: 18, color: '#b98cff',
     score: 20, art: 'jelly', attack: 'spread', every: 2.1,
   },
   {
@@ -68,7 +68,7 @@ const BOSSES = [
     score: 26, art: 'crab', attack: 'aimed', every: 1.7, minions: 3.4,
   },
   {
-    id: 'oog', name: 'Het Grote Oog', w: 250, h: 250, hp: 22, color: '#ff5f4d',
+    id: 'oog', name: 'Het Grote Oog', w: 250, h: 250, hp: 22, color: '#ff6b6b',
     score: 30, art: 'eye', attack: 'burst', every: 3.0, blink: 4.5,
   },
 ];
@@ -79,7 +79,7 @@ const POWER_LABEL = {
   rapid: 'Sneller vuren!',
   shield: 'Schild aan!',
 };
-const BURST_COLORS = ['#ffb224', '#ff5f4d', '#2fd9c6', '#ffffff'];
+const BURST_COLORS = ['#ffc24a', '#ff6b6b', '#5fe3c4', '#ffffff'];
 
 let hud = null;
 let handle = null;
@@ -116,6 +116,12 @@ export function init(container, opts) {
     split.className = 'inv-split';
     stage.appendChild(split);
   }
+  // The controls are the whole screen, which is exactly why they need saying
+  // once: nothing on a canvas looks like a button.
+  const hint = document.createElement('div');
+  hint.className = 'hint-line inv-hint';
+  hint.textContent = 'Sleep om te bewegen · tik om te schieten';
+  stage.appendChild(hint);
   container.appendChild(stage);
 
   handle = setupCanvas(canvas, { alpha: false });
@@ -129,10 +135,10 @@ export function init(container, opts) {
   });
   const ships = players === 2
     ? [
-        mkShip(half * 0.5, 0, half, '#ff5f4d'),
-        mkShip(half * 1.5, half, LOGICAL_WIDTH, '#2fd9c6'),
+        mkShip(half * 0.5, 0, half, '#ff6b6b'),
+        mkShip(half * 1.5, half, LOGICAL_WIDTH, '#5fe3c4'),
       ]
-    : [mkShip(half, 0, LOGICAL_WIDTH, '#ffb224')];
+    : [mkShip(half, 0, LOGICAL_WIDTH, '#ffc24a')];
 
   const bulletPool = new ObjectPool(
     () => ({ x: 0, y: 0, vx: 0, owner: 0 }),
@@ -440,7 +446,7 @@ export function init(container, opts) {
           const halfW = a.spec.w / 2 + 40;
           const target = Math.max(halfW, Math.min(LOGICAL_WIDTH - halfW, home + rnd(-420, 420)));
           a.blink = target - home;
-          burst(pos.x, pos.y, ['#ff5f4d', '#ffffff'], { count: 18, speed: 300 });
+          burst(pos.x, pos.y, ['#ff6b6b', '#ffffff'], { count: 18, speed: 300 });
           sfx.laser();
         }
       }
@@ -574,7 +580,7 @@ export function init(container, opts) {
         if (ship.repair > 0) continue;
         const reach = ship.shield > 0 ? 76 : 48;
         if (Math.hypot(s.x - ship.x, s.y - SHIP_Y) < reach + s.r) {
-          burst(s.x, s.y, ['#ff5f4d', '#ffe066'], { count: 10, speed: 220 });
+          burst(s.x, s.y, ['#ff6b6b', '#ffe066'], { count: 10, speed: 220 });
           hurtShip(ship);
           foeShots.splice(i, 1);
           break;
@@ -810,7 +816,7 @@ export function init(container, opts) {
       ctx.fillStyle = 'rgba(0,0,0,0.5)';
       roundRect(ctx, x - 150, y + h / 2 + 18, 300, 20, 10);
       ctx.fill();
-      ctx.fillStyle = frac > 0.35 ? '#6ee87a' : '#ff5f4d';
+      ctx.fillStyle = frac > 0.35 ? '#7ee787' : '#ff6b6b';
       roundRect(ctx, x - 150, y + h / 2 + 18, 300 * frac, 20, 10);
       ctx.fill();
     }
@@ -825,13 +831,13 @@ export function init(container, opts) {
     ctx.beginPath();
     ctx.ellipse(x, y, 78, 26, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = '#7cc4ff';
+    ctx.fillStyle = '#8fd6ff';
     ctx.beginPath();
     ctx.arc(x, y - 14, 30, Math.PI, 0);
     ctx.fill();
     ctx.restore();
     for (let i = -2; i <= 2; i++) {
-      ctx.fillStyle = ['#ff5f4d', '#6ee87a', '#7cc4ff', '#b06bff', '#ffb224'][i + 2];
+      ctx.fillStyle = ['#ff6b6b', '#7ee787', '#8fd6ff', '#b98cff', '#ffc24a'][i + 2];
       ctx.globalAlpha = (Math.sin(mystery.wob + i) + 1) / 2 * 0.7 + 0.3;
       ctx.beginPath();
       ctx.arc(x + i * 26, y + 12, 7, 0, Math.PI * 2);
@@ -856,7 +862,7 @@ export function init(container, opts) {
       ctx.closePath();
       ctx.stroke();
       ctx.setLineDash([]);
-      ctx.strokeStyle = '#ffb224';
+      ctx.strokeStyle = '#ffc24a';
       ctx.lineWidth = 8;
       ctx.beginPath();
       ctx.arc(ship.x, y, 60, -Math.PI / 2, -Math.PI / 2 + (1 - ship.repair / 2.6) * Math.PI * 2);
@@ -866,7 +872,7 @@ export function init(container, opts) {
     }
 
     const flame = 26 + Math.sin(t * 22) * 10;
-    ctx.fillStyle = '#ffb224';
+    ctx.fillStyle = '#ffc24a';
     ctx.beginPath();
     ctx.moveTo(ship.x - 16, y + SHIP_H / 2);
     ctx.lineTo(ship.x + 16, y + SHIP_H / 2);
@@ -906,7 +912,7 @@ export function init(container, opts) {
       ctx.fillStyle = 'rgba(0,0,0,0.45)';
       roundRect(ctx, bx, by, bw, 16, 8);
       ctx.fill();
-      ctx.fillStyle = ship.hp > 2 ? '#6ee87a' : '#ff5f4d';
+      ctx.fillStyle = ship.hp > 2 ? '#7ee787' : '#ff6b6b';
       roundRect(ctx, bx, by, (bw * Math.max(0, ship.hp)) / ship.maxHp, 16, 8);
       ctx.fill();
     }
@@ -916,13 +922,13 @@ export function init(container, opts) {
     ctx.save();
     ctx.translate(p.x, p.y);
     ctx.rotate(p.spin);
-    ctx.shadowColor = '#ffb224';
+    ctx.shadowColor = '#ffc24a';
     ctx.shadowBlur = 26;
-    ctx.fillStyle = p.kind === 'shield' ? '#7cc4ff' : '#ffb224';
+    ctx.fillStyle = p.kind === 'shield' ? '#8fd6ff' : '#ffc24a';
     roundRect(ctx, -26, -26, 52, 52, 14);
     ctx.fill();
     ctx.restore();
-    ctx.fillStyle = '#121634';
+    ctx.fillStyle = '#0d0c22';
     ctx.font = 'bold 34px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -957,9 +963,9 @@ export function init(container, opts) {
       ctx.fill();
     }
 
-    for (const s of foeShots) drawGlow(ctx, s.big ? '#ff8a3d' : '#ff5f4d', s.x, s.y, s.r * 2.3);
+    for (const s of foeShots) drawGlow(ctx, s.big ? '#ff8a3d' : '#ff6b6b', s.x, s.y, s.r * 2.3);
     for (const s of foeShots) {
-      ctx.fillStyle = s.big ? '#ff8a3d' : '#ff5f4d';
+      ctx.fillStyle = s.big ? '#ff8a3d' : '#ff6b6b';
       ctx.beginPath();
       ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
       ctx.fill();

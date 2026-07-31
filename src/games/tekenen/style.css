@@ -26,27 +26,50 @@
   right: 0;
   margin: 0 auto;
   width: fit-content;
+  /* Four labelled clusters instead of three anonymous rows. Thirty-odd
+     identical circles in a row is a wall a child has to scan linearly; naming
+     the groups means they only ever search inside one of them. */
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: clamp(4px, 0.7vmin, 14px);
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: clamp(6px, 1vmin, 20px);
   padding: clamp(6px, 1vmin, 20px) clamp(10px, 1.5vmin, 30px);
   border-radius: var(--r-lg);
-  background: rgba(8, 13, 42, 0.9);
-  border: clamp(2px, 0.3vmin, 7px) solid var(--panel-line);
+  background: rgba(13, 12, 34, 0.88);
   box-shadow: var(--shadow-panel);
   z-index: 20;
   max-width: 97vw;
 }
 
-/* Each row wraps rather than scrolls: a toolbar that scrolls is a dead end
-   for a three-year-old who will never discover that it scrolls. */
-.draw-bar__row {
+.draw-cluster {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(3px, 0.5vmin, 10px);
+}
+
+.draw-cluster__label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--faint);
+  padding-left: clamp(4px, 0.6vmin, 13px);
+}
+
+/* The body is a fixed number of columns wide, so each cluster wraps at a
+   predictable place instead of reflowing every time a tool is added. */
+.draw-cluster__body {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
-  gap: clamp(4px, 0.7vmin, 14px);
+  gap: var(--dgap);
+  width: calc(var(--cols) * var(--dcell) + (var(--cols) - 1) * var(--dgap));
+  padding: clamp(5px, 0.8vmin, 17px);
+  border-radius: var(--r-lg);
+  box-sizing: content-box;
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule);
 }
 
 /* Stamp drawer, anchored to the toolbar itself so it clears it whatever
@@ -86,48 +109,68 @@
   grid-template-columns: repeat(9, auto);
 }
 
+.draw-stage {
+  --dcell: clamp(40px, 5.2vmin, 112px);
+  --dgap: clamp(4px, 0.65vmin, 14px);
+}
+
 .swatch {
-  width: clamp(38px, 5.2vmin, 112px);
-  height: clamp(38px, 5.2vmin, 112px);
+  width: var(--dcell);
+  height: var(--dcell);
   border-radius: 50%;
-  border: clamp(3px, 0.45vmin, 10px) solid rgba(255, 255, 255, 0.2);
+  box-shadow:
+    inset 0 0 0 var(--hair) var(--rule-strong),
+    0 0 0 clamp(2px, 0.28vmin, 6px) rgba(0, 0, 0, 0.35);
   flex-shrink: 0;
-  transition: transform 0.1s ease, border-color 0.1s ease;
+  transition: transform 0.12s var(--ease-press), box-shadow 0.12s ease;
 }
 
 .swatch:active { transform: scale(0.9); }
 
 .swatch.is-active {
-  border-color: var(--enamel);
-  box-shadow: 0 0 clamp(8px, 1.6vmin, 32px) currentColor;
-  transform: scale(1.1);
+  box-shadow:
+    0 0 0 clamp(2px, 0.32vmin, 7px) var(--amber),
+    0 0 clamp(10px, 1.9vmin, 40px) clamp(1px, 0.2vmin, 4px) rgba(255, 194, 74, 0.75);
+  transform: scale(1.06);
 }
 
-/* Three rows of these now, so they are a touch smaller than a single-row bar
-   would allow — still well over the 44px minimum touch target at every size. */
 .tool {
-  width: clamp(44px, 5.7vmin, 120px);
-  height: clamp(44px, 5.7vmin, 120px);
+  width: var(--dcell);
+  height: var(--dcell);
   border-radius: 50%;
   display: grid;
   place-items: center;
-  font-size: clamp(19px, 2.8vmin, 58px);
+  font-size: clamp(17px, 2.5vmin, 54px);
   line-height: 1;
-  background: linear-gradient(180deg, var(--panel-hi), var(--panel));
-  border: clamp(2px, 0.3vmin, 7px) solid var(--panel-line);
-  color: var(--enamel);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--cream);
   flex-shrink: 0;
-  transition: transform 0.1s ease, border-color 0.1s ease, background 0.1s ease;
+  transition: transform 0.12s var(--ease-press), background 0.16s ease, box-shadow 0.16s ease;
 }
 
 .tool:active { transform: scale(0.9); }
 
 .tool.is-active {
-  border-color: var(--sun);
-  background: linear-gradient(180deg, #ffd469, var(--sun));
+  background: radial-gradient(circle at 34% 26%, var(--amber-hi), var(--amber-lo));
   color: var(--ink);
-  box-shadow: var(--glow-sun);
+  box-shadow: 0 0 clamp(10px, 1.9vmin, 40px) clamp(1px, 0.2vmin, 4px) rgba(255, 194, 74, 0.6);
 }
+
+/* Wiping the drawing is the one irreversible thing in here, so it wears a red
+   edge and sits at the end of the row instead of among the paint tools. */
+.tool--danger {
+  background: rgba(255, 107, 107, 0.12);
+  box-shadow: inset 0 0 0 var(--hair) rgba(255, 107, 107, 0.45);
+}
+
+.tool--danger:active { background: rgba(255, 107, 107, 0.24); }
+
+.tool--keep {
+  background: rgba(95, 227, 196, 0.12);
+  box-shadow: inset 0 0 0 var(--hair) rgba(95, 227, 196, 0.45);
+}
+
+.tool--keep:active { background: rgba(95, 227, 196, 0.24); }
 
 /* Thickness picker: a filled dot at (roughly) the size it paints. */
 .tool--dot .dot {
@@ -139,7 +182,7 @@
 .draw-zoom {
   font-family: var(--font-mono);
   font-size: var(--fs-label);
-  color: var(--ice);
+  color: var(--sky);
   min-width: 5ch;
   text-align: center;
   padding: 0 var(--sp-1);

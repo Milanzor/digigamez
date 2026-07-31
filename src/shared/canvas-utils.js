@@ -127,9 +127,11 @@ export function createStars(count = 140) {
 // Fills the whole logical canvas with the space gradient + drifting stars.
 export function drawSpaceBackdrop(ctx, stars, t, { scrollSpeed = 14 } = {}) {
   const g = ctx.createLinearGradient(0, 0, LOGICAL_WIDTH * 0.3, LOGICAL_HEIGHT);
-  g.addColorStop(0, '#101a4a');
-  g.addColorStop(0.65, '#0a1036');
-  g.addColorStop(1, '#060a24');
+  // Near-black at the top opening out to a lit indigo at the bottom, matching
+  // the CSS backdrop the portal uses so a game does not read as a different app.
+  g.addColorStop(0, '#05070f');
+  g.addColorStop(0.65, '#0e1030');
+  g.addColorStop(1, '#141642');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
 
@@ -138,8 +140,8 @@ export function drawSpaceBackdrop(ctx, stars, t, { scrollSpeed = 14 } = {}) {
     LOGICAL_WIDTH * 0.8, LOGICAL_HEIGHT * 0.2, 0,
     LOGICAL_WIDTH * 0.8, LOGICAL_HEIGHT * 0.2, LOGICAL_HEIGHT * 0.85
   );
-  neb.addColorStop(0, 'rgba(176,107,255,0.20)');
-  neb.addColorStop(1, 'rgba(176,107,255,0)');
+  neb.addColorStop(0, 'rgba(185,140,255,0.20)');
+  neb.addColorStop(1, 'rgba(185,140,255,0)');
   ctx.fillStyle = neb;
   ctx.fillRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
 

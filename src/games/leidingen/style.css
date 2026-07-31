@@ -12,18 +12,16 @@
 .pipe-grid {
   display: grid;
   gap: clamp(3px, 0.5vmin, 10px);
-  padding: clamp(6px, 1vmin, 20px);
-  border-radius: var(--r-md);
-  background: rgba(6, 10, 36, 0.72);
-  border: clamp(3px, 0.55vmin, 12px) solid var(--bezel);
-  box-shadow: var(--shadow-panel), inset 0 0 clamp(14px, 3vmin, 60px) rgba(0, 0, 0, 0.7);
+  padding: var(--sp-2);
+  border-radius: var(--r-lg);
+  background: var(--panel);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule-mid), var(--shadow-panel);
 }
 
 .pipe-tile {
   position: relative;
-  border-radius: clamp(4px, 0.7vmin, 14px);
-  background: linear-gradient(160deg, #1b2a63, #141f4c);
-  box-shadow: inset 0 0 0 1px rgba(124, 196, 255, 0.1);
+  border-radius: var(--r-sm);
+  background: rgba(255, 255, 255, 0.045);
   overflow: hidden;
   touch-action: manipulation;
 }
@@ -37,7 +35,7 @@
 .pipe-tile__art svg { width: 100%; height: 100%; display: block; }
 
 .pipe-pipe {
-  fill: #6b7bb0;
+  fill: #7f8bc4;
   transition: fill 0.2s ease;
 }
 
@@ -67,7 +65,7 @@
 }
 
 .pipe-tile.is-locked {
-  background: linear-gradient(160deg, #2a3670, #1d2650);
+  background: rgba(255, 255, 255, 0.085);
 }
 
 /* Rivets mark a welded tile that can't be turned */
@@ -86,15 +84,28 @@
   display: grid;
   place-items: center;
   font-size: clamp(18px, 3.4vmin, 72px);
-  background: linear-gradient(160deg, #2b3a7e, #1a2454);
+  background: rgba(255, 255, 255, 0.03);
 }
 
-.pipe-tile--source { box-shadow: inset 0 0 0 clamp(2px, 0.35vmin, 7px) var(--sun); }
-.pipe-tile--drain { box-shadow: inset 0 0 0 clamp(2px, 0.35vmin, 7px) var(--leaf); }
+/* The tap is amber and the tank is teal — the two ends of the run, in the two
+   colours the rest of the app already uses for "act here" and "this worked". */
+.pipe-tile--source {
+  background: rgba(255, 194, 74, 0.1);
+  box-shadow:
+    inset 0 0 0 clamp(2px, 0.3vmin, 6px) var(--amber),
+    0 0 clamp(14px, 2.6vmin, 56px) clamp(-6px, -0.7vmin, -2px) rgba(255, 194, 74, 0.5);
+}
+
+.pipe-tile--drain {
+  background: rgba(95, 227, 196, 0.1);
+  box-shadow:
+    inset 0 0 0 clamp(2px, 0.3vmin, 6px) var(--teal),
+    0 0 clamp(14px, 2.6vmin, 56px) clamp(-6px, -0.7vmin, -2px) rgba(95, 227, 196, 0.5);
+}
 
 .pipe-tile--source.is-wet,
 .pipe-tile--drain.is-wet {
-  background: linear-gradient(160deg, #1f6b62, #12463f);
+  background: rgba(95, 227, 196, 0.22);
 }
 
 .pipe-taps {

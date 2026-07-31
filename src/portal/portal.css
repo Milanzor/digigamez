@@ -1,114 +1,130 @@
-/* ── Start screen: the digiboard as a spaceship porthole ───────────── */
+/* ── Start screen ──────────────────────────────────────────────────────
+   The enamel porthole frame that used to hold this screen is gone. At 75"
+   a bezel that thick was a picture frame around the content, and it fought
+   the starfield it was supposed to be a window onto. The porthole survives
+   as the rocket's medallion — the same shape, now an object on the screen
+   rather than a border around it, which also makes it reusable as the
+   mission icon and the reward trophy. */
 
 .launch {
   position: relative;
   width: 100%;
   height: 100%;
-  display: grid;
-  place-items: center;
-  padding: var(--sp-4);
-}
-
-.porthole {
-  position: relative;
-  width: min(78vw, 116vh);
-  aspect-ratio: 16 / 9;
-  border-radius: clamp(24px, 5vmin, 110px);
-  display: grid;
-  place-items: center;
-  text-align: center;
-  padding: var(--sp-5);
-  /* Enamel bezel with a rivet ring — the "physical console" signature. */
-  border: var(--bezel-w) solid var(--bezel);
-  background:
-    radial-gradient(ellipse at 50% 120%, rgba(47, 217, 198, 0.16), transparent 60%),
-    radial-gradient(ellipse at 20% 0%, rgba(176, 107, 255, 0.22), transparent 55%),
-    linear-gradient(175deg, #16225c 0%, #070c2a 100%);
-  box-shadow:
-    0 0 0 clamp(3px, 0.5vmin, 11px) var(--bezel-sh),
-    inset 0 0 clamp(30px, 6vmin, 130px) rgba(4, 8, 28, 0.9),
-    var(--shadow-panel);
-  overflow: hidden;
-}
-
-/* Rivets around the bezel */
-.porthole::before {
-  content: '';
-  position: absolute;
-  inset: calc(var(--bezel-w) * -0.5);
-  border-radius: inherit;
-  pointer-events: none;
-  background-image: radial-gradient(circle, rgba(0, 0, 0, 0.35) 40%, transparent 45%);
-  background-size: clamp(26px, 4.4vmin, 96px) clamp(26px, 4.4vmin, 96px);
-  background-position: center;
-  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  mask-composite: exclude;
-  padding: var(--bezel-w);
-  opacity: 0.5;
-}
-
-/* Glass sheen across the porthole */
-.porthole::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(118deg, rgba(255, 255, 255, 0.12) 0%, transparent 34%);
-}
-
-.launch__inner {
-  position: relative;
-  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--sp-3);
+  justify-content: center;
+  text-align: center;
+  padding: var(--sp-5) var(--sp-4);
 }
 
 .launch__eyebrow {
   font-family: var(--font-mono);
+  font-weight: 700;
   font-size: var(--fs-label);
-  letter-spacing: 0.34em;
+  letter-spacing: 0.42em;
   text-transform: uppercase;
   color: var(--teal);
+  margin-bottom: var(--sp-5);
+}
+
+.launch__medal {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.launch__rocket {
+  width: clamp(90px, 19vmin, 420px);
+  height: clamp(90px, 19vmin, 420px);
+  font-size: clamp(42px, 8.8vmin, 195px);
+  animation-duration: 5.5s;
 }
 
 .launch__title {
-  margin: 0;
+  margin: var(--sp-4) 0 0;
   font-size: var(--fs-hero);
   font-weight: 800;
-  line-height: 0.92;
-  letter-spacing: -0.015em;
-  color: var(--enamel);
-  text-shadow:
-    0 0 clamp(14px, 2.6vmin, 56px) rgba(255, 178, 36, 0.45),
-    0 clamp(3px, 0.6vmin, 12px) 0 rgba(0, 0, 0, 0.4);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--cream);
 }
 
 .launch__title em {
   font-style: normal;
-  color: var(--sun);
+  color: var(--amber);
+  text-shadow: 0 0 clamp(14px, 2.8vmin, 62px) rgba(255, 194, 74, 0.45);
 }
 
 .launch__sub {
+  margin: var(--sp-2) 0 0;
+  font-size: var(--fs-h2);
+  font-weight: 500;
+  color: #b5aa96;
+}
+
+.launch__btn { margin-top: var(--sp-5); }
+
+/* Footer strip: the three facts a grown-up walking past the board wants. */
+.launch__meta {
+  position: absolute;
+  bottom: var(--sp-4);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.launch__meta i {
+  width: clamp(3px, 0.4vmin, 9px);
+  height: clamp(3px, 0.4vmin, 9px);
+  border-radius: 50%;
+  background: #4a4638;
+}
+
+/* Settings key floating in the corner of the launch screen, so the grown-up
+   settings are reachable before a child has picked anything. */
+.launch__settings {
+  position: absolute;
+  right: var(--sp-4);
+  top: var(--sp-4);
+  z-index: 10;
+}
+
+/* ── Shared screen bar ─────────────────────────────────────────────────
+   One bar for every portal screen below the start: round back key on the
+   left, copper mono label, and a hairline underneath instead of a panel. */
+
+.bar-top {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding-bottom: var(--sp-3);
+  border-bottom: var(--hair) solid var(--rule);
+}
+
+.bar-top__titles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+
+.bar-top__spacer { flex: 1; }
+
+.bar-top__heading {
   margin: 0;
   font-size: var(--fs-h2);
-  font-weight: 600;
-  color: #b9c6f5;
-}
-
-.launch__rocket {
-  font-size: var(--fs-icon);
+  font-weight: 700;
   line-height: 1;
-  animation: hover-bob 3.2s ease-in-out infinite;
+  color: var(--cream);
+  white-space: nowrap;
 }
-
-@keyframes hover-bob {
-  0%, 100% { transform: translateY(0) rotate(-6deg); }
-  50% { transform: translateY(calc(var(--sp-3) * -1)) rotate(-2deg); }
-}
-
-.launch__btn { margin-top: var(--sp-3); }
 
 /* ── Crew select ───────────────────────────────────────────────────── */
 
@@ -117,29 +133,25 @@
   height: 100%;
   display: flex;
   flex-direction: column;
+  padding: var(--sp-4) var(--sp-4) var(--sp-4);
+}
+
+.crew__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: var(--sp-5);
-  padding: var(--sp-4);
 }
 
 .screen-title {
   margin: 0;
   font-size: var(--fs-h1);
-  font-weight: 800;
-  color: var(--enamel);
-  text-align: center;
-}
-
-.screen-title span {
-  display: block;
-  font-family: var(--font-mono);
-  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--teal);
-  margin-bottom: var(--sp-2);
+  color: var(--cream);
+  text-align: center;
 }
 
 .crew__options {
@@ -150,181 +162,172 @@
 }
 
 .crew__card {
-  width: min(34vw, 42vmin);
-  aspect-ratio: 1 / 1.12;
+  width: min(34vw, 40vmin);
   border-radius: var(--r-lg);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: var(--sp-3);
-  padding: var(--sp-4);
-  color: var(--enamel);
-  background: linear-gradient(180deg, var(--panel-hi), var(--panel));
-  border: clamp(2px, 0.35vmin, 8px) solid var(--panel-line);
-  box-shadow: var(--shadow-panel), var(--inset-panel);
-  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+  padding: var(--sp-5) var(--sp-4) var(--sp-4);
+  color: var(--cream);
+  background: var(--panel);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule);
+  transition: transform 0.16s var(--ease-press), background 0.2s ease;
 }
 
 .crew__card:active {
-  transform: scale(0.955);
-  border-color: var(--sun);
-  box-shadow: var(--glow-sun), var(--shadow-panel);
+  transform: translateY(clamp(2px, 0.4vmin, 9px)) scale(0.985);
+  background: var(--panel-hi);
+}
+
+/* The stored choice is shown as chosen. A child coming back to the board
+   should see what the last crew was, not a blank pair of options. */
+.crew__card.is-chosen {
+  background: linear-gradient(180deg, rgba(255, 194, 74, 0.13), rgba(255, 255, 255, 0.02));
+  box-shadow:
+    inset 0 0 0 var(--hair) rgba(255, 194, 74, 0.4),
+    var(--shadow-panel);
 }
 
 .crew__figures {
-  font-size: var(--fs-icon);
-  line-height: 1;
+  width: clamp(84px, 16vmin, 360px);
+  height: clamp(84px, 16vmin, 360px);
+  font-size: clamp(36px, 7.4vmin, 165px);
+  animation-duration: 5.2s;
+}
+
+/* Two astronauts in one medallion: tucked together so the pair still reads
+   as one icon rather than overflowing the glass. */
+.crew__figures--pair {
+  font-size: clamp(26px, 5.6vmin, 125px);
+  letter-spacing: -0.12em;
+  animation-duration: 6.4s;
 }
 
 .crew__label {
   font-size: var(--fs-h2);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .crew__note {
   font-family: var(--font-mono);
   font-size: var(--fs-label);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: #9fb0e8;
+  color: var(--muted);
   text-align: center;
 }
 
-/* ── Mission select ────────────────────────────────────────────────── */
+.crew__card.is-chosen .crew__label { color: var(--cream-hi); }
+.crew__card.is-chosen .crew__note { color: var(--muted-warm); }
+
+.crew__badge {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--amber);
+  border: var(--hair) solid rgba(255, 194, 74, 0.5);
+  border-radius: var(--r-pill);
+  padding: clamp(3px, 0.5vmin, 11px) clamp(9px, 1.4vmin, 30px);
+}
+
+.crew__hint,
+.missions__hint {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+/* ── Mission select ────────────────────────────────────────────────────
+   Nine missions in a 3x3 of horizontal rows rather than a 4x2 of tall
+   cards. A row puts the icon, the name, the age and the progress on one
+   reading line, so the eye scans down a column instead of decoding a tile;
+   it also stops the nine names from wrapping to two lines each. */
 
 .missions {
   width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: var(--sp-3) var(--sp-4) var(--sp-4);
-  gap: var(--sp-3);
+  padding: var(--sp-4);
+  gap: var(--sp-4);
 }
-
-/* Console strip across the top */
-.missions__bar {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--r-pill);
-  background: rgba(8, 13, 42, 0.72);
-  border: clamp(1px, 0.22vmin, 5px) solid var(--panel-line);
-  box-shadow: var(--shadow-panel);
-}
-
-.missions__heading {
-  margin: 0;
-  font-size: var(--fs-h2);
-  font-weight: 800;
-  color: var(--enamel);
-  white-space: nowrap;
-}
-
-.missions__spacer { flex: 1; }
 
 .missions__grid {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: repeat(2, 1fr);
-  gap: var(--sp-3);
+  grid-template-columns: repeat(3, 1fr);
+  /* Content-height rows spread down the column. Stretched 1fr rows made each
+     mission a 250px-tall box, so the highlight on the last-played one read as
+     a panel rather than as a lit row. */
+  grid-auto-rows: max-content;
+  align-content: space-evenly;
+  gap: var(--sp-3) var(--sp-4);
 }
 
-/* Each mission is a physical illuminated console button. */
 .mission {
-  position: relative;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  gap: var(--sp-2);
-  padding: var(--sp-4) var(--sp-3) var(--sp-3);
+  gap: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
   border-radius: var(--r-lg);
-  color: var(--enamel);
-  background: linear-gradient(180deg, var(--panel-hi) 0%, var(--panel) 62%, #14204d 100%);
-  border: clamp(2px, 0.32vmin, 7px) solid var(--panel-line);
-  box-shadow: var(--shadow-panel), var(--inset-panel);
-  overflow: hidden;
-  transition: transform 0.1s ease, box-shadow 0.1s ease, border-color 0.1s ease;
-}
-
-/* Colour-coded light bar at the top of each button */
-.mission::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 12%;
-  right: 12%;
-  height: clamp(4px, 0.75vmin, 16px);
-  border-radius: 0 0 var(--r-pill) var(--r-pill);
-  background: var(--mission-color);
-  box-shadow: 0 0 clamp(8px, 1.6vmin, 34px) var(--mission-color);
+  text-align: left;
+  color: var(--cream);
+  background: transparent;
+  box-shadow: none;
+  transition: background 0.2s ease, transform 0.16s var(--ease-press);
 }
 
 .mission:active {
-  transform: translateY(clamp(3px, 0.5vmin, 11px)) scale(0.985);
-  border-color: var(--mission-color);
-  box-shadow: 0 0 clamp(12px, 2.4vmin, 52px) var(--mission-color), var(--shadow-panel);
+  transform: translateY(clamp(1px, 0.3vmin, 6px)) scale(0.99);
+  background: var(--panel-press);
 }
 
-/* The icon claims the free vertical space so a tall card doesn't leave a
-   dead gap under the label. */
+/* The mission a child played last is already lit, so returning to the board
+   points at where they left off without them having to remember. */
+.mission.is-recent {
+  background: var(--panel-sel);
+  box-shadow: inset 0 0 0 var(--hair) rgba(255, 194, 74, 0.28);
+}
+
 .mission__icon {
-  flex: 1;
-  min-height: 0;
-  display: grid;
-  place-items: center;
-  font-size: clamp(38px, 9vmin, 190px);
-  line-height: 1;
-  filter: drop-shadow(0 clamp(2px, 0.5vmin, 10px) clamp(4px, 1vmin, 20px) rgba(0, 0, 0, 0.5));
+  width: clamp(64px, 11.5vmin, 260px);
+  height: clamp(64px, 11.5vmin, 260px);
+  font-size: clamp(28px, 5.2vmin, 116px);
+}
+
+.mission__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  min-width: 0;
 }
 
 .mission__name {
   font-size: var(--fs-body);
-  font-weight: 800;
-  text-align: center;
+  font-weight: 700;
   line-height: 1.1;
 }
+
+.mission.is-recent .mission__name { color: var(--cream-hi); }
 
 .mission__meta {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
   font-family: var(--font-mono);
-  font-size: var(--fs-label);
-  letter-spacing: 0.06em;
-  color: #9fb0e8;
+  font-size: var(--fs-micro);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
-.mission__crew {
-  color: var(--teal);
-  border: clamp(1px, 0.18vmin, 4px) solid rgba(47, 217, 198, 0.5);
-  border-radius: var(--r-pill);
-  padding: 0 var(--sp-2);
-}
-
-/* Level lamps — encode real progress, not decoration */
-.lamps {
-  display: flex;
-  gap: clamp(3px, 0.5vmin, 10px);
-}
-
-.lamp {
-  width: clamp(7px, 1.15vmin, 24px);
-  height: clamp(7px, 1.15vmin, 24px);
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.16);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
-}
-
-.lamp--on {
-  background: var(--sun);
-  box-shadow: 0 0 clamp(5px, 1vmin, 20px) var(--sun);
-}
+.mission.is-recent .mission__meta { color: var(--muted-warm); }
 
 /* ── Settings ("Missiecontrole") ───────────────────────────────────── */
 
@@ -333,8 +336,8 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: var(--sp-3) var(--sp-4) var(--sp-4);
-  gap: var(--sp-3);
+  padding: var(--sp-4);
+  gap: var(--sp-4);
 }
 
 .settings__panel {
@@ -358,14 +361,13 @@
   gap: var(--sp-4);
   padding: var(--sp-3) var(--sp-4);
   border-radius: var(--r-md);
-  background: linear-gradient(180deg, var(--panel-hi), var(--panel));
-  border: clamp(2px, 0.3vmin, 7px) solid var(--panel-line);
-  box-shadow: var(--shadow-panel), var(--inset-panel);
+  background: var(--panel);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule);
 }
 
 .setting--danger {
-  border-color: rgba(255, 95, 77, 0.55);
-  background: linear-gradient(180deg, #3a2050, #2a1436);
+  background: rgba(255, 107, 107, 0.06);
+  box-shadow: inset 0 0 0 var(--hair) rgba(255, 107, 107, 0.35);
 }
 
 .setting__label {
@@ -384,16 +386,17 @@
 .setting__name {
   display: block;
   font-size: var(--fs-body);
-  font-weight: 800;
-  color: var(--enamel);
+  font-weight: 700;
+  color: var(--cream);
 }
 
 .setting__note {
   display: block;
   font-family: var(--font-mono);
-  font-size: var(--fs-label);
-  letter-spacing: 0.04em;
-  color: #9fb0e8;
+  font-size: var(--fs-micro);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
 /* Segmented picker: the whole range visible at once, no hidden state — the
@@ -403,8 +406,8 @@
   gap: clamp(3px, 0.5vmin, 10px);
   padding: clamp(3px, 0.5vmin, 10px);
   border-radius: var(--r-pill);
-  background: rgba(6, 10, 36, 0.72);
-  border: clamp(1px, 0.2vmin, 4px) solid var(--panel-line);
+  background: rgba(5, 7, 15, 0.5);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule);
   flex-shrink: 0;
 }
 
@@ -414,26 +417,28 @@
   padding: 0 var(--sp-3);
   border-radius: var(--r-pill);
   font-size: var(--fs-body);
-  font-weight: 800;
-  color: #b9c6f5;
+  font-weight: 700;
+  color: var(--muted);
   background: transparent;
-  transition: transform 0.09s ease, background 0.12s ease, color 0.12s ease;
+  transition: transform 0.12s var(--ease-press), background 0.14s ease, color 0.14s ease;
 }
 
 .seg__btn:active { transform: scale(0.94); }
 
 .seg__btn.is-active {
   color: var(--ink);
-  background: linear-gradient(180deg, #ffd469, var(--sun));
+  font-weight: 800;
+  background: linear-gradient(180deg, var(--amber-hi), var(--amber-lo));
   box-shadow: var(--glow-sun);
 }
 
-/* Slimmer enamel button for use inside a settings row */
+/* Slimmer amber button for use inside a settings row */
 .btn--small {
   min-height: clamp(52px, 7.6vmin, 170px);
   padding: 0 var(--sp-4);
   font-size: var(--fs-body);
   flex-shrink: 0;
+  --btn-lift: clamp(3px, 0.55vmin, 12px);
 }
 
 /* Press-and-hold wipe. The fill is a CSS transition rather than a rAF loop, so
@@ -446,10 +451,10 @@
   padding: 0 var(--sp-4);
   border-radius: var(--r-pill);
   font-size: var(--fs-body);
-  font-weight: 800;
-  color: var(--enamel);
-  background: rgba(255, 95, 77, 0.16);
-  border: clamp(2px, 0.3vmin, 7px) solid var(--mars);
+  font-weight: 700;
+  color: var(--cream);
+  background: rgba(255, 107, 107, 0.12);
+  box-shadow: inset 0 0 0 var(--hair) rgba(255, 107, 107, 0.45);
   flex-shrink: 0;
 }
 
@@ -459,7 +464,7 @@
   top: 0;
   bottom: 0;
   width: 0;
-  background: linear-gradient(90deg, #ff8a3d, var(--mars));
+  background: linear-gradient(90deg, #ff9d3f, var(--coral));
   transition: width 0.18s ease;
 }
 
@@ -469,9 +474,9 @@
 }
 
 .hold.is-done {
-  background: var(--leaf);
-  border-color: var(--leaf);
-  color: var(--ink);
+  background: var(--green);
+  box-shadow: inset 0 0 0 var(--hair) var(--green);
+  color: #10240f;
 }
 
 .hold.is-done .hold__fill { display: none; }
@@ -481,15 +486,6 @@
   z-index: 1;
 }
 
-/* Settings key floating in the corner of the launch screen, so the grown-up
-   settings are reachable before a child has picked anything. */
-.launch__settings {
-  position: absolute;
-  right: var(--sp-4);
-  top: var(--sp-4);
-  z-index: 10;
-}
-
 /* ── Game loading state ────────────────────────────────────────────── */
 
 .loading {
@@ -497,14 +493,26 @@
   height: 100%;
   display: grid;
   place-items: center;
-  gap: var(--sp-3);
   text-align: center;
+}
+
+.loading__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+.loading__port {
+  width: clamp(84px, 16vmin, 360px);
+  height: clamp(84px, 16vmin, 360px);
+  font-size: clamp(36px, 7.4vmin, 165px);
 }
 
 .loading__label {
   font-family: var(--font-mono);
-  font-size: var(--fs-h2);
-  letter-spacing: 0.22em;
+  font-size: var(--fs-label);
+  letter-spacing: 0.3em;
   text-transform: uppercase;
   color: var(--teal);
 }

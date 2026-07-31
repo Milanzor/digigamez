@@ -1,7 +1,7 @@
 import './style.css';
-import { createHud } from '../../shared/ui-components.js';
+import { createHud, showMissionComplete } from '../../shared/ui-components.js';
 import { sfx } from '../../shell/audio.js';
-import { setLevel } from '../../shell/progress.js';
+import { setLevel, starsForLevel } from '../../shell/progress.js';
 
 // "Sterrenvormen" — dock cargo modules into the matching airlock port.
 //
@@ -18,16 +18,19 @@ const SHAPES = [
   { id: 'star', svg: '<polygon points="50,5 61,37 96,37 68,58 79,91 50,70 21,91 32,58 4,37 39,37"/>' },
   { id: 'hexagon', svg: '<polygon points="50,6 88,28 88,72 50,94 12,72 12,28"/>' },
   { id: 'moon', svg: '<path d="M62 10a42 42 0 1 0 28 66A34 34 0 0 1 62 10Z"/>' },
-  { id: 'rocket', svg: '<path d="M50 6c14 14 20 30 20 48l-10 8H40l-10-8c0-18 6-34 20-48Z"/><circle cx="50" cy="38" r="8" fill="#0e1741"/>' },
+  { id: 'rocket', svg: '<path d="M50 6c14 14 20 30 20 48l-10 8H40l-10-8c0-18 6-34 20-48Z"/><circle cx="50" cy="38" r="8" fill="#0d0c22"/>' },
   { id: 'diamond', svg: '<polygon points="50,6 92,50 50,94 8,50"/>' },
 ];
 
-const COLORS = ['#ffb224', '#ff5f4d', '#2fd9c6', '#b06bff', '#7cc4ff', '#6ee87a'];
+const COLORS = ['#ffc24a', '#ff6b6b', '#5fe3c4', '#b98cff', '#8fd6ff', '#7ee787'];
 
 let hud = null;
 let stage = null;
 let level = 1;
 let slug = 'vormen-sorteren';
+let mission = null;
+let reward = null;
+let onExit = null;
 let listeners = [];
 let driftRaf = null;
 
@@ -55,6 +58,9 @@ function shapeSvg(shape, color) {
 export function init(container, opts) {
   slug = opts.slug;
   level = opts.startLevel || 1;
+  mission = { title: opts.title, icon: opts.icon, color: opts.color };
+  onExit = opts.onExit;
+  reward = null;
   listeners = [];
 
   hud = createHud(container, {
@@ -91,7 +97,7 @@ function startRound() {
     <div class="dock-row" id="ports">
       ${portOrder.map((p) => `
         <div class="dock-port" data-key="${p.key}">
-          ${shapeSvg(p.shape, cfg.matchColor ? p.color : '#7cc4ff')}
+          ${shapeSvg(p.shape, cfg.matchColor ? p.color : '#8fd6ff')}
         </div>
       `).join('')}
     </div>
@@ -239,17 +245,29 @@ function attachDrag(cargo, ports, onDocked) {
 
 function finishRound() {
   sfx.missionComplete();
+  stopDrift();
+  const cleared = level;
   level += 1;
   setLevel(slug, level);
-  hud.banner('Alle vracht gedockt! 🛰️', { sub: `Level ${level} vrijgespeeld`, ms: 1800 });
-  stopDrift();
-  setTimeout(startRound, 1900);
+  reward = showMissionComplete(stage, {
+    icon: mission.icon,
+    color: mission.color,
+    mission: mission.title,
+    level: cleared,
+    stars: starsForLevel(level),
+    title: 'Alle vracht gedockt! 🛰️',
+    onNext: () => startRound(),
+    onRetry: () => { level = cleared; hud.setLevel(level); startRound(); },
+    onHome: onExit,
+  });
 }
 
 export function destroy() {
   stopDrift();
   listeners.forEach((off) => off());
   listeners = [];
+  reward?.close();
+  reward = null;
   hud?.destroy();
   hud = null;
   stage = null;

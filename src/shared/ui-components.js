@@ -1,11 +1,30 @@
-// Unified in-game HUD. Every game mounts one of these so the back key,
-// mission title, level readout, scores and banners look and behave
-// identically everywhere — a child learns the chrome once.
+// Shared portal + in-game chrome. Every game mounts the same HUD and the same
+// reward screen so the console language a child learns on one mission carries
+// to all nine.
 
 import { sfx } from '../shell/audio.js';
 
-const PLAYER_COLORS = ['var(--p1)', 'var(--p2)'];
+// ── Porthole ────────────────────────────────────────────────────────────
+// The recurring ring of instrument glass. The mission colour enters the UI
+// only through this component, as an inner glow — never as a border, a fill
+// or a second accent inside a control.
+export function porthole(content, { className = '', color, lit = false, duration } = {}) {
+  const style = [
+    color ? `--mission-color:${color}` : '',
+    duration ? `animation-duration:${duration}s` : '',
+  ].filter(Boolean).join(';');
+  return `<span class="port${lit ? ' port--lit' : ''} ${className}"${style ? ` style="${style}"` : ''}>${content}</span>`;
+}
 
+// Thin amber progress bar. Replaces the old row of lamps: the same level data,
+// but a bar is legible from the back of a room where five dots have to be
+// counted one by one.
+export function progressBar(value, total) {
+  const pct = Math.max(0, Math.min(100, Math.round((value / total) * 100)));
+  return `<span class="bar" role="img" aria-label="Level ${value} van ${total}"><span class="bar__fill" style="width:${pct}%"></span></span>`;
+}
+
+// ── In-game HUD ─────────────────────────────────────────────────────────
 export function createHud(container, {
   title,
   onExit,
@@ -13,14 +32,14 @@ export function createHud(container, {
   players = 1,
   showScore = false,
   showTurn = false,
+  meter = null,
 }) {
   const hud = document.createElement('div');
   hud.className = 'hud';
 
   const backBtn = document.createElement('button');
-  backBtn.className = 'key';
+  backBtn.className = 'key key--bar key--back';
   backBtn.setAttribute('aria-label', 'Terug naar missiekeuze');
-  backBtn.textContent = '◀';
   backBtn.addEventListener('pointerup', () => {
     sfx.back();
     onExit();
@@ -44,26 +63,56 @@ export function createHud(container, {
     hud.appendChild(turnEl);
   }
 
-  let levelEl = null;
+  // Readouts are separated by 1px hairlines rather than each being boxed in
+  // its own pill — the way a real panel groups dials.
+  let needsSep = false;
+  const sep = () => {
+    if (!needsSep) return;
+    const s = document.createElement('div');
+    s.className = 'hud__sep';
+    hud.appendChild(s);
+  };
+
+  const stat = (label, value, extraClass = '') => {
+    const el = document.createElement('div');
+    el.className = `stat ${extraClass}`.trim();
+    el.innerHTML = `${label}<span class="stat__value">${value}</span>`;
+    hud.appendChild(el);
+    needsSep = true;
+    return el.querySelector('.stat__value');
+  };
+
+  let levelValue = null;
   if (level !== null) {
-    levelEl = document.createElement('div');
-    levelEl.className = 'readout';
-    levelEl.textContent = `Level ${level}`;
-    hud.appendChild(levelEl);
+    sep();
+    levelValue = stat('Level', level);
   }
 
-  const scoreEls = [];
+  const scoreValues = [];
   if (showScore) {
+    sep();
     const scores = document.createElement('div');
     scores.className = 'hud__scores';
     for (let i = 0; i < players; i++) {
-      const s = document.createElement('div');
-      s.className = `readout readout--p${i + 1}`;
-      s.textContent = players > 1 ? `P${i + 1} 0` : 'Score 0';
-      scores.appendChild(s);
-      scoreEls.push(s);
+      const el = document.createElement('div');
+      el.className = players > 1 ? `stat stat--p${i + 1}` : 'stat stat--score';
+      el.innerHTML = `${players > 1 ? `P${i + 1}` : 'Score'}<span class="stat__value">0</span>`;
+      scores.appendChild(el);
+      scoreValues.push(el.querySelector('.stat__value'));
     }
     hud.appendChild(scores);
+    needsSep = true;
+  }
+
+  let meterFill = null;
+  if (meter) {
+    sep();
+    const el = document.createElement('div');
+    el.className = 'stat';
+    el.innerHTML = `${meter}<span class="stat__meter"><i></i></span>`;
+    hud.appendChild(el);
+    meterFill = el.querySelector('i');
+    needsSep = true;
   }
 
   container.appendChild(hud);
@@ -76,17 +125,20 @@ export function createHud(container, {
 
   return {
     setLevel(n) {
-      if (levelEl) levelEl.textContent = `Level ${n}`;
+      if (levelValue) levelValue.textContent = n;
     },
     setScore(playerIndex, value) {
-      const el = scoreEls[playerIndex];
-      if (!el) return;
-      el.textContent = players > 1 ? `P${playerIndex + 1} ${value}` : `Score ${value}`;
+      const el = scoreValues[playerIndex];
+      if (el) el.textContent = value;
+    },
+    // 0..1 — the pipe pressure, the fuel level, whatever the game meters.
+    setMeter(fraction) {
+      if (meterFill) meterFill.style.width = `${Math.max(0, Math.min(1, fraction)) * 100}%`;
     },
     setTurn(playerIndex) {
       if (!turnEl) return;
       turnEl.textContent = `Astronaut ${playerIndex + 1} mag`;
-      turnEl.style.background = PLAYER_COLORS[playerIndex % PLAYER_COLORS.length];
+      turnEl.style.background = playerIndex % 2 === 0 ? 'var(--p1)' : 'var(--p2)';
     },
     // Shows a centered message. `sub` renders as a small mono caption.
     banner(text, { sub = '', ms = 1600, hint = false } = {}) {
@@ -108,11 +160,64 @@ export function createHud(container, {
   };
 }
 
-// Row of level lamps (●●●○○) used on the portal mission buttons.
-export function lampRow(lit, total) {
-  let out = '';
-  for (let i = 0; i < total; i++) {
-    out += `<span class="lamp${i < lit ? ' lamp--on' : ''}"></span>`;
+// ── Mission complete ────────────────────────────────────────────────────
+// The reward moment gets its own screen instead of a banner that slides past.
+// Finishing a level is the payoff, and it is the one place where the child
+// decides what happens next rather than being dropped into the next level.
+export function showMissionComplete(container, {
+  icon = '⭐',
+  color,
+  mission,
+  level,
+  stars = 1,
+  title = 'Missie voltooid!',
+  onNext,
+  onRetry,
+  onHome,
+}) {
+  const el = document.createElement('div');
+  el.className = 'done';
+  el.innerHTML = `
+    <div class="done__medal">
+      <div class="port__halo"></div>
+      <div class="done__spark done__spark--a">✨</div>
+      <div class="done__spark done__spark--b">✨</div>
+      <div class="done__spark done__spark--c">✨</div>
+      ${porthole(icon, { className: 'done__port port--lit', color })}
+    </div>
+    <div class="done__eyebrow">${mission} · Level ${level}</div>
+    <h2 class="done__title">${title}</h2>
+    <div class="done__stars" role="img" aria-label="${stars} van 3 sterren">
+      ${[0, 1, 2].map((i) => (i < stars
+        ? `<span class="done__star" style="animation-delay:${0.14 + i * 0.13}s">⭐</span>`
+        : '<span class="done__star done__star--off">⭐</span>')).join('')}
+    </div>
+    <div class="done__actions">
+      <button class="btn" data-act="next">Volgend level</button>
+      <button class="btn btn--ghost" data-act="retry">Nog een keer</button>
+      <button class="key key--bar" data-act="home" aria-label="Terug naar de missies">🏠</button>
+    </div>
+  `;
+  container.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('is-visible'));
+
+  const acts = { next: onNext, retry: onRetry, home: onHome };
+  const onPress = (e) => {
+    const btn = e.target.closest('[data-act]');
+    if (!btn) return;
+    sfx.select();
+    close();
+    acts[btn.dataset.act]?.();
+  };
+  el.addEventListener('pointerup', onPress);
+
+  let closed = false;
+  function close() {
+    if (closed) return;
+    closed = true;
+    el.removeEventListener('pointerup', onPress);
+    el.remove();
   }
-  return `<span class="lamps" aria-label="Level ${lit} van ${total}">${out}</span>`;
+
+  return { close };
 }

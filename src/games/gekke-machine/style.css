@@ -26,9 +26,8 @@
   gap: clamp(4px, 0.7vmin, 14px);
   padding: clamp(6px, 1vmin, 20px) clamp(10px, 1.5vmin, 30px);
   border-radius: var(--r-lg);
-  background: rgba(8, 13, 42, 0.9);
-  border: clamp(2px, 0.3vmin, 7px) solid var(--panel-line);
-  box-shadow: var(--shadow-panel);
+  background: rgba(13, 12, 34, 0.9);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule-mid), var(--shadow-panel);
   z-index: 20;
 }
 
@@ -46,7 +45,7 @@
 .mach-sep {
   width: clamp(2px, 0.3vmin, 6px);
   height: clamp(30px, 4.4vmin, 92px);
-  background: var(--panel-line);
+  background: var(--rule-mid);
   border-radius: var(--r-pill);
   flex-shrink: 0;
 }

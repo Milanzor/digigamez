@@ -1,7 +1,8 @@
 import { navigate } from '../shell/router.js';
-import { getItem } from '../shell/storage.js';
+import { getItem, setItem } from '../shell/storage.js';
 import { getGame } from '../games/game-registry.js';
 import { getLevel } from '../shell/progress.js';
+import { porthole } from '../shared/ui-components.js';
 
 export async function renderGameLoaderView(container, params) {
   const game = getGame(params.slug);
@@ -10,10 +11,13 @@ export async function renderGameLoaderView(container, params) {
     return;
   }
 
+  // Remembered so the grid can light up where the child left off.
+  setItem('lastGame', game.slug);
+
   container.innerHTML = `
     <div class="loading">
-      <div>
-        <div class="mission__icon">${game.icon}</div>
+      <div class="loading__inner">
+        ${porthole(game.icon, { className: 'loading__port', color: game.color })}
         <div class="loading__label">${game.title} laden…</div>
       </div>
     </div>
@@ -49,6 +53,10 @@ export async function renderGameLoaderView(container, params) {
     players,
     title: game.title,
     slug: game.slug,
+    // The reward screen shows the mission in its own porthole, so a game needs
+    // to know its own icon and play colour rather than hardcoding a copy.
+    icon: game.icon,
+    color: game.color,
     startLevel: getLevel(game.slug),
     onExit,
   });

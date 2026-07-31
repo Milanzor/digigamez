@@ -13,7 +13,7 @@ body {
   overscroll-behavior: none;
   touch-action: none;
   background: var(--void-deep);
-  color: var(--enamel);
+  color: var(--cream);
   font-family: var(--font-display);
   font-size: var(--fs-body);
   user-select: none;
@@ -38,9 +38,10 @@ canvas {
 
 /* ─────────────────────────────────────────────────────────────
    Starfield backdrop
-   Three tiled gradient layers drifting at different speeds for
-   parallax. Pure CSS transforms — GPU-composited, zero JS, zero
-   repaint, so it costs nothing while a game runs its own loop.
+   A nebula lit from one corner over near-black, then three tiled
+   gradient layers drifting at different speeds for parallax. Pure CSS
+   transforms — GPU-composited, zero JS, zero repaint, so it costs
+   nothing while a game runs its own loop.
    ───────────────────────────────────────────────────────────── */
 .space-bg {
   position: fixed;
@@ -48,9 +49,8 @@ canvas {
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(circle at 78% 18%, rgba(176, 107, 255, 0.20), transparent 45%),
-    radial-gradient(circle at 12% 82%, rgba(47, 217, 198, 0.14), transparent 50%),
-    linear-gradient(170deg, var(--void) 0%, var(--void-deep) 70%);
+    radial-gradient(58% 46% at 50% 0%, rgba(120, 90, 220, 0.22), transparent 72%),
+    radial-gradient(90% 70% at 76% 6%, var(--nebula-lit) 0%, var(--void) 55%, var(--void-deep) 100%);
   overflow: hidden;
 }
 
@@ -63,29 +63,32 @@ canvas {
   will-change: transform;
 }
 
+/* The far layer also breathes, which is what sells "stars" rather than
+   "dots on a moving sheet" — one compositor-only opacity animation for a
+   whole layer, not one per star. */
 .space-bg__stars--far {
   background-image:
-    radial-gradient(1.5px 1.5px at 24px 38px, rgba(255, 255, 255, 0.75), transparent),
-    radial-gradient(1.5px 1.5px at 132px 96px, rgba(190, 220, 255, 0.65), transparent),
-    radial-gradient(1px 1px at 78px 156px, rgba(255, 255, 255, 0.5), transparent),
-    radial-gradient(1px 1px at 176px 22px, rgba(255, 240, 200, 0.6), transparent);
+    radial-gradient(1.2px 1.2px at 24px 38px, rgba(255, 255, 255, 0.85), transparent),
+    radial-gradient(1.2px 1.2px at 132px 96px, rgba(201, 214, 255, 0.7), transparent),
+    radial-gradient(1px 1px at 78px 156px, rgba(255, 255, 255, 0.55), transparent),
+    radial-gradient(1px 1px at 176px 22px, rgba(255, 228, 192, 0.65), transparent);
   background-size: 210px 210px;
-  animation: drift-far 240s linear infinite;
+  animation: drift-far 240s linear infinite, twinkle 7s ease-in-out infinite;
 }
 
 .space-bg__stars--mid {
   background-image:
-    radial-gradient(2.5px 2.5px at 60px 70px, rgba(255, 255, 255, 0.9), transparent),
-    radial-gradient(2px 2px at 190px 140px, rgba(124, 196, 255, 0.8), transparent),
-    radial-gradient(2px 2px at 240px 40px, rgba(255, 200, 150, 0.7), transparent);
+    radial-gradient(1.6px 1.6px at 60px 70px, rgba(255, 255, 255, 0.9), transparent),
+    radial-gradient(1.4px 1.4px at 190px 140px, rgba(143, 214, 255, 0.75), transparent),
+    radial-gradient(1.4px 1.4px at 240px 40px, rgba(255, 224, 138, 0.7), transparent);
   background-size: 320px 320px;
   animation: drift-mid 150s linear infinite;
 }
 
 .space-bg__stars--near {
   background-image:
-    radial-gradient(3.5px 3.5px at 120px 90px, rgba(255, 255, 255, 1), transparent),
-    radial-gradient(3px 3px at 380px 260px, rgba(255, 178, 36, 0.85), transparent);
+    radial-gradient(2.2px 2.2px at 120px 90px, rgba(255, 255, 255, 1), transparent),
+    radial-gradient(2px 2px at 380px 260px, rgba(255, 194, 74, 0.8), transparent);
   background-size: 520px 520px;
   animation: drift-near 90s linear infinite;
 }
@@ -102,71 +105,137 @@ canvas {
   from { transform: translate3d(0, 0, 0); }
   to { transform: translate3d(-520px, 260px, 0); }
 }
+@keyframes twinkle {
+  0%, 100% { opacity: 0.62; }
+  50% { opacity: 1; }
+}
 
-/* A single drifting planet gives the void a sense of scale. */
+/* Two drifting planets give the void a sense of scale. */
 .space-bg__planet {
   position: absolute;
   border-radius: 50%;
-  filter: blur(0.4px);
-  animation: planet-float 40s ease-in-out infinite;
+  animation: planet-drift 24s ease-in-out infinite;
 }
 
 .space-bg__planet--a {
-  width: 26vmin;
-  height: 26vmin;
-  right: -7vmin;
-  bottom: -9vmin;
-  background:
-    radial-gradient(circle at 32% 28%, #ffd98a 0%, #ff9b3d 40%, #c4571f 78%, #7d2f10 100%);
-  box-shadow: inset -2vmin -2vmin 4vmin rgba(0, 0, 0, 0.5);
+  width: 31vmin;
+  height: 31vmin;
+  right: -13vmin;
+  bottom: -17vmin;
+  background: radial-gradient(circle at 34% 30%, #ffd08a, #e07f34 55%, #8f3f12 100%);
+  box-shadow: 0 0 clamp(40px, 7vmin, 150px) clamp(6px, 1.2vmin, 26px) rgba(224, 127, 52, 0.14);
 }
 
 .space-bg__planet--b {
-  width: 9vmin;
-  height: 9vmin;
-  left: 4vmin;
-  bottom: 22vmin;
-  background: radial-gradient(circle at 35% 30%, #b9e7ff 0%, #5aa7d8 55%, #2b5f8f 100%);
-  box-shadow: inset -1vmin -1vmin 2vmin rgba(0, 0, 0, 0.45);
-  animation-delay: -12s;
+  width: 12vmin;
+  height: 12vmin;
+  left: -5.5vmin;
+  top: 58%;
+  background: radial-gradient(circle at 34% 28%, #cbe9ff, #6fb4e6 60%, #26536f 100%);
+  box-shadow: 0 0 clamp(30px, 5.5vmin, 120px) clamp(4px, 0.8vmin, 18px) rgba(111, 180, 230, 0.15);
+  animation-duration: 32s;
+  animation-direction: reverse;
 }
 
-@keyframes planet-float {
+@keyframes planet-drift {
   0%, 100% { transform: translate3d(0, 0, 0); }
-  50% { transform: translate3d(0, -2.2vmin, 0); }
+  50% { transform: translate3d(-1.4vmin, 1vmin, 0); }
 }
 
 /* "Rustig" in the settings, and the OS-level preference, park the backdrop:
    same effect, two different people asking for it. */
 :root[data-calm] .space-bg__stars,
 :root[data-calm] .space-bg__planet,
-:root[data-calm] .launch__rocket {
+:root[data-calm] .port,
+:root[data-calm] .port__halo,
+:root[data-calm] .launch__rocket,
+:root[data-calm] .done__spark {
   animation: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .space-bg__stars,
-  .space-bg__planet {
+  .space-bg__planet,
+  .port,
+  .port__halo,
+  .done__spark {
     animation: none !important;
   }
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Controls — chunky enamel instrument buttons
+   Porthole — the one recurring shape
+   A ring of instrument glass holding a single emoji. It is the mission
+   icon in the grid, the rocket on the start screen and the trophy on the
+   reward screen, so a child meets the same object everywhere. The mission
+   colour enters only here, as an inner glow.
+   ───────────────────────────────────────────────────────────── */
+.port {
+  position: relative;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+  flex: none;
+  background: radial-gradient(circle at 34% 26%, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.02) 60%);
+  box-shadow:
+    inset 0 0 0 var(--hair) var(--rule-strong),
+    inset 0 0 clamp(12px, 2.2vmin, 48px) color-mix(in srgb, var(--mission-color, var(--sky)) 18%, transparent),
+    0 0 0 clamp(3px, 0.7vmin, 15px) rgba(255, 255, 255, 0.018);
+  animation: port-bob 6s ease-in-out infinite;
+}
+
+/* Each porthole gets its own duration so a grid of nine never pulses in
+   lockstep — set inline from the index. */
+@keyframes port-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(calc(var(--sp-1) * -0.55)); }
+}
+
+/* Lit: the selected mission, the launch rocket, the reward trophy. Amber
+   takes over the glow entirely — never amber plus a mission colour. */
+.port--lit {
+  background: radial-gradient(circle at 34% 26%, rgba(255, 194, 74, 0.3), rgba(255, 255, 255, 0.02) 62%);
+  box-shadow:
+    inset 0 0 0 var(--hair) rgba(255, 194, 74, 0.45),
+    inset 0 0 clamp(14px, 2.8vmin, 60px) rgba(255, 161, 74, 0.3),
+    0 0 clamp(18px, 3.4vmin, 74px) clamp(-8px, -1vmin, -3px) rgba(255, 161, 74, 0.35);
+}
+
+.port__halo {
+  position: absolute;
+  inset: calc(var(--sp-3) * -1);
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(255, 194, 74, 0.22), transparent 68%);
+  animation: port-halo 4.5s ease-in-out infinite;
+}
+
+@keyframes port-halo {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.06); }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Controls
    ───────────────────────────────────────────────────────────── */
 button {
   font-family: inherit;
   border: none;
+  background: none;
   cursor: pointer;
   touch-action: manipulation;
   color: inherit;
 }
 
 button:focus-visible {
-  outline: clamp(3px, 0.5vmin, 10px) solid var(--sun);
+  outline: clamp(3px, 0.5vmin, 10px) solid var(--amber);
   outline-offset: clamp(2px, 0.4vmin, 8px);
 }
 
+/* Primary: the amber pill. Its hard bottom shadow is the button's depth, so
+   pressing it collapses that shadow and moves the cap down by the same
+   amount — the cap travels, the base stays put. */
 .btn {
   min-height: var(--touch);
   padding: var(--sp-3) var(--sp-5);
@@ -175,28 +244,34 @@ button:focus-visible {
   font-weight: 800;
   letter-spacing: 0.01em;
   color: var(--ink);
-  background: linear-gradient(180deg, var(--enamel), var(--bezel));
+  background: linear-gradient(180deg, var(--amber-hi), var(--amber-lo));
   box-shadow:
-    0 clamp(4px, 0.7vmin, 16px) 0 var(--bezel-sh),
-    var(--shadow-panel);
-  transition: transform 0.09s ease, box-shadow 0.09s ease;
+    0 var(--btn-lift, clamp(5px, 0.9vmin, 20px)) 0 -1px var(--amber-sh),
+    0 clamp(12px, 2.4vmin, 52px) clamp(20px, 4vmin, 88px) calc(var(--sp-4) * -1) rgba(255, 161, 74, 0.5),
+    inset 0 clamp(1px, 0.2vmin, 4px) 0 rgba(255, 255, 255, 0.6);
+  transition: transform 0.12s var(--ease-press), box-shadow 0.12s ease;
 }
 
 .btn:active {
-  transform: translateY(clamp(3px, 0.55vmin, 12px));
-  box-shadow: 0 0 0 var(--bezel-sh), var(--shadow-panel);
-}
-
-.btn--go {
-  background: linear-gradient(180deg, #ffd469, var(--sun));
+  transform: translateY(var(--btn-lift, clamp(5px, 0.9vmin, 20px)));
   box-shadow:
-    0 clamp(4px, 0.7vmin, 16px) 0 #c47f0c,
-    var(--glow-sun),
-    var(--shadow-panel);
+    0 1px 0 -1px var(--amber-sh),
+    0 clamp(6px, 1.2vmin, 26px) clamp(10px, 2vmin, 44px) calc(var(--sp-4) * -1) rgba(255, 161, 74, 0.5),
+    inset 0 clamp(1px, 0.2vmin, 4px) 0 rgba(255, 255, 255, 0.6);
 }
 
-.btn--go:active {
-  box-shadow: 0 0 0 #c47f0c, var(--glow-sun), var(--shadow-panel);
+/* Secondary: cream label on glass. No amber — one action colour per screen. */
+.btn--ghost {
+  color: var(--cream);
+  background: var(--panel-hi);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule-strong);
+  font-weight: 600;
+  transition: background 0.18s ease, transform 0.12s var(--ease-press);
+}
+
+.btn--ghost:active {
+  background: var(--panel-press);
+  transform: scale(0.97);
 }
 
 /* Round instrument key (back, mute, tools) */
@@ -207,25 +282,29 @@ button:focus-visible {
   display: grid;
   place-items: center;
   font-size: var(--fs-h2);
-  color: var(--ink);
-  background: linear-gradient(180deg, var(--enamel), var(--bezel));
-  box-shadow:
-    0 clamp(3px, 0.6vmin, 14px) 0 var(--bezel-sh),
-    var(--shadow-panel);
-  transition: transform 0.09s ease, box-shadow 0.09s ease;
+  color: var(--cream);
+  background: rgba(232, 217, 176, 0.05);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule-strong);
+  transition: background 0.16s ease, transform 0.12s var(--ease-press);
 }
 
 .key:active {
-  transform: translateY(clamp(3px, 0.5vmin, 11px));
-  box-shadow: 0 0 0 var(--bezel-sh), var(--shadow-panel);
+  background: rgba(232, 217, 176, 0.14);
+  transform: scale(0.94);
 }
 
-.key--dark {
-  color: var(--enamel);
-  background: linear-gradient(180deg, var(--panel-hi), var(--panel));
-  box-shadow:
-    0 clamp(3px, 0.6vmin, 14px) 0 #0a1136,
-    var(--shadow-panel);
+/* A drawn triangle rather than the ◀ glyph: at 240px on a 4K board a font
+   glyph shows its hinting, and the fonts disagree about how big "◀" is. */
+.key--back { font-size: 0; }
+
+.key--back::before {
+  content: '';
+  width: 0;
+  height: 0;
+  margin-right: clamp(2px, 0.35vmin, 8px);
+  border-top: clamp(8px, 1.5vmin, 33px) solid transparent;
+  border-bottom: clamp(8px, 1.5vmin, 33px) solid transparent;
+  border-right: clamp(11px, 2.2vmin, 48px) solid var(--cream);
 }
 
 /* Slightly smaller key for use inside a console strip, so it sits within
@@ -236,23 +315,68 @@ button:focus-visible {
   font-size: var(--fs-body);
 }
 
-/* Mono readout chip — scores, levels, mission codes */
-.readout {
+/* Mono label — the small copper/faint uppercase captions */
+.eyebrow {
   font-family: var(--font-mono);
   font-weight: 700;
   font-size: var(--fs-label);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: var(--sun);
-  background: rgba(6, 10, 36, 0.72);
-  border: clamp(1px, 0.2vmin, 4px) solid var(--panel-line);
+  color: var(--copper);
+}
+
+/* Mono pill — crew readout, hints, mission codes */
+.readout {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--fs-label);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted-warm);
+  background: var(--panel-hi);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule-mid);
   border-radius: var(--r-pill);
   padding: var(--sp-2) var(--sp-3);
   white-space: nowrap;
 }
 
-.readout--p1 { color: var(--p1); border-color: var(--p1); }
-.readout--p2 { color: var(--p2); border-color: var(--p2); }
+/* Small teal capability tag ("2P", "6 MISSIES") */
+.tag {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--teal);
+  border: var(--hair) solid rgba(95, 227, 196, 0.35);
+  border-radius: var(--r-pill);
+  padding: 0 clamp(5px, 0.8vmin, 17px);
+  white-space: nowrap;
+}
+
+/* Thin amber progress bar — replaces the old lamp dots. Same data, but a bar
+   reads as "how far along" at a glance from across a classroom, where five
+   dots have to be counted. */
+.bar {
+  display: block;
+  width: clamp(60px, 9vmin, 200px);
+  height: clamp(3px, 0.42vmin, 9px);
+  border-radius: var(--r-pill);
+  background: var(--rule);
+  overflow: hidden;
+}
+
+.bar__fill {
+  display: block;
+  height: 100%;
+  background: var(--amber);
+  transition: width 0.3s ease;
+}
+
+.bar--wide { width: 100%; }
 
 .hidden { display: none !important; }
 
@@ -282,24 +406,81 @@ button:focus-visible {
 
 .hud > * { pointer-events: auto; }
 
+/* The mission name is a copper mono label, not a bordered chip: the bar is
+   already delimited by the screen edge, so a second box around the title was
+   pure noise. */
 .hud__title {
   font-family: var(--font-mono);
   font-weight: 700;
   font-size: var(--fs-label);
-  letter-spacing: 0.14em;
+  letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: var(--enamel);
-  background: rgba(6, 10, 36, 0.66);
-  border: clamp(1px, 0.2vmin, 4px) solid var(--panel-line);
-  border-radius: var(--r-pill);
-  padding: var(--sp-2) var(--sp-4);
+  color: var(--copper);
+  white-space: nowrap;
 }
 
 .hud__spacer { flex: 1; }
 
 .hud__scores {
   display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+/* Instrument readout: mono label, then the value in the display face. Reading
+   "LEVEL 3" as two typefaces is how a real panel labels a dial. */
+.stat {
+  display: flex;
+  align-items: center;
   gap: var(--sp-2);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--fs-label);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.stat__value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-h2);
+  letter-spacing: 0;
+  color: var(--cream);
+}
+
+.stat--score .stat__value {
+  color: var(--amber);
+  text-shadow: var(--glow-amber-text);
+}
+
+.stat--p1 .stat__value { color: var(--p1); text-shadow: 0 0 clamp(10px, 2vmin, 44px) rgba(255, 107, 107, 0.5); }
+.stat--p2 .stat__value { color: var(--p2); text-shadow: 0 0 clamp(10px, 2vmin, 44px) rgba(95, 227, 196, 0.5); }
+
+/* 1px hairline between readouts, in place of the old bordered pills */
+.hud__sep {
+  width: var(--hair);
+  height: clamp(22px, 3.4vmin, 74px);
+  background: var(--rule-mid);
+  flex: none;
+}
+
+/* A meter for a continuous quantity (pipe pressure, fuel) */
+.stat__meter {
+  width: clamp(60px, 9vmin, 200px);
+  height: clamp(5px, 0.75vmin, 16px);
+  border-radius: var(--r-pill);
+  background: var(--rule);
+  overflow: hidden;
+}
+
+.stat__meter i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, var(--teal), var(--sky));
+  transition: width 0.35s ease;
 }
 
 /* Turn indicator for 2-player, turn-based games. Sits in the HUD row so it
@@ -310,7 +491,6 @@ button:focus-visible {
   color: var(--ink);
   padding: var(--sp-2) var(--sp-4);
   border-radius: var(--r-pill);
-  box-shadow: var(--shadow-panel);
   white-space: nowrap;
 }
 
@@ -324,13 +504,16 @@ button:focus-visible {
   text-align: center;
   font-weight: 800;
   font-size: var(--fs-h1);
-  color: var(--ink);
-  background: linear-gradient(180deg, var(--enamel), var(--bezel));
+  color: var(--cream);
+  background: rgba(13, 12, 34, 0.9);
   border-radius: var(--r-lg);
   padding: var(--sp-4) var(--sp-5);
-  box-shadow: var(--shadow-panel), var(--glow-sun);
+  box-shadow:
+    inset 0 0 0 var(--hair) rgba(255, 194, 74, 0.4),
+    var(--shadow-panel),
+    var(--glow-sun);
   opacity: 0;
-  transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.35);
+  transition: opacity 0.22s ease, transform 0.22s var(--ease-press);
   pointer-events: none;
   max-width: 80vw;
 }
@@ -345,16 +528,15 @@ button:focus-visible {
   margin-top: var(--sp-2);
   font-family: var(--font-mono);
   font-size: var(--fs-label);
-  letter-spacing: 0.1em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--ink-soft);
+  color: var(--teal);
 }
 
 .banner--hint {
-  background: rgba(6, 10, 36, 0.86);
-  border: clamp(1px, 0.2vmin, 4px) solid var(--panel-line);
-  color: var(--enamel);
-  box-shadow: var(--shadow-panel);
+  background: rgba(13, 12, 34, 0.86);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule-mid), var(--shadow-panel);
+  color: var(--cream);
   font-size: var(--fs-h2);
 }
 
@@ -362,12 +544,130 @@ button:focus-visible {
 .hint-strip {
   font-family: var(--font-mono);
   font-size: var(--fs-label);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--ice);
-  background: rgba(6, 10, 36, 0.6);
-  border: clamp(1px, 0.2vmin, 4px) solid var(--panel-line);
+  color: var(--muted);
+  background: var(--panel-hi);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule-mid);
   border-radius: var(--r-pill);
-  padding: var(--sp-2) var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
   text-align: center;
 }
+
+/* Bare bottom-of-screen version, for action games where a pill would sit on
+   top of the play area. */
+.hint-line {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #6d7290;
+  text-align: center;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Mission complete — the reward moment
+   Its own screen rather than a banner: finishing a level is the payoff, and
+   it is also the only place a child gets to choose what happens next
+   instead of being dropped into the next level.
+   ───────────────────────────────────────────────────────────── */
+.done {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-4);
+  text-align: center;
+  background:
+    radial-gradient(50% 52% at 50% 0%, rgba(255, 194, 74, 0.16), transparent 72%),
+    rgba(5, 7, 15, 0.94);
+  opacity: 0;
+  transition: opacity 0.28s ease;
+}
+
+.done.is-visible { opacity: 1; }
+
+.done__medal {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.done__port {
+  width: clamp(96px, 20vmin, 440px);
+  height: clamp(96px, 20vmin, 440px);
+  font-size: clamp(46px, 9.5vmin, 210px);
+  animation-duration: 4s;
+}
+
+/* Sparks rise and drift back, offset so they never fire together */
+.done__spark {
+  position: absolute;
+  font-size: clamp(14px, 2.8vmin, 62px);
+  animation: done-rise 2.4s ease-in-out infinite alternate;
+}
+
+.done__spark--a { left: -18%; top: -8%; }
+.done__spark--b { right: -20%; top: 14%; animation-duration: 3.1s; font-size: clamp(11px, 2.2vmin, 48px); }
+.done__spark--c { left: -10%; bottom: -6%; animation-duration: 2.7s; font-size: clamp(10px, 2vmin, 44px); }
+
+@keyframes done-rise {
+  from { transform: translateY(0) rotate(0); }
+  to { transform: translateY(calc(var(--sp-3) * -1)) rotate(-4deg); }
+}
+
+.done__eyebrow {
+  margin-top: var(--sp-4);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--fs-label);
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--teal);
+}
+
+.done__title {
+  margin: var(--sp-2) 0 0;
+  font-size: var(--fs-h1);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--cream);
+}
+
+.done__stars {
+  display: flex;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+  font-size: clamp(28px, 5.5vmin, 122px);
+  line-height: 1;
+}
+
+.done__star {
+  filter: drop-shadow(0 0 clamp(8px, 1.7vmin, 38px) rgba(255, 194, 74, 0.7));
+  animation: done-pop 0.42s var(--ease-press) backwards;
+}
+
+.done__star--off {
+  opacity: 0.22;
+  filter: none;
+  animation: none;
+}
+
+@keyframes done-pop {
+  from { transform: scale(0.2); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.done__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-top: var(--sp-5);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.done__actions .btn { min-height: clamp(58px, 9vmin, 200px); }

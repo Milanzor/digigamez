@@ -50,28 +50,57 @@ de DOM-boom. Vanilla JS + Vite geeft de kleinste bundel en de meeste controle
 over `requestAnimationFrame`-timing, wat cruciaal is voor "soepel draaien" op
 een touchscreen.
 
-## 2b. Visuele richting: "retro-futuristisch missieconsole"
+## 2b. Visuele richting: "observatorium + cockpit"
 
 Het hele pakket zit in één ruimtethema. Het uitgangspunt is niet de
-standaard "zwarte ruimte met één neonkleur", maar een **Apollo-achtig
-instrumentenpaneel**: diep indigo (nooit puur zwart) achter warm
-emaille-wit, met verzadigde accentkleuren uit mid-century ruimteposters.
-Het digibord is de patrijspoort van een ruimteschip; de spellen zijn
-"missies" op verlichte consoleknoppen.
+standaard "zwarte ruimte met één neonkleur", maar ook niet langer het
+Apollo-emaillepaneel waarmee dit begon: die geverfde panelen met dikke
+randen vochten om aandacht met de spellen die erin stonden. De ruimte is
+nu **écht donker** — een bijna-zwart indigo dat vanuit één hoek door een
+nevel wordt aangelicht — en het chroom dat erop zweeft is getekend met
+**1px crème haarlijnen** in plaats van massieve platen. Dat is de hele
+omslag: een haarlijn leest als instrumentglas en laat de missiekleur het
+enige felle op het scherm zijn.
 
-- **Palet**: `--void-deep #060a24`, `--void #0e1741`, `--panel #1a2a63`,
-  emaille `#f9f4e7` / `#e7dfcb`, accenten `--sun #ffb224`,
-  `--mars #ff5f4d`, `--teal #2fd9c6`, `--nebula #b06bff`, `--leaf #6ee87a`.
-- **Typografie**: `Baloo 2` (800) als display — rond, stevig, kindvriendelijk
-  en met goede Nederlandse diakritieken. `Space Mono` (700) uitsluitend voor
-  uitleesvelden (level, score, missietitels), zoals de tekst op een echt
-  instrumentpaneel.
-- **Signatuur**: de patrijspoort met emaille-rand op het startscherm, en
-  de missieknoppen met een gekleurde lichtbalk plus **levellampjes**
-  (`●●●○○`) die echte voortgang tonen — geen decoratie.
+- **Palet**: `--void-deep #05070f`, `--void #0d0c22`,
+  `--nebula-lit #2a1f4d`, crème `#f3ece0` / `--muted #9a9280`,
+  haarlijn crème op 14/22/30%.
+- **Één actiekleur**: `--amber #ffc24a` — knoppen, voortgang, actieve
+  staat, en niets anders. `--copper #d08c4a` is uitsluitend voor de kleine
+  mono-kopjes. Nooit twee accenten in dezelfde knop.
+- **Acht speelkleuren**: `--teal #5fe3c4`, `--coral #ff6b6b`,
+  `--violet #b98cff`, `--pink #ff8fc7`, `--sky #8fd6ff`, `--green #7ee787`,
+  `--flame #ffa14a`, `--copper`. Eén per missie, en ze komen de UI alleen
+  binnen als *gloed in de patrijspoort* — nooit als rand of vulling.
+- **Typografie**: `Baloo 2` (800/700/500) voor alles wat een kind leest.
+  `Space Mono` (700) uitsluitend voor kleine hoofdletterlabels die de
+  ruimtevaart-toon zetten — nooit voor lopende tekst of knoppen.
+- **Signatuur — de patrijspoort**: een ring instrumentglas met één emoji
+  erin (`.port`). Hij is de missie-icoon in het rooster, de raket op het
+  startscherm en de trofee op het beloningsscherm, dus een kind komt
+  overal hetzelfde object tegen. `.port--lit` (amber) markeert "dit is
+  waar je was".
+- **Voortgang** is een dunne amberen balk, niet meer een rij lampjes:
+  dezelfde level-data, maar een balk is van achter in een lokaal leesbaar
+  waar vijf stippen geteld moeten worden.
 - **Sterrenveld**: drie getilede gradient-lagen die met CSS-transforms
-  driften (parallax). Puur compositor-werk, dus het kost geen main-thread
-  tijd terwijl een spel zijn eigen renderloop draait.
+  driften (parallax), plus een twinkelende opacity op de verste laag. Puur
+  compositor-werk, dus het kost geen main-thread tijd terwijl een spel
+  zijn eigen renderloop draait.
+
+### Vaste schermgrammatica
+Elk scherm onder het startscherm opent met dezelfde balk: ronde terugknop
+(getekende driehoek, geen `◀`-glyph), koperen mono-label, en een haarlijn
+eronder in plaats van een paneel. In het spel staan de uitleesvelden
+rechts als **mono-label + waarde in de displayletter** (`LEVEL 3`),
+gescheiden door 1px haarlijnen — zoals een echt paneel zijn meters labelt.
+
+### Een nieuwe missie toevoegen
+Kies één ongebruikte speelkleur en zet die in `game-registry.js`. Eén emoji
+in een patrijspoort. Titel in Baloo 2 700, leeftijd en `2P` in Space Mono.
+Het spelscherm krijgt automatisch dezelfde balk via `createHud()`, en sluit
+af met `showMissionComplete()` — dezelfde patrijspoort, drie sterren, één
+amberen primaire knop.
 
 ### Schaalregel voor grote touchscreens (belangrijkste les)
 Een 75" digibord rapporteert vaak 3840×2160 op `devicePixelRatio` 1.
@@ -238,10 +267,22 @@ verloren heeft. Score en level gaan alleen omhoog.
 ## 6b. Progressie en geluid
 
 **Progressie** (`src/shell/progress.js`): elk spel schrijft het hoogst
-bereikte level naar `localStorage`. Het portaal leest dat terug als
-levellampjes op de missieknop, zodat een kind ziet hoe ver het in elk spel
-is — de hub voelt daardoor als één geheel in plaats van negen losse spellen
-die elke sessie op nul beginnen.
+bereikte level naar `localStorage`. Het portaal leest dat terug als een
+amberen voortgangsbalk op de missierij, zodat een kind ziet hoe ver het in
+elk spel is — de hub voelt daardoor als één geheel in plaats van negen losse
+spellen die elke sessie op nul beginnen. Dezelfde vijf-levelladder voedt de
+drie sterren op het beloningsscherm (`starsForLevel`); die sterren zijn
+bewust géén prestatiecijfer, want geen van deze spellen meet *hoe goed* een
+level is opgelost en een verzonnen score zou de sterren willekeurig maken.
+
+Het spel dat het laatst gespeeld is wordt onthouden (`lastGame`) en licht op
+in het rooster, zodat een kind dat terugkomt bij het bord ziet waar het was.
+
+**Beloningsmoment** (`showMissionComplete`): een level afmaken krijgt zijn
+eigen scherm in plaats van een banner die voorbijschuift — patrijspoort met
+het missie-icoon, drie sterren, en dan *Volgend level* / *Nog een keer* /
+🏠. Het is ook de enige plek waar het kind kiest wat er daarna gebeurt in
+plaats van automatisch in het volgende level te worden gezet.
 
 De twee open spellen bewaren niet een level maar het **werk zelf**: de Gekke
 Machine schrijft de hele werkbank (onderdelen plus getekende banen) weg en

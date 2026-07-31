@@ -1,7 +1,7 @@
 import './style.css';
-import { createHud } from '../../shared/ui-components.js';
+import { createHud, showMissionComplete } from '../../shared/ui-components.js';
 import { sfx } from '../../shell/audio.js';
-import { setLevel } from '../../shell/progress.js';
+import { setLevel, starsForLevel } from '../../shell/progress.js';
 
 // "Ruimtegeheugen" — match pairs of space objects.
 //
@@ -25,6 +25,9 @@ let hud = null;
 let stage = null;
 let level = 1;
 let slug = 'geheugenspel';
+let mission = null;
+let reward = null;
+let onExit = null;
 let players = 1;
 let listeners = [];
 let timers = [];
@@ -48,6 +51,9 @@ export function init(container, opts) {
   slug = opts.slug;
   level = opts.startLevel || 1;
   players = opts.players || 1;
+  mission = { title: opts.title, icon: opts.icon, color: opts.color };
+  onExit = opts.onExit;
+  reward = null;
   listeners = [];
   timers = [];
 
@@ -171,16 +177,34 @@ function startRound() {
 
 function finishRound(scores) {
   sfx.missionComplete();
+  const cleared = level;
   level += 1;
   setLevel(slug, level);
 
+  // With two astronauts the headline is the result, not the completion: who
+  // won is the thing they both want to read.
   let text = 'Alle paren gevonden! 🪐';
+  let icon = mission.icon;
   if (players > 1) {
-    if (scores[0] === scores[1]) text = 'Gelijkspel! 🤝';
-    else text = `Astronaut ${scores[0] > scores[1] ? 1 : 2} wint! 🏆`;
+    if (scores[0] === scores[1]) {
+      text = 'Gelijkspel! 🤝';
+      icon = '🤝';
+    } else {
+      text = `Astronaut ${scores[0] > scores[1] ? 1 : 2} wint! 🏆`;
+      icon = '🏆';
+    }
   }
-  hud.banner(text, { sub: `Level ${level} vrijgespeeld`, ms: 2100 });
-  later(startRound, 2200);
+  reward = showMissionComplete(stage, {
+    icon,
+    color: mission.color,
+    mission: mission.title,
+    level: cleared,
+    stars: starsForLevel(level),
+    title: text,
+    onNext: () => startRound(),
+    onRetry: () => { level = cleared; hud.setLevel(level); startRound(); },
+    onHome: onExit,
+  });
 }
 
 export function destroy() {
@@ -188,6 +212,8 @@ export function destroy() {
   timers = [];
   listeners.forEach((off) => off());
   listeners = [];
+  reward?.close();
+  reward = null;
   hud?.destroy();
   hud = null;
   stage = null;

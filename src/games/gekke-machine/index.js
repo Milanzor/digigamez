@@ -784,7 +784,7 @@ function knockPin(p) {
   p.down = true;
   G.score += 1;
   G.hud.setScore(0, G.score);
-  G.particles.push(...createBurst(p.x, p.y - 20, ['#f9f4e7', '#ff5f4d', '#ffe066'], { count: 16, speed: 340 }));
+  G.particles.push(...createBurst(p.x, p.y - 20, ['#f3ece0', '#ff6b6b', '#ffe066'], { count: 16, speed: 340 }));
   sfx.impact();
   sfx.dock();
 }
@@ -808,7 +808,7 @@ function triggers() {
           other.vx += (dx / dd) * power;
           other.vy += (dy / dd) * power;
         }
-        G.particles.push(...createBurst(p.x, p.y, ['#ffb224', '#ff5f4d', '#ffe066'], { count: 30, speed: 520 }));
+        G.particles.push(...createBurst(p.x, p.y, ['#ffc24a', '#ff6b6b', '#ffe066'], { count: 30, speed: 520 }));
         sfx.explode();
       }
 
@@ -817,11 +817,11 @@ function triggers() {
       if (p.type === 'beam' && p.pair && b.tp <= 0 && d < 54) {
         const partner = G.parts.find((o) => o.id === p.pair);
         if (partner) {
-          G.particles.push(...createBurst(p.x, p.y, ['#7cc4ff', '#b06bff'], { count: 12, speed: 280 }));
+          G.particles.push(...createBurst(p.x, p.y, ['#8fd6ff', '#b98cff'], { count: 12, speed: 280 }));
           b.x = partner.x;
           b.y = partner.y;
           b.tp = 0.32;
-          G.particles.push(...createBurst(partner.x, partner.y, ['#7cc4ff', '#2fd9c6'], { count: 14, speed: 300 }));
+          G.particles.push(...createBurst(partner.x, partner.y, ['#8fd6ff', '#5fe3c4'], { count: 14, speed: 300 }));
           partner.flash = 1;
           p.flash = 1;
           sfx.laser();
@@ -831,7 +831,7 @@ function triggers() {
 
       if (p.type === 'hole' && d < 46) {
         G.bodies.splice(i, 1);
-        G.particles.push(...createBurst(p.x, p.y, ['#b06bff', '#7cc4ff'], { count: 14, speed: 260 }));
+        G.particles.push(...createBurst(p.x, p.y, ['#b98cff', '#8fd6ff'], { count: 14, speed: 260 }));
         sfx.laser();
         break;
       }
@@ -843,7 +843,7 @@ function triggers() {
         G.bodies.splice(i, 1);
         G.score += 1;
         G.hud.setScore(0, G.score);
-        G.particles.push(...createBurst(p.x, p.y - 40, ['#6ee87a', '#ffe066', '#2fd9c6'], { count: 22, speed: 380 }));
+        G.particles.push(...createBurst(p.x, p.y - 40, ['#7ee787', '#ffe066', '#5fe3c4'], { count: 22, speed: 380 }));
         sfx.dock();
         if (G.score % 5 === 0) G.hud.banner('Lekker bezig! 🎉', { ms: 1400 });
         break;
@@ -898,8 +898,8 @@ function drawBench(ctx) {
   ctx.setLineDash([]);
 
   const g = ctx.createLinearGradient(0, FLOOR_Y, 0, FLOOR_Y + 60);
-  g.addColorStop(0, '#3a57a8');
-  g.addColorStop(1, '#101a4a');
+  g.addColorStop(0, '#3a3560');
+  g.addColorStop(1, '#12112b');
   ctx.fillStyle = g;
   roundRect(ctx, WALL_L - 10, FLOOR_Y, WALL_R - WALL_L + 20, 42, 12);
   ctx.fill();
@@ -968,7 +968,7 @@ function drawPart(ctx, p) {
       const teal = p.type === 'tramp';
       ctx.save();
       ctx.lineCap = 'round';
-      ctx.strokeStyle = teal ? '#2fd9c6' : '#c9a06a';
+      ctx.strokeStyle = teal ? '#5fe3c4' : '#c9a06a';
       ctx.lineWidth = teal ? 26 : 20;
       ctx.beginPath();
       ctx.moveTo(p.x, p.y);
@@ -1017,7 +1017,7 @@ function drawPart(ctx, p) {
       ctx.save();
       ctx.translate(p.x, p.y);
       ctx.rotate(a);
-      ctx.fillStyle = '#ffb224';
+      ctx.fillStyle = '#ffc24a';
       roundRect(ctx, -WIP_ARM - 12, -14, (WIP_ARM + 12) * 2, 28, 14);
       ctx.fill();
       ctx.fillStyle = 'rgba(255,255,255,0.32)';
@@ -1037,15 +1037,15 @@ function drawPart(ctx, p) {
     case 'fan': {
       ctx.save();
       ctx.translate(p.x, p.y);
-      ctx.fillStyle = '#274088';
+      ctx.fillStyle = '#2c2a52';
       ctx.beginPath();
       ctx.arc(0, 0, 52, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = '#7cc4ff';
+      ctx.strokeStyle = '#8fd6ff';
       ctx.lineWidth = 6;
       ctx.stroke();
       ctx.rotate(G.running ? G.t * 12 : 0);
-      ctx.fillStyle = '#7cc4ff';
+      ctx.fillStyle = '#8fd6ff';
       for (let i = 0; i < 4; i++) {
         ctx.rotate(Math.PI / 2);
         ctx.beginPath();
@@ -1067,7 +1067,7 @@ function drawPart(ctx, p) {
       ctx.fillStyle = 'rgba(255,255,255,0.22)';
       roundRect(ctx, -10 + recoil, -18, 80, 12, 6);
       ctx.fill();
-      ctx.fillStyle = '#0e1741';
+      ctx.fillStyle = '#0d0c22';
       ctx.beginPath();
       ctx.arc(78 + recoil, 0, 20, 0, Math.PI * 2);
       ctx.fill();
@@ -1077,7 +1077,7 @@ function drawPart(ctx, p) {
         ctx.globalAlpha = 1;
       }
       ctx.restore();
-      ctx.fillStyle = '#ff7ab8';
+      ctx.fillStyle = '#ff8fc7';
       ctx.beginPath();
       ctx.arc(p.x, p.y, 30, 0, Math.PI * 2);
       ctx.fill();
@@ -1092,14 +1092,14 @@ function drawPart(ctx, p) {
       ctx.save();
       ctx.translate(p.x, p.y);
       ctx.rotate(a);
-      ctx.fillStyle = '#ff7ab8';
+      ctx.fillStyle = '#ff8fc7';
       roundRect(ctx, -178, -15, 356, 30, 15);
       ctx.fill();
       ctx.fillStyle = 'rgba(255,255,255,0.35)';
       roundRect(ctx, -170, -9, 340, 8, 4);
       ctx.fill();
       ctx.restore();
-      ctx.fillStyle = '#f9f4e7';
+      ctx.fillStyle = '#f3ece0';
       ctx.beginPath();
       ctx.arc(p.x, p.y, 20, 0, Math.PI * 2);
       ctx.fill();
@@ -1116,7 +1116,7 @@ function drawPart(ctx, p) {
       }
       const g = ctx.createRadialGradient(p.x - 10, p.y - 12, 4, p.x, p.y, 36);
       g.addColorStop(0, '#fff3c4');
-      g.addColorStop(0.6, '#ffb224');
+      g.addColorStop(0.6, '#ffc24a');
       g.addColorStop(1, '#a35f10');
       ctx.fillStyle = g;
       ctx.beginPath();
@@ -1137,7 +1137,7 @@ function drawPart(ctx, p) {
       ctx.save();
       ctx.translate(p.x, p.y);
       if (p.down) ctx.rotate(1.5);
-      ctx.fillStyle = '#f9f4e7';
+      ctx.fillStyle = '#f3ece0';
       ctx.beginPath();
       ctx.moveTo(0, -46);
       ctx.bezierCurveTo(16, -34, 12, -14, 16, 6);
@@ -1146,7 +1146,7 @@ function drawPart(ctx, p) {
       ctx.bezierCurveTo(-12, -14, -16, -34, 0, -46);
       ctx.closePath();
       ctx.fill();
-      ctx.fillStyle = '#ff5f4d';
+      ctx.fillStyle = '#ff6b6b';
       roundRect(ctx, -14, -22, 28, 12, 6);
       ctx.fill();
       ctx.restore();
@@ -1195,7 +1195,7 @@ function drawPart(ctx, p) {
       ctx.stroke();
       if (flash > 0) {
         ctx.globalAlpha = flash * 0.6;
-        ctx.fillStyle = '#7cc4ff';
+        ctx.fillStyle = '#8fd6ff';
         ctx.beginPath();
         ctx.ellipse(p.x, p.y, 62, 24, 0, 0, Math.PI * 2);
         ctx.fill();
@@ -1209,7 +1209,7 @@ function drawPart(ctx, p) {
     }
     case 'basket': {
       ctx.save();
-      ctx.fillStyle = '#6ee87a';
+      ctx.fillStyle = '#7ee787';
       ctx.beginPath();
       ctx.moveTo(p.x - 108, p.y - 96);
       ctx.lineTo(p.x + 108, p.y - 96);
@@ -1225,10 +1225,10 @@ function drawPart(ctx, p) {
       break;
     }
     case 'fountain': {
-      ctx.fillStyle = '#7cc4ff';
+      ctx.fillStyle = '#8fd6ff';
       roundRect(ctx, p.x - 54, p.y - 40, 108, 74, 16);
       ctx.fill();
-      ctx.fillStyle = '#0e1741';
+      ctx.fillStyle = '#0d0c22';
       ctx.beginPath();
       ctx.arc(p.x, p.y + 40, 22, 0, Math.PI * 2);
       ctx.fill();
@@ -1290,7 +1290,7 @@ function drawBody(ctx, b) {
       if (G.running && Math.random() < 0.6) {
         G.particles.push(...createBurst(
           b.x - Math.cos(b.heading) * b.r, b.y - Math.sin(b.heading) * b.r,
-          ['#ffb224', '#ff5f4d'], { count: 2, speed: 120 }
+          ['#ffc24a', '#ff6b6b'], { count: 2, speed: 120 }
         ));
       }
       break;
@@ -1355,7 +1355,7 @@ function attachPointer() {
           pushUndo();
           unpair(part);
           G.parts.splice(G.parts.indexOf(part), 1);
-          G.particles.push(...createBurst(part.x, part.y, ['#ff5f4d', '#ffb224'], { count: 12, speed: 260 }));
+          G.particles.push(...createBurst(part.x, part.y, ['#ff6b6b', '#ffc24a'], { count: 12, speed: 260 }));
           sfx.explode();
           return;
         }

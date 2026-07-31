@@ -1,7 +1,7 @@
 import './style.css';
-import { createHud } from '../../shared/ui-components.js';
+import { createHud, showMissionComplete } from '../../shared/ui-components.js';
 import { sfx } from '../../shell/audio.js';
-import { setLevel } from '../../shell/progress.js';
+import { setLevel, starsForLevel } from '../../shell/progress.js';
 
 // "Brandstof Sorteren" — the water-sort mechanic as rocket fuel tanks.
 // Tap a tank to pick it up, tap another to pour; a pour is only legal onto
@@ -13,7 +13,7 @@ import { setLevel } from '../../shell/progress.js';
 // restart to recover.
 
 const CAP = 4;
-const FUELS = ['#ff5f4d', '#7cc4ff', '#ffb224', '#6ee87a', '#b06bff', '#2fd9c6', '#ff8fd0'];
+const FUELS = ['#ff6b6b', '#8fd6ff', '#ffc24a', '#7ee787', '#b98cff', '#5fe3c4', '#ff8fc7'];
 
 const LEVELS = [
   { colors: 3, spares: 2 },
@@ -30,6 +30,9 @@ let hud = null;
 let stage = null;
 let level = 1;
 let slug = 'water-puzzel';
+let mission = null;
+let reward = null;
+let onExit = null;
 let listeners = [];
 let timers = [];
 
@@ -77,6 +80,9 @@ function build(cfg) {
 export function init(container, opts) {
   slug = opts.slug;
   level = opts.startLevel || 1;
+  mission = { title: opts.title, icon: opts.icon, color: opts.color };
+  onExit = opts.onExit;
+  reward = null;
   listeners = [];
   timers = [];
 
@@ -221,10 +227,20 @@ function startRound() {
 
 function finishRound() {
   sfx.missionComplete();
+  const cleared = level;
   level += 1;
   setLevel(slug, level);
-  hud.banner('Tanks gesorteerd! ⛽', { sub: `Level ${level} vrijgespeeld`, ms: 2000 });
-  later(startRound, 2100);
+  reward = showMissionComplete(stage, {
+    icon: mission.icon,
+    color: mission.color,
+    mission: mission.title,
+    level: cleared,
+    stars: starsForLevel(level),
+    title: 'Tanks gesorteerd! ⛽',
+    onNext: () => startRound(),
+    onRetry: () => { level = cleared; hud.setLevel(level); startRound(); },
+    onHome: onExit,
+  });
 }
 
 export function destroy() {
@@ -232,6 +248,8 @@ export function destroy() {
   timers = [];
   listeners.forEach((off) => off());
   listeners = [];
+  reward?.close();
+  reward = null;
   hud?.destroy();
   hud = null;
   stage = null;

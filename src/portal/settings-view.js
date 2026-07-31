@@ -47,11 +47,13 @@ export function renderSettingsView(container) {
 
   container.innerHTML = `
     <div class="settings">
-      <div class="missions__bar">
-        <button class="key key--bar" id="settings-back" aria-label="Terug">◀</button>
-        <h1 class="missions__heading">Instellingen</h1>
-        <div class="missions__spacer"></div>
-        <div class="readout">Missiecontrole</div>
+      <div class="bar-top">
+        <button class="key key--bar key--back" id="settings-back" aria-label="Terug"></button>
+        <div class="bar-top__titles">
+          <div class="eyebrow">Missiecontrole</div>
+          <h1 class="bar-top__heading">Instellingen</h1>
+        </div>
+        <div class="bar-top__spacer"></div>
       </div>
 
       <div class="settings__panel" id="settings-panel">
