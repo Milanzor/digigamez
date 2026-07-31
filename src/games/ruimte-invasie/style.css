@@ -10,6 +10,78 @@
   height: 100%;
 }
 
+/* Difficulty gate. Shown over the live starfield so the game already feels
+   like it has started while the choice is being made. */
+.inv-diff {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  background: rgba(6, 10, 36, 0.72);
+}
+
+.inv-diff__panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-5);
+  border-radius: var(--r-lg);
+  background: rgba(14, 23, 65, 0.94);
+  border: var(--bezel-w) solid var(--bezel);
+  box-shadow: var(--shadow-panel);
+  max-width: 92vw;
+}
+
+.inv-diff__title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs-h1);
+  color: var(--enamel);
+  text-align: center;
+}
+
+.inv-diff__row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-3);
+}
+
+.inv-diff__btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-1);
+  width: clamp(180px, 26vmin, 560px);
+  padding: var(--sp-3) var(--sp-3) var(--sp-4);
+  border-radius: var(--r-md);
+  background: linear-gradient(180deg, var(--panel-hi), var(--panel));
+  border: clamp(3px, 0.5vmin, 11px) solid var(--panel-line);
+  color: var(--enamel);
+  transition: transform 0.1s ease, border-color 0.1s ease;
+}
+
+.inv-diff__btn:active { transform: translateY(clamp(2px, 0.4vmin, 9px)); }
+.inv-diff__btn.is-last { border-color: var(--sun); }
+
+.inv-diff__icon { font-size: var(--fs-icon); }
+
+.inv-diff__label {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs-h2);
+}
+
+.inv-diff__sub {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  color: var(--ice);
+  text-align: center;
+  line-height: 1.3;
+}
+
 .inv-split {
   position: absolute;
   top: 0;
