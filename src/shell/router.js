@@ -6,6 +6,8 @@
 const routes = new Map();
 let currentCleanup = null;
 let mountEl = null;
+let currentPath = '/';
+let prevPath = '/';
 
 export function registerRoute(path, render) {
   routes.set(path, render);
@@ -15,8 +17,13 @@ export function navigate(path) {
   window.location.hash = path;
 }
 
-function matchRoute(hash) {
-  const path = hash.replace(/^#/, '') || '/';
+// Where the last navigation came from, so a screen that can be opened from more
+// than one place (the settings screen) knows what its ◀ should return to.
+export function previousPath() {
+  return prevPath;
+}
+
+function matchRoute(path) {
   for (const [pattern, render] of routes) {
     if (pattern.includes(':')) {
       const patternParts = pattern.split('/').filter(Boolean);
@@ -41,7 +48,13 @@ function matchRoute(hash) {
 }
 
 async function handleChange() {
-  const match = matchRoute(window.location.hash);
+  const path = window.location.hash.replace(/^#/, '') || '/';
+  if (path !== currentPath) {
+    prevPath = currentPath;
+    currentPath = path;
+  }
+
+  const match = matchRoute(path);
   if (typeof currentCleanup === 'function') {
     try {
       currentCleanup();

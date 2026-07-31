@@ -5,7 +5,7 @@
 // gives the hub a sense of progression across sessions instead of every
 // game restarting from scratch.
 
-import { getItem, setItem } from './storage.js';
+import { getItem, setItem, removeItem, appKeys } from './storage.js';
 
 export const MAX_LAMPS = 5;
 
@@ -24,6 +24,12 @@ export function getLamps(slug) {
   return Math.min(getLevel(slug), MAX_LAMPS);
 }
 
-export function resetAll(slugs) {
-  slugs.forEach((s) => setItem(`level:${s}`, 1));
+// Wipes everything the children built up: every level, the saved drawing, the
+// machine on the workbench, the last crew and difficulty choice. Swept by
+// prefix rather than from a list of slugs, so a new game's save key is included
+// the day that game is added; the `set:` preferences are deliberately spared.
+export function resetProgress() {
+  appKeys()
+    .filter((key) => !key.startsWith('set:'))
+    .forEach(removeItem);
 }

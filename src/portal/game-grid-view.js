@@ -35,6 +35,7 @@ export function renderGameGridView(container) {
           ${playerCount === 2 ? '👨‍🚀👩‍🚀 2 astronauten' : '👨‍🚀 1 astronaut'}
         </div>
         <button class="key key--bar" id="grid-mute" aria-label="Geluid aan of uit">${isMuted() ? '🔇' : '🔊'}</button>
+        <button class="key key--bar" id="grid-settings" aria-label="Instellingen">⚙️</button>
       </div>
       <div class="missions__grid">${cards}</div>
     </div>
@@ -42,6 +43,7 @@ export function renderGameGridView(container) {
 
   const backBtn = container.querySelector('#grid-back');
   const muteBtn = container.querySelector('#grid-mute');
+  const settingsBtn = container.querySelector('#grid-settings');
   const crewReadout = container.querySelector('#crew-readout');
 
   const onBack = () => {
@@ -57,10 +59,15 @@ export function renderGameGridView(container) {
     muteBtn.textContent = nowMuted ? '🔇' : '🔊';
     if (!nowMuted) sfx.blip();
   };
+  const onSettings = () => {
+    sfx.select();
+    navigate('/instellingen');
+  };
 
   backBtn.addEventListener('pointerup', onBack);
   crewReadout.addEventListener('pointerup', onCrew);
   muteBtn.addEventListener('pointerup', onMute);
+  settingsBtn.addEventListener('pointerup', onSettings);
 
   const missionBtns = container.querySelectorAll('.mission');
   const onPick = (e) => {
@@ -73,6 +80,7 @@ export function renderGameGridView(container) {
     backBtn.removeEventListener('pointerup', onBack);
     crewReadout.removeEventListener('pointerup', onCrew);
     muteBtn.removeEventListener('pointerup', onMute);
+    settingsBtn.removeEventListener('pointerup', onSettings);
     missionBtns.forEach((c) => c.removeEventListener('pointerup', onPick));
   };
 }

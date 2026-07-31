@@ -15,6 +15,22 @@ export async function enterFullscreen() {
   }
 }
 
+export function isFullscreen() {
+  return !!document.fullscreenElement;
+}
+
+// The settings screen needs a way back out as well — a laptop driving the board
+// during a lesson is not always meant to stay locked to one window.
+export async function toggleFullscreen() {
+  try {
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else await enterFullscreen();
+  } catch {
+    // Denied/unsupported — the caller reads the real state back afterwards.
+  }
+  return isFullscreen();
+}
+
 export async function requestWakeLock() {
   try {
     if ('wakeLock' in navigator) {

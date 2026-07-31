@@ -136,6 +136,14 @@ canvas {
   50% { transform: translate3d(0, -2.2vmin, 0); }
 }
 
+/* "Rustig" in the settings, and the OS-level preference, park the backdrop:
+   same effect, two different people asking for it. */
+:root[data-calm] .space-bg__stars,
+:root[data-calm] .space-bg__planet,
+:root[data-calm] .launch__rocket {
+  animation: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .space-bg__stars,
   .space-bg__planet {

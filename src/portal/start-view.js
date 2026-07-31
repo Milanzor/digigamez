@@ -14,10 +14,13 @@ export function renderStartView(container) {
           <button class="btn btn--go launch__btn" id="start-btn">Start de raket</button>
         </div>
       </div>
+      <button class="key key--dark launch__settings" id="start-settings" aria-label="Instellingen">⚙️</button>
     </div>
   `;
 
   const btn = container.querySelector('#start-btn');
+  const settingsBtn = container.querySelector('#start-settings');
+
   const onStart = async () => {
     unlockAudio();
     sfx.launch();
@@ -25,7 +28,16 @@ export function renderStartView(container) {
     await requestWakeLock();
     navigate('/spelers');
   };
+  const onSettings = () => {
+    unlockAudio();
+    sfx.select();
+    navigate('/instellingen');
+  };
   btn.addEventListener('pointerup', onStart);
+  settingsBtn.addEventListener('pointerup', onSettings);
 
-  return () => btn.removeEventListener('pointerup', onStart);
+  return () => {
+    btn.removeEventListener('pointerup', onStart);
+    settingsBtn.removeEventListener('pointerup', onSettings);
+  };
 }

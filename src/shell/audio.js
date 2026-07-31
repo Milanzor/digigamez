@@ -5,10 +5,22 @@
 // means no download cost, no licensing, and instant playback with no
 // decode latency — which matters on a kiosk that may have flaky network.
 
+import { getSetting, setSetting } from './settings.js';
+
+// Three steps rather than a slider: a classroom either wants it quiet, normal,
+// or loud enough to carry over a room full of children, and a slider is one
+// more thing that can be left at 2%.
+const VOLUMES = { zacht: 0.45, gewoon: 0.85, hard: 1.3 };
+
 let ctx = null;
 let master = null;
 let noiseBuffer = null;
-let muted = false;
+let muted = !getSetting('sound');
+let volume = getSetting('volume');
+
+function targetGain() {
+  return muted ? 0 : VOLUMES[volume] ?? VOLUMES.gewoon;
+}
 
 function getCtx() {
   if (!ctx) {
@@ -16,9 +28,10 @@ function getCtx() {
     ctx = new AudioCtx();
 
     // Master chain: gain -> soft limiter -> out. The limiter keeps stacked
-    // effects (e.g. rapid laser fire) from clipping on loud digiboard speakers.
+    // effects (e.g. rapid laser fire) from clipping on loud digiboard speakers,
+    // which is also what makes the "hard" step safe to push past unity.
     master = ctx.createGain();
-    master.gain.value = 0.85;
+    master.gain.value = targetGain();
     const limiter = ctx.createDynamicsCompressor();
     limiter.threshold.value = -8;
     limiter.knee.value = 6;
@@ -42,7 +55,8 @@ export function unlockAudio() {
 
 export function setMuted(value) {
   muted = value;
-  if (master) master.gain.value = value ? 0 : 0.85;
+  setSetting('sound', !value);
+  if (master) master.gain.value = targetGain();
 }
 
 export function isMuted() {
@@ -52,6 +66,16 @@ export function isMuted() {
 export function toggleMuted() {
   setMuted(!muted);
   return muted;
+}
+
+export function setVolume(level) {
+  volume = level in VOLUMES ? level : 'gewoon';
+  setSetting('volume', volume);
+  if (master) master.gain.value = targetGain();
+}
+
+export function getVolume() {
+  return volume;
 }
 
 // --- primitives -----------------------------------------------------------
@@ -173,4 +197,16 @@ export const sfx = {
     noise({ dur: 0.9, gain: 0.06, freq: 500, to: 4000, type: 'bandpass', q: 0.9, delay: 0.4 });
   },
   star: () => tone({ freq: N(19), to: N(24), dur: 0.2, type: 'sine', gain: 0.16 }),
+
+  // Glockenspiel note, indexed into a pentatonic scale: any combination of
+  // steps sounds consonant, so a machine full of bells can't play a wrong note.
+  chime: (step = 0) => {
+    const semis = PENTATONIC[((step % PENTATONIC.length) + PENTATONIC.length) % PENTATONIC.length];
+    const freq = N(semis + 12);
+    tone({ freq, dur: 0.55, type: 'sine', gain: 0.17 });
+    tone({ freq: freq * 2, dur: 0.3, type: 'sine', gain: 0.05 });
+    tone({ freq: freq * 3.01, dur: 0.12, type: 'sine', gain: 0.02 });
+  },
 };
+
+const PENTATONIC = [0, 2, 4, 7, 9, 12, 14, 16];
