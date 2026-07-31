@@ -10,9 +10,12 @@ geoptimaliseerd voor grote touchscreens en soepele 60fps-animaties.
 - **Doelgroep**: kinderen 2–7 jaar, dus grote knoppen, weinig tekst, veel
   iconen/kleur/geluid, vergevingsgezinde besturing (geen "game over" drama,
   geen agressieve content).
-- **Apparaat**: 75" touchscreen digibord (kiosk-modus), landscape, waarschijnlijk
-  Chrome/Edge in fullscreen. Aanraakbediening is leidend, muis/toetsenbord als
-  fallback voor ontwikkeling/testen.
+- **Apparaat**: 75" touchscreen digibord (kiosk-modus), landscape. Het bord
+  wordt aangestuurd door een laptop met **Firefox** in fullscreen — die is
+  getest en doet multi-touch correct, dus de ingebouwde (stokoude) browser van
+  het bord hoeft niet ondersteund te worden en we mikken op een moderne
+  engine. Aanraakbediening is leidend, muis/toetsenbord als fallback voor
+  ontwikkeling/testen.
 - **Taal**: alle UI-teksten in het Nederlands.
 - **1 of 2 spelers**: sommige games ondersteunen gelijktijdig samen-/tegen-spelen
   op hetzelfde scherm (split-zone touch), andere zijn om-de-beurt.
@@ -94,7 +97,7 @@ want een kind staat dicht op een wandscherm.
   overdraw op 4K-achtige paneelresoluties te vermijden.
 - **Lazy loading per spel**: elk spel is een apart ES-module + eigen assets,
   dynamisch geïmporteerd (`import()`) zodra de speler het kiest — portal laadt
-  alleen UI-assets, niet alle 8 spellen tegelijk.
+  alleen UI-assets, niet alle negen spellen tegelijk.
 - **Unified pointer events**: alle input via `pointerdown/move/up` (werkt voor
   touch én muis) i.p.v. aparte touch-/mouse-handlers, met input-throttling op
   `pointermove` waar niet nodig per frame.
@@ -136,7 +139,8 @@ digigamez/
 │   │   ├── ruimte-invasie/       # Space Invaders-achtig
 │   │   ├── leidingen/            # Pipe-connect puzzel
 │   │   ├── water-puzzel/         # Water-sort puzzel
-│   │   ├── tekenen/              # Vrij tekenen / kleurplaten
+│   │   ├── tekenen/              # Vrij tekenen op een schuifbaar bord
+│   │   ├── gekke-machine/        # Fysica-zandbak (knikkerbaan)
 │   │   ├── legpuzzel/            # Jigsaw puzzel
 │   │   ├── geheugenspel/         # Memory / matching
 │   │   ├── vormen-sorteren/      # Shape sorting (peuters)
@@ -186,7 +190,7 @@ kleuters (Sago Mini, Toca Boca, Lingokids, ElePant, jigsaw/matching-apps zoals
 tastbare elementen, direct visueel/auditief succesgevoel, geen faalstatus die
 als "verlies" aanvoelt, korte sessies. Zie bronnen onderaan dit document.
 
-Alle acht spellen zitten in hetzelfde ruimtethema en hebben een
+Alle negen spellen zitten in hetzelfde ruimtethema en hebben een
 **levelprogressie** die lokaal wordt opgeslagen (zie §6b).
 
 | Spel (NL)                 | Genre                | Leeftijd | 1P / 2P | Kern-mechaniek en diepte |
@@ -194,16 +198,18 @@ Alle acht spellen zitten in hetzelfde ruimtethema en hebben een
 | **Sterrenvormen**         | Shape-sort           | 2–4      | 1P      | Sleep vracht naar de bijpassende luchtsluis. Diepte via drie knoppen: aantal stukken 3→6, vanaf level 3 driften de sluizen zijwaarts, vanaf level 5 moet ook de **kleur** kloppen. |
 | **Ruimtegeheugen**        | Memory / matching    | 3–6      | 1P & 2P | Kaarten met planeten en aliens. Bord groeit 4→12 paren; vanaf level 2 is er één gouden **komeetpaar** dat dubbel telt. 2P om de beurt met scores. |
 | **Sterrenpuzzel**         | Jigsaw               | 3–7      | 1P & 2P | Ruimtescènes (inline SVG, dus scherp op 4K) in stukjes. 4→20 stukjes; **👁️-knop** ghost het voorbeeld over het bord als hint in plaats van een moeilijkheidsmuur. |
-| **Ruimtetekenen**         | Creatief             | 2–7      | 1P & 2P | Vrij tekenen op een sterrenveld. Diepte in het gereedschap: **gloeistift**, **spiegelmodus** (scribbels worden symmetrische wezens), stempels, gum, undo. Multi-touch: twee kinderen tekenen gelijktijdig. |
+| **Ruimtetekenen**         | Creatief             | 2–7      | 1P & 2P | Vrij tekenen op een bord van **drie schermen breed** dat je met ✋ verschuift en met knijpen/wiel zoomt. Zeven kwasten (stift, neon, krijt, regenboog, sterrenstof, spuitbus, gum), vier vormen met vulknop, zestien stempels, **spiegel- en viervoudige symmetrie**, vier achtergronden, undo/redo en opslaan als PNG. Streken zijn vectoren, dus scherp op elke zoom. Multi-touch: twee kinderen tekenen gelijktijdig. |
+| **Gekke Machine**         | Fysica-zandbak       | 4–7      | 1P      | Bouw een knikkerbaan van dertien onderdelen (knikker, stuiterbal, ballon, raket, plank, trampoline, ventilator, molen, magneet, zwart gat, bom, knikkerkraan, emmer), **teken banen** die meedoen als vaste botsingslijnen, en druk op ▶ om alles los te laten. ⏹ zet elk onderdeel terug waar het gebouwd is, dus experimenteren kost niks. |
 | **Zuurstofleidingen**     | Pipe-connect         | 4–7      | 1P      | Draai buizen zodat zuurstof de tank haalt. Puzzels zijn **solvable-by-construction** (pad eerst uitgelopen, dan geschud). Raster groeit 3×3→6×6; vanaf level 3 zitten er dichtgesoldeerde tegels in, vanaf level 4 zijn er **twee onafhankelijke netwerken**. |
 | **Brandstof Sorteren**    | Water-sort           | 5–7      | 1P      | Giet raketbrandstof tot elke tank één kleur is. Kleuren 3→7 en reservetanks 2→1 met het level. **Undo** altijd beschikbaar, want de puzzel kan doodlopen en dan moet een kind niet opnieuw hoeven beginnen. |
-| **Ruimte Invasie**        | Space Invaders       | 5–7      | 1P & 2P | Drie alientypes (drifter / zigzagger / gepanzerd), **eindboss elke 5e golf** met health bar, en op te vangen **power-ups** (drievoudig schot, sneller vuren). Aliens schieten niet en er zijn geen levens. |
+| **Ruimte Invasie**        | Space Invaders       | 5–7      | 1P & 2P | **Moeilijkheidskeuze vooraf** (makkelijk / gewoon / moeilijk; op moeilijk schieten de aliens terug en hebben de schepen een schildbalk). Vijf alientypes met eigen silhouet en gedrag — inktvis, schotel, kever, splitser die in tweeën breekt, en zijn kleintjes — plus **drie afwisselende eindbosses** (Kwalmonster, Sterrenkrab, Het Grote Oog), een bonusschotel en power-ups (drievoudig schot, sneller vuren, schild). De zwerm keert altijd om ruim **boven de schepen**, zodat aliens nooit onschietbaar laag komen. |
 | **Asteroïdenveld**        | Breakout             | 6–7      | 1P & 2P | Asteroïden met 1–3 hits, vier **veldpatronen** (vol / schaakbord / piramide / kloof), power-ups (brede vanger, multi-bal, trage bal). 2P = paddles boven én onder, coöperatief. |
 
 ### Ontwerpkeuze: geen verliesstatus
-Geen van de acht spellen kent "game over". Aliens die de onderkant halen
-trekken zich terug naar boven; een verloren bal komt gewoon terug in het
-midden; een verkeerd geplaatst puzzelstuk zweeft terug. Er is dus altijd
+Geen van de negen spellen kent "game over". Aliens die de onderkant halen
+trekken zich terug naar boven; een geraakt schip wordt na een paar tellen
+gerepareerd; een verloren bal komt gewoon terug in het midden; een verkeerd
+geplaatst puzzelstuk zweeft terug. Er is dus altijd
 vooruitgang en nooit een moment waarop een kind te horen krijgt dat het
 verloren heeft. Score en level gaan alleen omhoog.
 
@@ -216,7 +222,7 @@ tel-/rekenspelletje, "verstop-en-zoek" (Sago Mini-stijl).
 **Progressie** (`src/shell/progress.js`): elk spel schrijft het hoogst
 bereikte level naar `localStorage`. Het portaal leest dat terug als
 levellampjes op de missieknop, zodat een kind ziet hoe ver het in elk spel
-is — de hub voelt daardoor als één geheel in plaats van acht losse spellen
+is — de hub voelt daardoor als één geheel in plaats van negen losse spellen
 die elke sessie op nul beginnen.
 
 **Geluid** (`src/shell/audio.js`): volledig procedureel gesynthetiseerd via
@@ -255,7 +261,7 @@ gaat clippen op harde digibord-speakers. De kit is ruimte-specifiek:
 
 Het geheel is geautomatiseerd nagelopen met een headless Chromium
 (puppeteer-core tegen de systeem-Chromium) die de echte build bedient:
-portaalflow doorlopen, alle acht spellen openen, tikken én slepen
+portaalflow doorlopen, alle negen spellen openen, tikken én slepen
 simuleren, en per spel controleren op:
 
 - console- en `pageerror`-meldingen (nul);
@@ -300,7 +306,7 @@ te bewijzen. Drie echte bugs kwamen hieruit:
 **Nu (dit werk)**:
 - Volledige projectstructuur + build-tooling (Vite).
 - Portal met 1P/2P-keuze en spellenrooster.
-- Alle 8 MVP-spellen als speelbare, canvas-gebaseerde modules met basis-
+- Alle negen spellen als speelbare, canvas-gebaseerde modules met basis-
   polish (geluid, animatie, 1P/2P waar van toepassing).
 - Shell-optimalisaties: fullscreen, wake lock, unified pointer input, lazy
   loading, object pooling waar relevant.
