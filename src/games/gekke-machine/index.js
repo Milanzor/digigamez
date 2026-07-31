@@ -1,7 +1,7 @@
 import './style.css';
 import { createHud } from '../../shared/ui-components.js';
 import {
-  setupCanvas, LOGICAL_WIDTH, createStars, drawSpaceBackdrop,
+  setupCanvas, LOGICAL_WIDTH, LOGICAL_HEIGHT, createStars, drawSpaceBackdrop,
   roundRect, createBurst, updateAndDrawParticles,
 } from '../../shared/canvas-utils.js';
 import { sfx } from '../../shell/audio.js';
@@ -35,9 +35,23 @@ const WALL_L = 26;
 const WALL_R = LOGICAL_WIDTH - 26;
 
 const GRAVITY = 1900;
-const MAX_BODIES = 60;
-const MAX_PARTS = 90;
+// A workbench you can genuinely fill. The old ceiling of 90 parts was set by
+// the simulation being all-pairs — every marble asked every part and every
+// collision segment about itself, three times a frame — so ten times the parts
+// meant a hundred times the work. With the broad phase below, the cost scales
+// with what is actually near a marble instead, and a bench of nine hundred
+// parts costs about what ninety used to.
+const MAX_BODIES = 600;
+const MAX_PARTS = 900;
 const SUBSTEPS = 3;
+
+// Broad phase: one uniform grid over the bench. 80px cells are a little wider
+// than the biggest marble, so a marble asks about four cells at most while a
+// crowded bench still splits its thousands of collision segments finely enough
+// that each query hands back a handful rather than a hundred.
+const CELL = 80;
+const GRID_W = Math.ceil(LOGICAL_WIDTH / CELL) + 1;
+const GRID_H = Math.ceil(LOGICAL_HEIGHT / CELL) + 1;
 const SLOW_SCALE = 0.3;
 
 const BELT_SPEED = 660;
@@ -116,6 +130,13 @@ export function init(container, opts) {
     // from the ink only when the ink changes.
     segs: [],
     inkSegs: [],
+    // Broad-phase scratch: the two grids and the short lists of parts that act
+    // at a distance. All rebuilt per substep, never allocated per frame.
+    segGrid: Array.from({ length: GRID_W * GRID_H }, () => []),
+    bodyGrid: Array.from({ length: GRID_W * GRID_H }, () => []),
+    fields: [],
+    triggerParts: [],
+    stamp: 0,
     undo: [],
     running: false,
     slow: false,
@@ -426,9 +447,66 @@ function collectSegs(p, out) {
   }
 }
 
+// Parts that reach out and pull, push or slow a marble from a distance. They
+// are the only ones the force loop has to walk, and pulling them out of the
+// part list once per substep is what keeps that loop off the O(parts × bodies)
+// path a bench of nine hundred parts would otherwise put it on.
+const FIELD_TYPES = new Set(['fan', 'belt', 'magnet', 'hole', 'stroop']);
+// The parts a marble can arrive *at*: swallowed, teleported, caught, blown up.
+const TRIGGER_TYPES = new Set(['bomb', 'beam', 'hole', 'basket']);
+
 function rebuildSegs() {
   G.segs.length = 0;
-  for (const p of G.parts) collectSegs(p, G.segs);
+  G.fields.length = 0;
+  G.triggerParts.length = 0;
+  for (const p of G.parts) {
+    collectSegs(p, G.segs);
+    if (FIELD_TYPES.has(p.type)) G.fields.push(p);
+    if (TRIGGER_TYPES.has(p.type)) G.triggerParts.push(p);
+  }
+  fillSegGrid();
+}
+
+// --- broad phase ----------------------------------------------------------
+//
+// Two uniform grids, both rebuilt from scratch each substep: one holding the
+// collision segments, one holding the marbles. Filling them is linear, and it
+// turns "every marble against every segment" into "every marble against the
+// two or three cells it is actually touching".
+
+function gridClear(grid) {
+  for (let i = 0; i < grid.length; i++) grid[i].length = 0;
+}
+
+// Kept allocation-free on purpose: this runs over every segment three times a
+// frame, and a returned range object per segment is thousands of throwaway
+// objects a second for the garbage collector to sweep mid-animation.
+function binSegment(s) {
+  const w = s.w || 0;
+  const cx0 = Math.max(0, Math.min(GRID_W - 1, Math.floor((Math.min(s.x1, s.x2) - w) / CELL)));
+  const cy0 = Math.max(0, Math.min(GRID_H - 1, Math.floor((Math.min(s.y1, s.y2) - w) / CELL)));
+  const cx1 = Math.max(0, Math.min(GRID_W - 1, Math.floor((Math.max(s.x1, s.x2) + w) / CELL)));
+  const cy1 = Math.max(0, Math.min(GRID_H - 1, Math.floor((Math.max(s.y1, s.y2) + w) / CELL)));
+  for (let cy = cy0; cy <= cy1; cy++) {
+    for (let cx = cx0; cx <= cx1; cx++) G.segGrid[cy * GRID_W + cx].push(s);
+  }
+}
+
+function fillSegGrid() {
+  gridClear(G.segGrid);
+  for (const s of G.segs) binSegment(s);
+  for (const s of G.inkSegs) binSegment(s);
+}
+
+function fillBodyGrid() {
+  gridClear(G.bodyGrid);
+  for (let i = 0; i < G.bodies.length; i++) {
+    const b = G.bodies[i];
+    b.gi = i;
+    const cx = Math.max(0, Math.min(GRID_W - 1, Math.floor(b.x / CELL)));
+    const cy = Math.max(0, Math.min(GRID_H - 1, Math.floor(b.y / CELL)));
+    G.bodyGrid[cy * GRID_W + cx].push(b);
+  }
 }
 
 // Ink never moves once drawn, so its segments are built once per edit rather
@@ -560,7 +638,9 @@ function step(dt) {
     let ax = 0;
     let ay = GRAVITY * b.g;
 
-    for (const p of parts) {
+    // Only the parts that pull, blow or slow: everything else touches a marble
+    // through its collision segments, not through this loop.
+    for (const p of G.fields) {
       const dx = p.x - b.x;
       const dy = p.y - b.y;
 
@@ -655,34 +735,63 @@ function collide() {
       b.vx *= 0.99;
     }
 
-    for (const s of G.segs) hitSegment(b, s);
-    for (const s of G.inkSegs) hitSegment(b, s);
+    // Only the segments in the cells this marble overlaps. A segment sitting
+    // in two cells would be tested twice, so each carries the stamp of the
+    // last marble that saw it.
+    G.stamp += 1;
+    const cx0 = Math.max(0, Math.floor((b.x - b.r) / CELL));
+    const cy0 = Math.max(0, Math.floor((b.y - b.r) / CELL));
+    const cx1 = Math.min(GRID_W - 1, Math.floor((b.x + b.r) / CELL));
+    const cy1 = Math.min(GRID_H - 1, Math.floor((b.y + b.r) / CELL));
+    for (let cy = cy0; cy <= cy1; cy++) {
+      for (let cx = cx0; cx <= cx1; cx++) {
+        const cell = G.segGrid[cy * GRID_W + cx];
+        for (let k = 0; k < cell.length; k++) {
+          const s = cell[k];
+          if (s.stamp === G.stamp) continue;
+          s.stamp = G.stamp;
+          hitSegment(b, s);
+        }
+      }
+    }
   }
 
   // Ball on ball: equal mass, so the resolution is a straight swap of the
-  // velocity along the contact normal.
-  for (let i = 0; i < G.bodies.length; i++) {
-    for (let j = i + 1; j < G.bodies.length; j++) {
-      const a = G.bodies[i];
-      const b = G.bodies[j];
-      const dx = b.x - a.x;
-      const dy = b.y - a.y;
-      const min = a.r + b.r;
-      const d2 = dx * dx + dy * dy;
-      if (d2 >= min * min || d2 === 0) continue;
-      const d = Math.sqrt(d2);
-      const nx = dx / d;
-      const ny = dy / d;
-      const overlap = (min - d) / 2;
-      a.x -= nx * overlap; a.y -= ny * overlap;
-      b.x += nx * overlap; b.y += ny * overlap;
-      const rel = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
-      if (rel > 0) continue;
-      const e = Math.min(a.e, b.e);
-      const j2 = -(1 + e) * rel * 0.5;
-      a.vx -= j2 * nx; a.vy -= j2 * ny;
-      b.vx += j2 * nx; b.vy += j2 * ny;
-      if (-rel > 700) thud(-rel);
+  // velocity along the contact normal. Each marble looks at its own cell and
+  // the eight around it, and only at marbles later in the list, so every pair
+  // is still resolved exactly once.
+  fillBodyGrid();
+  for (const a of G.bodies) {
+    const cx0 = Math.max(0, Math.floor(a.x / CELL) - 1);
+    const cy0 = Math.max(0, Math.floor(a.y / CELL) - 1);
+    const cx1 = Math.min(GRID_W - 1, Math.floor(a.x / CELL) + 1);
+    const cy1 = Math.min(GRID_H - 1, Math.floor(a.y / CELL) + 1);
+    for (let cy = cy0; cy <= cy1; cy++) {
+      for (let cx = cx0; cx <= cx1; cx++) {
+        const cell = G.bodyGrid[cy * GRID_W + cx];
+        for (let k = 0; k < cell.length; k++) {
+          const b = cell[k];
+          if (b.gi <= a.gi) continue;
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          const min = a.r + b.r;
+          const d2 = dx * dx + dy * dy;
+          if (d2 >= min * min || d2 === 0) continue;
+          const d = Math.sqrt(d2);
+          const nx = dx / d;
+          const ny = dy / d;
+          const overlap = (min - d) / 2;
+          a.x -= nx * overlap; a.y -= ny * overlap;
+          b.x += nx * overlap; b.y += ny * overlap;
+          const rel = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+          if (rel > 0) continue;
+          const e = Math.min(a.e, b.e);
+          const j2 = -(1 + e) * rel * 0.5;
+          a.vx -= j2 * nx; a.vy -= j2 * ny;
+          b.vx += j2 * nx; b.vy += j2 * ny;
+          if (-rel > 700) thud(-rel);
+        }
+      }
     }
   }
 }
@@ -698,9 +807,13 @@ function hitSegment(b, s) {
   const py = s.y1 + dy * t;
   let nx = b.x - px;
   let ny = b.y - py;
-  let d = Math.hypot(nx, ny);
   const reach = b.r + s.w;
-  if (d >= reach) return;
+  // Squared first: this is the hot line of the whole simulation and almost
+  // every call leaves here, so the square root is only worth taking for the
+  // handful of segments a marble is actually touching.
+  const d2 = nx * nx + ny * ny;
+  if (d2 >= reach * reach) return;
+  let d = Math.sqrt(d2);
   if (d < 0.0001) { nx = -dy || 1; ny = dx; d = Math.hypot(nx, ny) || 1; }
   nx /= d;
   ny /= d;
@@ -793,7 +906,9 @@ function triggers() {
   for (let i = G.bodies.length - 1; i >= 0; i--) {
     const b = G.bodies[i];
 
-    for (const p of G.parts) {
+    // Same reasoning as the force loop: a plank cannot swallow a marble, so
+    // only the parts that can are worth asking about.
+    for (const p of G.triggerParts) {
       const d = Math.hypot(p.x - b.x, p.y - b.y);
 
       if (p.type === 'bomb' && !p.spent && d < b.r + 46) {
@@ -934,15 +1049,68 @@ function drawTrail(ctx, b) {
   ctx.restore();
 }
 
+// A radial-shaded ball is the single most common thing on a busy bench —
+// every marble, every bell — and building its gradient again for every object
+// on every frame is what put a crowded machine under 60fps. Each distinct ball
+// is painted once into an offscreen sprite at device resolution and blitted
+// from then on: one `drawImage` instead of a gradient plus two fills.
+const ballSprites = new Map();
+
+function shadedBall(ctx, key, x, y, r, paint, baseR = r) {
+  const scale = ctx.getTransform().a || 1;
+  // Quantised, or a bell swelling as it rings would mint a new sprite per
+  // pixel of growth. Anything in between is scaled by the blit.
+  const px = Math.max(8, Math.round(baseR * 2 * scale / 8) * 8);
+  const id = `${key}|${px}`;
+  let sprite = ballSprites.get(id);
+  if (!sprite) {
+    sprite = document.createElement('canvas');
+    sprite.width = px;
+    sprite.height = px;
+    const g = sprite.getContext('2d');
+    // Painters draw in bench units around (0, 0), exactly as they did when
+    // they drew straight onto the canvas.
+    g.scale(px / (baseR * 2), px / (baseR * 2));
+    g.translate(baseR, baseR);
+    paint(g, baseR);
+    ballSprites.set(id, sprite);
+  }
+  ctx.drawImage(sprite, x - r, y - r, r * 2, r * 2);
+}
+
+// Most parts are drawn as an emoji, and `fillText` with a fresh `font` string
+// is one of the more expensive calls in canvas 2D. Same trick as the balls: one
+// raster per glyph and size, rendered at device resolution so it stays crisp on
+// a 4K board, then blitted.
+const emojiSprites = new Map();
+
 function emoji(ctx, glyph, x, y, size, rot = 0) {
-  ctx.save();
-  ctx.translate(x, y);
-  if (rot) ctx.rotate(rot);
-  ctx.font = `${size}px serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(glyph, 0, 0);
-  ctx.restore();
+  const scale = ctx.getTransform().a || 1;
+  // The box is wider than the type size because emoji overshoot their em box.
+  const box = size * 1.3;
+  const px = Math.max(8, Math.round(box * scale / 8) * 8);
+  const id = `${glyph}|${px}`;
+  let sprite = emojiSprites.get(id);
+  if (!sprite) {
+    sprite = document.createElement('canvas');
+    sprite.width = px;
+    sprite.height = px;
+    const g = sprite.getContext('2d');
+    g.font = `${px / 1.3}px serif`;
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(glyph, px / 2, px / 2);
+    emojiSprites.set(id, sprite);
+  }
+  if (rot) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rot);
+    ctx.drawImage(sprite, -box / 2, -box / 2, box, box);
+    ctx.restore();
+    return;
+  }
+  ctx.drawImage(sprite, x - box / 2, y - box / 2, box, box);
 }
 
 function drawBeamLink(ctx, p) {
@@ -1114,23 +1282,27 @@ function drawPart(ctx, p) {
         ctx.arc(p.x, p.y, 40 + (1 - ring) * 46, 0, Math.PI * 2);
         ctx.stroke();
       }
-      const g = ctx.createRadialGradient(p.x - 10, p.y - 12, 4, p.x, p.y, 36);
-      g.addColorStop(0, '#fff3c4');
-      g.addColorStop(0.6, '#ffc24a');
-      g.addColorStop(1, '#a35f10');
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 34 + ring * 3, 0, Math.PI * 2);
-      ctx.fill();
-      // Little note pips so children can tell the bells apart by eye as well.
-      ctx.fillStyle = 'rgba(20,26,60,0.65)';
+      // The pips are part of the sprite: a row of bells all ringing at once is
+      // otherwise eight little arcs each, every frame.
       const pips = ((p.note || 0) % 8) + 1;
-      for (let i = 0; i < pips; i++) {
-        const ang = -Math.PI / 2 + (i - (pips - 1) / 2) * 0.34;
-        ctx.beginPath();
-        ctx.arc(p.x + Math.cos(ang) * 20, p.y + Math.sin(ang) * 20, 3.4, 0, Math.PI * 2);
-        ctx.fill();
-      }
+      shadedBall(ctx, `bel${pips}`, p.x, p.y, 34 + ring * 3, (g) => {
+        const grad = g.createRadialGradient(-10, -12, 4, 0, 0, 36);
+        grad.addColorStop(0, '#fff3c4');
+        grad.addColorStop(0.6, '#ffc24a');
+        grad.addColorStop(1, '#a35f10');
+        g.fillStyle = grad;
+        g.beginPath();
+        g.arc(0, 0, 34, 0, Math.PI * 2);
+        g.fill();
+        // Little note pips so children can tell the bells apart by eye as well.
+        g.fillStyle = 'rgba(20,26,60,0.65)';
+        for (let i = 0; i < pips; i++) {
+          const ang = -Math.PI / 2 + (i - (pips - 1) / 2) * 0.34;
+          g.beginPath();
+          g.arc(Math.cos(ang) * 20, Math.sin(ang) * 20, 3.4, 0, Math.PI * 2);
+          g.fill();
+        }
+      }, 34);
       break;
     }
     case 'kegel': {
@@ -1309,20 +1481,22 @@ function drawBody(ctx, b) {
       ctx.stroke();
       break;
     }
-    default: {
-      const g = ctx.createRadialGradient(b.x - b.r * 0.35, b.y - b.r * 0.4, b.r * 0.1, b.x, b.y, b.r);
-      g.addColorStop(0, '#bfe3ff');
-      g.addColorStop(0.5, '#3b6bff');
-      g.addColorStop(1, '#16277a');
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = 'rgba(255,255,255,0.75)';
-      ctx.beginPath();
-      ctx.arc(b.x - b.r * 0.32, b.y - b.r * 0.36, b.r * 0.22, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    default:
+      // Hundreds of these can be in flight at once, so the marble is a sprite.
+      shadedBall(ctx, 'marble', b.x, b.y, b.r, (g, r) => {
+        const grad = g.createRadialGradient(-r * 0.35, -r * 0.4, r * 0.1, 0, 0, r);
+        grad.addColorStop(0, '#bfe3ff');
+        grad.addColorStop(0.5, '#3b6bff');
+        grad.addColorStop(1, '#16277a');
+        g.fillStyle = grad;
+        g.beginPath();
+        g.arc(0, 0, r, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = 'rgba(255,255,255,0.75)';
+        g.beginPath();
+        g.arc(-r * 0.32, -r * 0.36, r * 0.22, 0, Math.PI * 2);
+        g.fill();
+      });
   }
 }
 

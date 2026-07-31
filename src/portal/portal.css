@@ -243,10 +243,14 @@
 }
 
 /* ── Mission select ────────────────────────────────────────────────────
-   Nine missions in a 3x3 of horizontal rows rather than a 4x2 of tall
-   cards. A row puts the icon, the name, the age and the progress on one
-   reading line, so the eye scans down a column instead of decoding a tile;
-   it also stops the nine names from wrapping to two lines each. */
+   Missions are horizontal rows rather than tall cards: a row puts the icon,
+   the name, the age and the progress on one reading line, so the eye scans
+   down a column instead of decoding a tile.
+
+   Fourteen of them go in four columns of four. Three columns would need five
+   rows, and five rows of the old row height ran off the bottom of a 16:9
+   board — the archive has to be one screen, because a grid that scrolls is a
+   grid where a child never finds the last mission. */
 
 .missions {
   width: 100%;
@@ -261,7 +265,7 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   /* Content-height rows spread down the column. Stretched 1fr rows made each
      mission a 250px-tall box, so the highlight on the last-played one read as
      a panel rather than as a lit row. */
@@ -273,8 +277,8 @@
 .mission {
   display: flex;
   align-items: center;
-  gap: var(--sp-4);
-  padding: var(--sp-3) var(--sp-4);
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
   border-radius: var(--r-lg);
   text-align: left;
   color: var(--cream);
@@ -296,9 +300,9 @@
 }
 
 .mission__icon {
-  width: clamp(64px, 11.5vmin, 260px);
-  height: clamp(64px, 11.5vmin, 260px);
-  font-size: clamp(28px, 5.2vmin, 116px);
+  width: clamp(58px, 10vmin, 225px);
+  height: clamp(58px, 10vmin, 225px);
+  font-size: clamp(25px, 4.6vmin, 104px);
 }
 
 .mission__text {

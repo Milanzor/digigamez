@@ -1,0 +1,23 @@
+.bub-stage {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: var(--void-deep);
+}
+
+.bub-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* The one line of instruction sits at the bottom, out of the way of the
+   bubbles, which all rise through the middle of the screen. */
+.bub-hint {
+  position: absolute;
+  left: 50%;
+  bottom: var(--sp-3);
+  transform: translateX(-50%);
+  max-width: 90vw;
+  pointer-events: none;
+  z-index: 10;
+}

@@ -1,0 +1,129 @@
+.rov-stage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: calc(var(--touch) + var(--sp-2)) var(--sp-3) var(--sp-3);
+  gap: var(--sp-2);
+}
+
+/* The board takes whatever height the console leaves. `min-height: 0` is what
+   stops a flex column from letting the canvas push the console off screen. */
+.rov-board {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+.rov-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.rov-bar {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-lg);
+  background: rgba(13, 12, 34, 0.9);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule-mid), var(--shadow-panel);
+}
+
+/* The program strip: the plan, left to right, exactly as the rover will read
+   it. Tapping an instruction takes it back out again. */
+.rov-program {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(4px, 0.6vmin, 12px);
+  min-height: clamp(52px, 7vmin, 150px);
+}
+
+.rov-empty {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.rov-chip {
+  width: clamp(44px, 6vmin, 130px);
+  height: clamp(44px, 6vmin, 130px);
+  border-radius: var(--r-md);
+  display: grid;
+  place-items: center;
+  font-size: clamp(20px, 2.9vmin, 62px);
+  line-height: 1;
+  color: var(--cream);
+  background: var(--panel-hi);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule-mid);
+  transition: transform 0.12s var(--ease-press), background 0.14s ease;
+}
+
+.rov-chip:active { transform: scale(0.92); }
+
+/* The instruction being carried out right now, so the child can follow the
+   rover in the strip as well as on the board. */
+.rov-chip.is-active {
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--amber-hi), var(--amber-lo));
+  box-shadow: var(--glow-sun);
+  transform: translateY(clamp(-6px, -0.8vmin, -2px));
+}
+
+.rov-keys {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(5px, 0.8vmin, 16px);
+}
+
+.rov-key {
+  width: clamp(64px, 8.6vmin, 190px);
+  height: clamp(64px, 8.6vmin, 190px);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: clamp(26px, 3.6vmin, 78px);
+  line-height: 1;
+  color: var(--cream);
+  background: linear-gradient(180deg, var(--panel-hi), var(--panel));
+  box-shadow: inset 0 0 0 var(--hair) var(--rule-strong);
+  transition: transform 0.1s var(--ease-press), background 0.12s ease;
+}
+
+.rov-key:active {
+  transform: scale(0.92);
+  background: var(--panel-press);
+}
+
+/* "×2" is a word, not a symbol, so it needs a smaller face to fit the key. */
+.rov-key--x { font-size: clamp(19px, 2.5vmin, 54px); font-weight: 800; }
+
+.rov-sep {
+  width: var(--hair);
+  height: clamp(34px, 5vmin, 108px);
+  background: var(--rule-mid);
+  flex-shrink: 0;
+}
+
+/* Same green ▶ as the Gekke Machine: the one key that has to be findable from
+   the back of the classroom. */
+.rov-key--go {
+  width: clamp(74px, 10vmin, 220px);
+  height: clamp(74px, 10vmin, 220px);
+  color: #10240f;
+  background: linear-gradient(180deg, #8df59a, var(--green));
+  box-shadow: inset 0 0 0 var(--hair) rgba(255, 255, 255, 0.5);
+}
+
+.rov-key--go.is-running {
+  color: #2b0b08;
+  background: linear-gradient(180deg, #ff8f80, var(--coral));
+}

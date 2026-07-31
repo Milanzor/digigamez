@@ -201,12 +201,47 @@ export const sfx = {
   // Glockenspiel note, indexed into a pentatonic scale: any combination of
   // steps sounds consonant, so a machine full of bells can't play a wrong note.
   chime: (step = 0) => {
-    const semis = PENTATONIC[((step % PENTATONIC.length) + PENTATONIC.length) % PENTATONIC.length];
-    const freq = N(semis + 12);
+    const freq = pent(step, 12);
     tone({ freq, dur: 0.55, type: 'sine', gain: 0.17 });
     tone({ freq: freq * 2, dur: 0.3, type: 'sine', gain: 0.05 });
     tone({ freq: freq * 3.01, dur: 0.12, type: 'sine', gain: 0.02 });
   },
+
+  // The other three voices of the sequencer. They index the same pentatonic
+  // ladder as `chime`, so whatever a child switches on plays in tune with
+  // whatever the other child switched on — the loop cannot go sour.
+  blub: (step = 0) => {
+    const freq = pent(step, 0);
+    // A short sine that bends up into its note: watery rather than melodic,
+    // so it sits under the bells instead of competing with them.
+    tone({ freq: freq * 0.6, to: freq, dur: 0.22, type: 'sine', gain: 0.2 });
+    tone({ freq: freq * 2, dur: 0.07, type: 'sine', gain: 0.04, delay: 0.03 });
+  },
+  bass: (step = 0) => {
+    const freq = pent(step, -24);
+    tone({ freq, dur: 0.3, type: 'triangle', gain: 0.26 });
+    tone({ freq: freq * 2, dur: 0.12, type: 'sine', gain: 0.06 });
+  },
+  // Noise drum, pitched by variant so a two-row rhythm still has a high and a
+  // low. No oscillator at all, so it never has to be in any key.
+  drum: (variant = 0) => {
+    const low = variant % 2 === 0;
+    noise({
+      dur: low ? 0.18 : 0.09,
+      gain: low ? 0.22 : 0.13,
+      freq: low ? 900 : 6000,
+      to: low ? 90 : 2600,
+      type: low ? 'lowpass' : 'highpass',
+    });
+    if (low) tone({ freq: 110, to: 55, dur: 0.14, type: 'sine', gain: 0.14 });
+  },
 };
 
 const PENTATONIC = [0, 2, 4, 7, 9, 12, 14, 16];
+
+// Pentatonic step -> frequency, transposed by `octaveShift` semitones. Steps
+// wrap, so a caller may pass any integer and still land on a scale tone.
+function pent(step, shift = 0) {
+  const i = ((step % PENTATONIC.length) + PENTATONIC.length) % PENTATONIC.length;
+  return N(PENTATONIC[i] + shift);
+}

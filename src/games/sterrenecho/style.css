@@ -1,0 +1,74 @@
+.echo-stage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  padding: calc(var(--touch) + var(--sp-4)) var(--sp-4) var(--sp-4);
+}
+
+.echo-grid {
+  display: grid;
+  gap: clamp(10px, 1.8vmin, 40px);
+  flex: 1;
+  min-height: 0;
+  aspect-ratio: var(--grid-ratio, 1);
+  max-width: 100%;
+  max-height: 100%;
+}
+
+/* A panel is dark glass with its colour only as a rim and a faint inner wash.
+   That way "lit" is a real state change — the whole pane floods with its own
+   colour — rather than a slightly brighter version of an already bright tile,
+   which is unreadable from across a classroom. */
+.echo-panel {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  border-radius: var(--r-lg);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 36% 28%, color-mix(in srgb, var(--panel-color) 14%, transparent), transparent 62%),
+    rgba(255, 255, 255, 0.03);
+  box-shadow:
+    inset 0 0 0 clamp(2px, 0.32vmin, 7px) color-mix(in srgb, var(--panel-color) 45%, transparent),
+    var(--shadow-panel);
+  transition: transform 0.12s var(--ease-press), background 0.14s ease, box-shadow 0.14s ease;
+}
+
+.echo-panel:active { transform: scale(0.975); }
+
+.echo-panel__glyph {
+  font-size: clamp(46px, 11vmin, 250px);
+  line-height: 1;
+  color: color-mix(in srgb, var(--panel-color) 82%, var(--void));
+  transition: color 0.14s ease, transform 0.14s var(--ease-press);
+}
+
+.echo-panel.is-lit {
+  background: radial-gradient(circle at 40% 30%, #ffffff 0%, var(--panel-color) 55%, color-mix(in srgb, var(--panel-color) 70%, black) 100%);
+  box-shadow:
+    inset 0 0 0 clamp(2px, 0.32vmin, 7px) #ffffff,
+    0 0 clamp(20px, 4vmin, 90px) color-mix(in srgb, var(--panel-color) 65%, transparent);
+}
+
+.echo-panel.is-lit .echo-panel__glyph {
+  color: rgba(255, 255, 255, 0.9);
+  transform: scale(1.12);
+}
+
+/* A wrong tone gets a shrug, not an alarm: the panel dims for a moment while
+   the station starts the message again. */
+.echo-panel.is-wrong {
+  animation: echo-shrug 0.4s ease;
+}
+
+@keyframes echo-shrug {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(clamp(-10px, -1.4vmin, -4px)); }
+  75% { transform: translateX(clamp(4px, 1.4vmin, 10px)); }
+}

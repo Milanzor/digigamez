@@ -1,0 +1,97 @@
+.hoc-stage {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: var(--void-deep);
+}
+
+.hoc-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.hoc-hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: var(--sp-2);
+  z-index: 6;
+  pointer-events: none;
+}
+
+/* Mode gate, shown over the live rink so the game already looks like it has
+   started while the two of them decide. Same shape as the difficulty gate in
+   Ruimte Invasie — a child who has met one recognises the other. */
+.hoc-mode {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  background: rgba(5, 7, 15, 0.86);
+}
+
+.hoc-mode__panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-5);
+  border-radius: var(--r-lg);
+  background: rgba(13, 12, 34, 0.94);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule-mid), var(--shadow-panel);
+  max-width: 92vw;
+}
+
+.hoc-mode__title {
+  font-weight: 800;
+  font-size: var(--fs-h1);
+  color: var(--cream);
+  text-align: center;
+}
+
+.hoc-mode__row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-3);
+}
+
+.hoc-mode__btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-1);
+  width: clamp(180px, 26vmin, 560px);
+  padding: var(--sp-3) var(--sp-3) var(--sp-4);
+  border-radius: var(--r-md);
+  background: var(--panel-hi);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule);
+  color: var(--cream);
+  transition: transform 0.12s var(--ease-press), background 0.16s ease;
+}
+
+.hoc-mode__btn:active {
+  transform: translateY(clamp(2px, 0.4vmin, 9px)) scale(0.985);
+  background: var(--panel-press);
+}
+
+.hoc-mode__btn.is-last {
+  background: linear-gradient(180deg, rgba(255, 194, 74, 0.13), rgba(255, 255, 255, 0.02));
+  box-shadow: inset 0 0 0 var(--hair) rgba(255, 194, 74, 0.45);
+}
+
+.hoc-mode__icon { font-size: var(--fs-icon); }
+
+.hoc-mode__label {
+  font-weight: 800;
+  font-size: var(--fs-h2);
+}
+
+.hoc-mode__sub {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.3;
+}
