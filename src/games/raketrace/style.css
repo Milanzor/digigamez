@@ -1,0 +1,193 @@
+.race-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: calc(var(--touch) + var(--sp-2)) var(--sp-3) var(--sp-3);
+}
+
+/* ── Lane count ────────────────────────────────────────────────────────── */
+
+.race-intro {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-4);
+}
+
+.race-intro__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-4);
+}
+
+.race-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  min-width: clamp(120px, 22vmin, 490px);
+  border-radius: var(--r-lg);
+  color: var(--cream);
+  background: var(--panel);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule-mid);
+  transition: transform 0.12s var(--ease-press), background 0.14s ease;
+}
+
+.race-pick:active { transform: scale(0.96); background: var(--panel-press); }
+
+/* The count as that many rockets: the number is there for whoever reads, the
+   picture is there for whoever does not. */
+.race-pick__art {
+  font-size: clamp(20px, 3.6vmin, 78px);
+  line-height: 1.1;
+  letter-spacing: -0.06em;
+}
+
+.race-pick__label { font-size: var(--fs-label); font-weight: 700; }
+
+.race-intro__note {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--faint);
+  text-align: center;
+}
+
+/* ── Track ─────────────────────────────────────────────────────────────── */
+
+.race-track {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(var(--lanes), 1fr);
+  gap: var(--sp-3);
+}
+
+.race-lane {
+  position: relative;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--lane) 14%, transparent), transparent 55%),
+    rgba(255, 255, 255, 0.025);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule);
+}
+
+.race-lane.is-robot { opacity: 0.72; }
+
+.race-lane__finish {
+  position: absolute;
+  top: var(--sp-1);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: clamp(20px, 3.4vmin, 74px);
+  line-height: 1;
+}
+
+/* As tall as the lane, so a percentage translate is a percentage of the lane
+   rather than of the rocket. The rocket rides at the arm's foot and the arm
+   slides up — a transform, so climbing four lanes costs no layout. */
+.race-arm {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: var(--sp-2);
+  will-change: transform;
+}
+
+.race-rocket {
+  font-size: clamp(28px, 5.4vmin, 118px);
+  line-height: 1;
+  filter: drop-shadow(0 clamp(4px, 0.8vmin, 18px) clamp(6px, 1.2vmin, 26px) color-mix(in srgb, var(--lane) 60%, transparent));
+}
+
+/* ── Pads ──────────────────────────────────────────────────────────────── */
+
+.race-pads {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(var(--lanes), 1fr);
+  gap: var(--sp-3);
+}
+
+.race-pair {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.race-pair.is-robot { opacity: 0.4; pointer-events: none; }
+
+.race-pair__cap {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  text-align: center;
+  color: color-mix(in srgb, var(--lane) 80%, var(--cream));
+}
+
+.race-pair__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-2);
+}
+
+.race-pad {
+  height: clamp(64px, 11vmin, 250px);
+  border-radius: var(--r-md);
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.035);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule);
+  transition: background 0.1s ease, transform 0.1s var(--ease-press), box-shadow 0.1s ease;
+}
+
+/* The live pad, and the only one that does anything. Amber, like every other
+   "this is where you press" in the bundle. */
+.race-pad.is-next {
+  background: linear-gradient(180deg, var(--amber-hi), var(--amber-lo));
+  box-shadow: inset 0 0 0 var(--hair) rgba(255, 255, 255, 0.5), var(--glow-sun);
+}
+
+.race-pad.is-hit { transform: scale(0.94); }
+.race-pad.is-dud { background: rgba(255, 255, 255, 0.015); transform: scale(0.98); }
+
+.race-pad__foot {
+  font-size: clamp(22px, 4.2vmin, 92px);
+  line-height: 1;
+}
+
+/* One foot mirrored into the other, so the pair is a left and a right. */
+.race-pad__foot.is-left { transform: scaleX(-1); }
+
+/* ── Countdown ─────────────────────────────────────────────────────────── */
+
+.race-count {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  z-index: 12;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs-hero);
+  color: var(--amber);
+  text-shadow: var(--glow-amber-text);
+  background: rgba(5, 7, 15, 0.35);
+  transition: opacity 0.2s ease;
+}
+
+.race-count.is-done { opacity: 0; }

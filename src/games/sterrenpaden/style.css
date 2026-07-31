@@ -1,0 +1,40 @@
+.path-stage {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: var(--void-deep);
+}
+
+.path-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* The name of the thing, once it has appeared. Deliberately *after* the reveal
+   and not before: the picture is the answer, and printing "poes" over an
+   unfinished constellation would give it away to whoever can read. */
+.path-label {
+  position: absolute;
+  left: 50%;
+  bottom: var(--sp-4);
+  transform: translateX(-50%) translateY(clamp(6px, 1vmin, 22px));
+  z-index: 10;
+  pointer-events: none;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs-h2);
+  line-height: 1;
+  color: var(--cream-hi);
+  text-shadow: 0 0 clamp(12px, 2.4vmin, 52px) rgba(255, 194, 74, 0.45);
+  opacity: 0;
+  transition: opacity 0.4s ease, transform 0.4s var(--ease-press);
+}
+
+.path-label.is-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .path-label { transition: opacity 0.2s ease; }
+}

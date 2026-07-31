@@ -20,11 +20,60 @@ import { setLevel, starsForLevel } from '../../shell/progress.js';
 // crystals left over, everything goes back to the start with the program still
 // in the strip, so a child edits their plan instead of rebuilding it.
 
+// The console is drawn, not typed. ⤺ and ⤻ were the worst offenders: they are
+// barely a glyph at all in most fonts, they render at wildly different weights
+// per platform, and a five-year-old cannot tell them apart across a classroom.
+// A turning arrow with a real arrowhead can be read from the back wall, and it
+// scales with the key instead of with the font.
+//
+// Every icon is a 100x100 viewBox so the same string works on a program chip
+// and on a console key.
+const svg = (body) => `<svg class="rov-ico" viewBox="0 0 100 100" aria-hidden="true">${body}</svg>`;
+
+// Turning arrows: a shaft that leaves the rover, bends, and points where the
+// rover will end up facing. Right is the same drawing mirrored, so the pair is
+// guaranteed to be symmetrical.
+const TURN_BODY = `
+  <path d="M64 88V50a16 16 0 0 0-16-16H32" fill="none" stroke="currentColor"
+        stroke-width="11" stroke-linecap="round"/>
+  <path d="M38 14 12 34l26 20Z" fill="currentColor"/>
+`;
+
+const ICONS = {
+  forward: svg('<path d="M50 10 82 46H64v44H36V46H18Z" fill="currentColor"/>'),
+  left: svg(TURN_BODY),
+  right: svg(`<g transform="translate(100,0) scale(-1,1)">${TURN_BODY}</g>`),
+  // "Do that again": a loop with the number of times inside it. The old "×2"
+  // was the one key on the console that had to be read rather than seen.
+  repeat: svg(`
+    <path d="M80 52a30 30 0 1 1-9-21" fill="none" stroke="currentColor"
+          stroke-width="10" stroke-linecap="round"/>
+    <path d="M54 8l28 6-8 27Z" fill="currentColor"/>
+    <text x="48" y="70" text-anchor="middle" font-size="46" font-weight="800"
+          font-family="inherit" fill="currentColor">2</text>
+  `),
+  // Undo curls back on itself; the bin empties the whole strip. Both are
+  // pictures a child already knows from a tablet.
+  undo: svg(`
+    <path d="M34 38h28a24 24 0 0 1 0 48H36" fill="none" stroke="currentColor"
+          stroke-width="11" stroke-linecap="round"/>
+    <path d="M44 18 20 38l24 18Z" fill="currentColor"/>
+  `),
+  clear: svg(`
+    <rect x="18" y="22" width="64" height="12" rx="6" fill="currentColor"/>
+    <path d="M40 22v-7h20v7" fill="none" stroke="currentColor" stroke-width="8"
+          stroke-linecap="round"/>
+    <path d="M26 40h48l-5 46a9 9 0 0 1-9 8H40a9 9 0 0 1-9-8Z" fill="currentColor"/>
+  `),
+  run: svg('<path d="M30 16 86 50 30 84Z" fill="currentColor"/>'),
+  stop: svg('<rect x="26" y="26" width="48" height="48" rx="9" fill="currentColor"/>'),
+};
+
 const CMDS = {
-  F: { glyph: '⬆', label: 'Vooruit' },
-  L: { glyph: '⤺', label: 'Links draaien' },
-  R: { glyph: '⤻', label: 'Rechts draaien' },
-  X: { glyph: '×2', label: 'Nog een keer' },
+  F: { icon: ICONS.forward, label: 'Vooruit' },
+  L: { icon: ICONS.left, label: 'Links draaien' },
+  R: { icon: ICONS.right, label: 'Rechts draaien' },
+  X: { icon: ICONS.repeat, label: 'De vorige opdracht nog een keer' },
 };
 
 const MAX_PROGRAM = 14;
@@ -150,11 +199,22 @@ export function init(container, opts) {
 
   const bar = document.createElement('div');
   bar.className = 'rov-bar';
+
+  // The tape: the plan on the left, how much room is left on the right. The
+  // counter replaces the "het programma is vol" banner as the *first* thing a
+  // child sees about the limit — a banner only ever arrives after they have
+  // already hit it.
+  const tape = document.createElement('div');
+  tape.className = 'rov-tape';
   const strip = document.createElement('div');
   strip.className = 'rov-program';
+  const count = document.createElement('div');
+  count.className = 'rov-count';
+  tape.append(strip, count);
+
   const keys = document.createElement('div');
   keys.className = 'rov-keys';
-  bar.append(strip, keys);
+  bar.append(tape, keys);
   stage.append(board, bar);
   container.appendChild(stage);
 
@@ -188,34 +248,68 @@ export function init(container, opts) {
     btn.className = `rov-key rov-key--${cmd.toLowerCase()}`;
     btn.dataset.cmd = cmd;
     btn.setAttribute('aria-label', CMDS[cmd].label);
-    btn.textContent = CMDS[cmd].glyph;
+    btn.title = CMDS[cmd].label;
+    btn.innerHTML = CMDS[cmd].icon;
     return btn;
   }
 
   const runBtn = document.createElement('button');
   runBtn.className = 'rov-key rov-key--go';
   runBtn.setAttribute('aria-label', 'Voer het programma uit');
-  runBtn.textContent = '▶';
+  runBtn.innerHTML = ICONS.run;
 
   const undoBtn = document.createElement('button');
-  undoBtn.className = 'rov-key rov-key--undo';
+  undoBtn.className = 'rov-key rov-key--edit';
   undoBtn.setAttribute('aria-label', 'Laatste opdracht weghalen');
-  undoBtn.textContent = '⌫';
+  undoBtn.title = 'Laatste opdracht weghalen';
+  undoBtn.innerHTML = ICONS.undo;
+
+  const clearBtn = document.createElement('button');
+  clearBtn.className = 'rov-key rov-key--edit';
+  clearBtn.setAttribute('aria-label', 'Het hele programma weghalen');
+  clearBtn.title = 'Het hele programma weghalen';
+  clearBtn.innerHTML = ICONS.clear;
+
+  // Named clusters rather than one row of anonymous circles — the same move
+  // Ruimtetekenen made with its thirty tools, for the same reason: a child then
+  // only ever searches inside one group. Here it also separates the three kinds
+  // of key that used to sit side by side, where a stray tap on ▶ while aiming
+  // for an arrow would launch a half-finished plan.
+  function cluster(label, buttons, extraClass = '') {
+    const el = document.createElement('div');
+    el.className = `rov-cluster ${extraClass}`.trim();
+    const cap = document.createElement('div');
+    cap.className = 'rov-cluster__label';
+    cap.textContent = label;
+    const body = document.createElement('div');
+    body.className = 'rov-cluster__body';
+    body.append(...buttons);
+    el.append(cap, body);
+    return el;
+  }
 
   function buildKeys() {
     const cmds = cfg.repeat ? ['F', 'L', 'R', 'X'] : ['F', 'L', 'R'];
-    const sep = document.createElement('div');
-    sep.className = 'rov-sep';
-    keys.replaceChildren(...cmds.map(keyButton), sep, undoBtn, runBtn);
+    keys.replaceChildren(
+      cluster('Opdrachten', cmds.map(keyButton)),
+      cluster('Weghalen', [undoBtn, clearBtn]),
+      cluster('Rijden', [runBtn], 'rov-cluster--go'),
+    );
+  }
+
+  function renderCount() {
+    count.textContent = `${program.length}/${MAX_PROGRAM}`;
+    count.classList.toggle('is-full', program.length >= MAX_PROGRAM);
   }
 
   function renderProgram() {
+    renderCount();
     if (!program.length) {
       const empty = document.createElement('div');
       empty.className = 'rov-empty';
       empty.textContent = players > 1
-        ? 'Om de beurt één opdracht — dan samen op ▶'
-        : 'Zet opdrachten klaar en druk op ▶';
+        ? 'Om de beurt één opdracht — dan samen op start'
+        : 'Zet opdrachten klaar en druk op start';
       strip.replaceChildren(empty);
       return;
     }
@@ -224,7 +318,13 @@ export function init(container, opts) {
       chip.className = `rov-chip${i === (action ? runIndex : -1) ? ' is-active' : ''}`;
       chip.dataset.index = String(i);
       chip.setAttribute('aria-label', `${CMDS[cmd].label} weghalen`);
-      chip.textContent = CMDS[cmd].glyph;
+      chip.innerHTML = CMDS[cmd].icon;
+      // The step number under each chip: the strip is the program, and being
+      // able to say "step four goes wrong" is most of what editing a plan is.
+      const n = document.createElement('span');
+      n.className = 'rov-chip__n';
+      n.textContent = String(i + 1);
+      chip.appendChild(n);
       return chip;
     }));
   }
@@ -265,6 +365,15 @@ export function init(container, opts) {
     if (btn === undoBtn) {
       if (running || !program.length) return;
       program.pop();
+      sfx.back();
+      renderProgram();
+      return;
+    }
+    if (btn === clearBtn) {
+      if (running || !program.length) return;
+      program = [];
+      turn = 0;
+      setTurnLabel();
       sfx.back();
       renderProgram();
       return;
@@ -335,7 +444,8 @@ export function init(container, opts) {
     queue = flat;
     running = true;
     runBtn.classList.add('is-running');
-    runBtn.textContent = '⏹';
+    runBtn.innerHTML = ICONS.stop;
+    runBtn.setAttribute('aria-label', 'Stop en zet de rover terug');
     sfx.launch();
     nextAction();
   }
@@ -343,7 +453,8 @@ export function init(container, opts) {
   function stopRun(byHand = false) {
     running = false;
     runBtn.classList.remove('is-running');
-    runBtn.textContent = '▶';
+    runBtn.innerHTML = ICONS.run;
+    runBtn.setAttribute('aria-label', 'Voer het programma uit');
     action = null;
     queue = [];
     highlightStep(-1);
@@ -398,7 +509,8 @@ export function init(container, opts) {
   function finishRun() {
     running = false;
     runBtn.classList.remove('is-running');
-    runBtn.textContent = '▶';
+    runBtn.innerHTML = ICONS.run;
+    runBtn.setAttribute('aria-label', 'Voer het programma uit');
     highlightStep(-1);
 
     if (collected.size === field.crystals.length) {

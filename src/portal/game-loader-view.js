@@ -46,7 +46,10 @@ export async function renderGameLoaderView(container, params) {
   view.className = 'game-view';
   container.replaceChildren(view);
 
-  const players = getItem('playerCount', 1);
+  // Clamped to what this mission actually seats: the crew choice is a property
+  // of the board, not of the game, so a solo game asked for two players would
+  // otherwise render a turn indicator nobody can use.
+  const players = Math.max(1, Math.min(getItem('playerCount', 1), game.maxPlayers ?? 1));
   const onExit = () => navigate('/rooster');
 
   mod.init(view, {

@@ -1,0 +1,24 @@
+.tow-stage {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: var(--void-deep);
+}
+
+.tow-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* Bottom centre: the tower grows upward and the crane runs along the top, so
+   the lower middle of the screen is the one strip that never has anything in
+   it. */
+.tow-hint {
+  position: absolute;
+  left: 50%;
+  bottom: var(--sp-3);
+  transform: translateX(-50%);
+  max-width: 90vw;
+  pointer-events: none;
+  z-index: 10;
+}

@@ -1,0 +1,242 @@
+.mag-stage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--sp-2);
+  padding: calc(var(--touch) + var(--sp-2)) var(--sp-3) var(--sp-3);
+}
+
+/* ── Head start ────────────────────────────────────────────────────────── */
+
+.mag-intro {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-4);
+}
+
+.mag-intro__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-4);
+}
+
+.mag-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-lg);
+  color: var(--cream);
+  background: var(--panel);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule-mid);
+  transition: transform 0.12s var(--ease-press), background 0.14s ease;
+}
+
+.mag-pick:active { transform: scale(0.96); background: var(--panel-press); }
+.mag-pick.is-even { box-shadow: inset 0 0 0 var(--hair) var(--rule-strong); }
+
+/* A miniature of the rail, with the satellite already where it will start.
+   Which side is favoured is then a picture rather than a word. */
+.mag-pick__art {
+  width: clamp(120px, 22vmin, 490px);
+  display: grid;
+  place-items: center;
+  padding: var(--sp-2) 0;
+}
+
+.mag-pick__rail {
+  position: relative;
+  width: 100%;
+  height: clamp(6px, 0.9vmin, 20px);
+  border-radius: var(--r-pill);
+  background: linear-gradient(90deg, var(--p1), rgba(255, 255, 255, 0.14), var(--p2));
+}
+
+.mag-pick__rail i {
+  position: absolute;
+  top: 50%;
+  width: clamp(20px, 3.2vmin, 70px);
+  height: clamp(20px, 3.2vmin, 70px);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--cream);
+  box-shadow: var(--glow-sun);
+}
+
+.mag-pick__label {
+  font-size: var(--fs-label);
+  font-weight: 700;
+}
+
+/* ── The rail ──────────────────────────────────────────────────────────── */
+
+.mag-rail {
+  flex: 0 0 auto;
+  position: relative;
+  height: clamp(58px, 11vmin, 250px);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 0 var(--sp-3);
+}
+
+.mag-rail__home {
+  font-size: var(--fs-icon);
+  line-height: 1;
+  filter: drop-shadow(0 0 clamp(6px, 1.2vmin, 26px) rgba(255, 255, 255, 0.25));
+}
+
+/* The beam leans towards whoever is winning: the gradient midpoint follows the
+   satellite, so the rail itself reads as a tug even standing at the back. */
+.mag-rail__line {
+  height: clamp(8px, 1.3vmin, 28px);
+  border-radius: var(--r-pill);
+  background: linear-gradient(
+    90deg,
+    var(--p1) 0%,
+    rgba(255, 255, 255, 0.16) calc(50% + var(--lean, 0) * 42%),
+    var(--p2) 100%
+  );
+  box-shadow: inset 0 0 0 var(--hair) var(--rule);
+}
+
+/* As wide as the rail, so a percentage translate is a percentage of the rail.
+   The satellite rides in its centre. */
+.mag-arm {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  transition: transform 0.16s ease-out;
+  will-change: transform;
+}
+
+.mag-sat {
+  font-size: var(--fs-icon);
+  line-height: 1;
+  filter: drop-shadow(0 0 clamp(10px, 2vmin, 44px) rgba(255, 194, 74, 0.55));
+}
+
+/* ── The two consoles ──────────────────────────────────────────────────── */
+
+.mag-field {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+}
+
+.mag-half {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  min-height: 0;
+  padding: var(--sp-2);
+  border-radius: var(--r-lg);
+  background: var(--panel);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule);
+}
+
+.mag-half__cap {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--faint);
+}
+
+.mag-half--p1 .mag-half__cap { color: var(--p1); }
+.mag-half--p2 .mag-half__cap { color: var(--p2); }
+.mag-half.is-robot .mag-half__cap { color: var(--muted); }
+
+/* The robot's half stays visible — a child wants to see it being beaten — but
+   dimmed, so no finger goes looking for something to tap over there. */
+.mag-half.is-robot .mag-grid { opacity: 0.55; pointer-events: none; }
+
+.mag-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 2), 1fr);
+  gap: var(--sp-2);
+}
+
+.mag-panel {
+  min-height: 0;
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.035);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule);
+  transition: background 0.1s ease, transform 0.1s var(--ease-press), box-shadow 0.1s ease;
+}
+
+/* The live panel. Amber and only amber, because this is the one thing on the
+   screen a child has to find, and the palette reserves amber for exactly that. */
+.mag-panel.is-lit {
+  background: linear-gradient(180deg, var(--amber-hi), var(--amber-lo));
+  box-shadow: inset 0 0 0 var(--hair) rgba(255, 255, 255, 0.5), var(--glow-sun);
+}
+
+.mag-panel.is-hit { transform: scale(0.93); }
+
+/* Tapping a dark panel gets a shrug, not a buzzer: it dips and comes back. */
+.mag-panel.is-dud { background: rgba(255, 255, 255, 0.015); transform: scale(0.97); }
+
+/* ── Legend ────────────────────────────────────────────────────────────── */
+
+/* Tap the lit one, not the dark ones — as a picture, because the youngest
+   player this is aimed at is two. */
+.mag-legend {
+  flex: 0 0 auto;
+  align-self: center;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--r-pill);
+  background: rgba(5, 7, 15, 0.7);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule);
+}
+
+.mag-legend__item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.mag-legend__panel {
+  width: clamp(24px, 3.6vmin, 80px);
+  height: clamp(16px, 2.4vmin, 54px);
+  border-radius: var(--r-sm);
+  background: rgba(255, 255, 255, 0.035);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule);
+}
+
+.mag-legend__panel.is-lit {
+  background: linear-gradient(180deg, var(--amber-hi), var(--amber-lo));
+  box-shadow: var(--glow-sun);
+}
+
+.mag-legend__mark {
+  font-size: clamp(14px, 2.2vmin, 48px);
+  line-height: 1;
+}
+
+.mag-legend__mark--no { color: var(--coral); font-weight: 800; }
+
+.mag-legend__sep {
+  width: var(--hair);
+  height: clamp(16px, 2.4vmin, 54px);
+  background: var(--rule-mid);
+}

@@ -16,6 +16,17 @@ import { setLevel, starsForLevel } from '../../shell/progress.js';
 // big ones split in two, and only from level 4 is there an actual instruction
 // ("pop only the blue ones"), which a wrongly poked bubble answers by bouncing
 // away rather than by costing anything.
+//
+// That instruction is shown as a picture, never as a sentence. The children this
+// game is for cannot read, so a legend of the actual bubbles — the wanted one
+// ticked, the others crossed — is the only version of the rule that reaches
+// them. It doubles as the colour key for the child who *can* read and would
+// otherwise have to match a colour word to a bubble.
+//
+// Bubbles also leave the airlock with a shove rather than drifting up from
+// below the edge: spawning a screen's width of travel out of sight meant the
+// first second of every level was an empty stage, and the child was waiting on
+// the game instead of the other way round.
 
 const COLORS = [
   { hex: '#8fd6ff', name: 'blauwe' },
@@ -46,7 +57,7 @@ function levelConfig(l) {
     goal: Math.min(10 + n * 2, 26),
     // How many bubbles may be in the air at once, and how fast they climb.
     crowd: Math.min(6 + n, 13),
-    rise: Math.min(56 + n * 9, 132),
+    rise: Math.min(74 + n * 9, 150),
     minR: Math.max(52, 96 - n * 6),
     maxR: Math.max(78, 132 - n * 7),
     split: n >= 3,
@@ -129,9 +140,9 @@ export function init(container, opts) {
   stage.className = 'bub-stage';
   const canvas = document.createElement('canvas');
   canvas.className = 'bub-canvas';
-  const hint = document.createElement('div');
-  hint.className = 'hint-strip bub-hint';
-  stage.append(canvas, hint);
+  const legend = document.createElement('div');
+  legend.className = 'bub-legend';
+  stage.append(canvas, legend);
   container.appendChild(stage);
 
   handle = setupCanvas(canvas, { alpha: false });
@@ -158,18 +169,51 @@ export function init(container, opts) {
     chimeStep = 0;
     finished = false;
     target = cfg.colorTask ? COLORS[Math.floor(Math.random() * COLORS.length)] : null;
-    hint.textContent = target
-      ? `Prik alleen de ${target.name} bellen`
-      : players > 1
-        ? 'Prik de bellen — samen mag ook'
-        : 'Prik de bellen!';
+    renderLegend();
     // A few already in the air, so the screen is never empty on arrival.
     for (let i = 0; i < Math.min(4, cfg.crowd); i++) {
-      bubbles.push(spawn(LOGICAL_HEIGHT * (0.35 + Math.random() * 0.6)));
+      bubbles.push(spawn(LOGICAL_HEIGHT * (0.35 + Math.random() * 0.6), 0));
     }
   }
 
-  function spawn(y = LOGICAL_HEIGHT + 120) {
+  // The rule, drawn rather than written. Without a colour task there is nothing
+  // to explain — a finger on a bubble is the whole game — so the legend shrinks
+  // to that one pictogram instead of asserting a rule that does not exist.
+  function renderLegend() {
+    if (!target) {
+      legend.className = 'bub-legend bub-legend--simple';
+      legend.innerHTML = `
+        <span class="bub-legend__item" role="img" aria-label="${
+          players > 1 ? 'Prik de bellen, samen mag ook' : 'Prik de bellen'
+        }">
+          <span class="bub-legend__bub" style="--c:#8fd6ff"></span>
+          <span class="bub-legend__mark bub-legend__mark--tap">👆</span>
+        </span>
+      `;
+      return;
+    }
+
+    // Wanted colour first and biggest, then a hairline, then every colour that
+    // is not wanted — each crossed out on its own, because one cross over a
+    // group is a piece of grammar a three-year-old has not learned yet.
+    const others = COLORS.filter((c) => c !== target);
+    legend.className = 'bub-legend';
+    legend.innerHTML = `
+      <span class="bub-legend__item is-yes" role="img" aria-label="Prik alleen de ${target.name} bellen">
+        <span class="bub-legend__bub" style="--c:${target.hex}"></span>
+        <span class="bub-legend__mark bub-legend__mark--yes">✓</span>
+      </span>
+      <span class="bub-legend__sep"></span>
+      ${others.map((c) => `
+        <span class="bub-legend__item is-no" role="img" aria-label="Niet de ${c.name} bellen">
+          <span class="bub-legend__bub" style="--c:${c.hex}"></span>
+          <span class="bub-legend__mark bub-legend__mark--no">✕</span>
+        </span>
+      `).join('')}
+    `;
+  }
+
+  function spawn(y = null, boost = null) {
     const r = cfg.minR + Math.random() * (cfg.maxR - cfg.minR);
     // With a colour task, load the dice towards the wanted colour: hunting for
     // a rare blue bubble is a different, much less generous game.
@@ -177,11 +221,18 @@ export function init(container, opts) {
     if (target && Math.random() < 0.5) color = target;
     return {
       x: r + Math.random() * (LOGICAL_WIDTH - r * 2),
-      y,
+      // Just clear of the rim rather than a screenful below it, so the climb a
+      // child watches is the whole climb.
+      y: y === null ? LOGICAL_HEIGHT + r * 0.5 : y,
       r,
       color,
       vx: (Math.random() - 0.5) * 40,
       rise: cfg.rise * (0.75 + Math.random() * 0.5),
+      // The shove out of the airlock, which decays into the ordinary float.
+      // A real bubble leaves a nozzle fast and then settles, and the useful
+      // side effect is that it is in reach immediately instead of hanging
+      // around the bottom edge where nobody is looking.
+      boost: boost === null ? 300 + Math.random() * 120 : boost,
       phase: Math.random() * Math.PI * 2,
       wobble: 0.5 + Math.random() * 0.7,
       // Ticks down after a wrong poke: the bubble squashes and dodges.
@@ -218,6 +269,9 @@ export function init(container, opts) {
           r: b.r * 0.62,
           x: b.x + dir * b.r * 0.4,
           vx: dir * 120,
+          // A little of the pop's energy, so the pair springs apart instead of
+          // inheriting whatever was left of the parent's launch shove.
+          boost: 90,
           nudge: 0,
         });
       }
@@ -285,13 +339,16 @@ export function init(container, opts) {
       spawnCooldown -= dt;
       if (bubbles.length < cfg.crowd && spawnCooldown <= 0) {
         bubbles.push(spawn());
-        spawnCooldown = 0.45 + Math.random() * 0.5;
+        // Tightened along with the faster climb: at the old cadence a quicker
+        // bubble simply meant a thinner screen.
+        spawnCooldown = 0.34 + Math.random() * 0.42;
       }
     }
 
     for (let i = bubbles.length - 1; i >= 0; i--) {
       const b = bubbles[i];
-      b.y -= b.rise * dt;
+      b.y -= (b.rise + b.boost) * dt;
+      b.boost *= 1 - Math.min(1, dt * 2.6);
       b.x += (b.vx + Math.sin(t * b.wobble + b.phase) * 46) * dt;
       b.vx *= 1 - Math.min(1, dt * 2.2);
       if (b.nudge > 0) b.nudge -= dt;

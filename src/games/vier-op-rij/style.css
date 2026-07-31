@@ -1,0 +1,145 @@
+.rij-stage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  padding: calc(var(--touch) + var(--sp-2)) var(--sp-3) var(--sp-3);
+}
+
+/* The board is sized from its own aspect ratio so a 3x3 and a 7x6 both land
+   square-ish in the middle of the screen instead of one stretching to fill it.
+
+   The height comes from the grid's `aspect-ratio`, not from `flex: 1`. That was
+   the bug: inside a column whose own height is content-derived, `flex: 1` has no
+   free space to claim, so the whole board collapsed to its padding and left a
+   sliver of a grid under the column buttons. So the width is chosen such that
+   the drop row plus a cols:rows grid fits the height that is left over, and the
+   grid then derives its own height from that width. */
+.rij-wrap {
+  --gap: clamp(4px, 0.7vmin, 16px);
+  --drop-h: clamp(44px, 6.4vmin, 140px);
+  flex: 0 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  width: min(
+    94vw,
+    calc((100vh - var(--touch) - 15vmin - var(--drop-h)) * var(--cols) / var(--rows))
+  );
+}
+
+/* ── Column buttons ────────────────────────────────────────────────────── */
+
+.rij-drops {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), 1fr);
+  gap: var(--gap);
+}
+
+.rij-drop {
+  height: var(--drop-h);
+  border-radius: var(--r-md) var(--r-md) var(--r-sm) var(--r-sm);
+  display: grid;
+  place-items: center;
+  color: var(--amber);
+  background: rgba(255, 194, 74, 0.07);
+  box-shadow: inset 0 0 0 var(--hair) rgba(255, 194, 74, 0.24);
+  transition: transform 0.12s var(--ease-press), background 0.14s ease;
+}
+
+.rij-drop:active {
+  transform: translateY(clamp(2px, 0.4vmin, 8px)) scale(0.96);
+  background: rgba(255, 194, 74, 0.16);
+}
+
+.rij-drop__arrow {
+  font-size: clamp(20px, 3.6vmin, 78px);
+  line-height: 1;
+}
+
+/* The computer's turn: the arrows go dim and stop responding, which says "wait"
+   without a word of Dutch. */
+.rij-wrap.is-thinking .rij-drops {
+  opacity: 0.32;
+  pointer-events: none;
+}
+
+/* ── Grid ──────────────────────────────────────────────────────────────── */
+
+.rij-grid {
+  /* The board's height, derived from its width. See the note on .rij-wrap. */
+  aspect-ratio: var(--cols) / var(--rows);
+  display: grid;
+  grid-template-columns: repeat(var(--cols), 1fr);
+  grid-template-rows: repeat(var(--rows), 1fr);
+  gap: var(--gap);
+  padding: var(--gap);
+  border-radius: var(--r-lg);
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule-mid);
+}
+
+/* Each hole is a dark well drilled through the panel. */
+.rij-cell {
+  position: relative;
+  border-radius: 50%;
+  background: rgba(5, 7, 15, 0.66);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule);
+}
+
+/* ── Planets ───────────────────────────────────────────────────────────── */
+
+.rij-disc {
+  position: absolute;
+  inset: clamp(1px, 0.25vmin, 6px);
+  border-radius: 50%;
+  /* Starts one board-height above its hole and falls into place on a single
+     transition — no rAF, no layout, and the drop reads as gravity. */
+  transform: translateY(calc(var(--fall) * -100%));
+  transition: transform 0.34s cubic-bezier(0.4, 0.05, 0.6, 1);
+}
+
+.rij-disc.is-down { transform: translateY(0); }
+
+/* Planets rather than flat counters: a lit crescent and a band, so the two
+   sides differ in pattern as well as in colour. */
+.rij-disc--p1 {
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 46%),
+    radial-gradient(circle at 62% 70%, rgba(0, 0, 0, 0.32), rgba(0, 0, 0, 0) 60%),
+    var(--p1);
+  box-shadow: inset 0 0 0 var(--hair) rgba(255, 255, 255, 0.34);
+}
+
+.rij-disc--p2 {
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 46%),
+    linear-gradient(160deg, transparent 44%, rgba(0, 0, 0, 0.28) 46%, transparent 56%),
+    var(--p2);
+  box-shadow: inset 0 0 0 var(--hair) rgba(255, 255, 255, 0.34);
+}
+
+/* The winning line pulses. It is the one moment in the game worth pointing at,
+   and it has to be findable on a board of forty-two holes. */
+.rij-disc.is-win {
+  animation: rij-win 0.7s ease-in-out 3;
+  z-index: 2;
+}
+
+@keyframes rij-win {
+  0%, 100% { transform: translateY(0) scale(1); box-shadow: inset 0 0 0 var(--hair) rgba(255, 255, 255, 0.34); }
+  50% {
+    transform: translateY(0) scale(1.13);
+    box-shadow: inset 0 0 0 var(--hair) rgba(255, 255, 255, 0.7), var(--glow-sun);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rij-disc { transition: none; }
+  .rij-disc.is-win { animation: none; box-shadow: var(--glow-sun); }
+}
+
+.rij-hint { flex: 0 0 auto; }

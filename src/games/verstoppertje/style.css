@@ -1,0 +1,189 @@
+.hide-stage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: calc(var(--touch) + var(--sp-2)) var(--sp-3) var(--sp-3);
+}
+
+/* ── How many are hiding ───────────────────────────────────────────────── */
+
+/* That many faces, lighting up one at a time. A two-year-old cannot read "3
+   van 4", but they can see that one of the three little aliens is still dark. */
+.hide-legend {
+  flex: 0 0 auto;
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--r-pill);
+  background: rgba(5, 7, 15, 0.66);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule);
+}
+
+.hide-legend__cap {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.hide-legend i {
+  font-style: normal;
+  font-size: clamp(20px, 3.2vmin, 70px);
+  line-height: 1;
+  opacity: 0.28;
+  filter: grayscale(1);
+  transition: opacity 0.3s ease, filter 0.3s ease, transform 0.3s var(--ease-press);
+}
+
+.hide-legend i.is-on {
+  opacity: 1;
+  filter: none;
+  transform: scale(1.15);
+}
+
+/* ── The field of rocks ────────────────────────────────────────────────── */
+
+/* The rows share out whatever height is left over (`grid-auto-rows: 1fr`) rather
+   than each cover claiming a fixed aspect ratio. With a ratio, three rows of
+   twelve covers on a 16:9 board came to well over a screen and the bottom row
+   was simply cut off — and a rock a child cannot reach is worse than no rock. */
+.hide-field {
+  flex: 1;
+  min-height: 0;
+  align-self: center;
+  width: min(100%, 170vh);
+  display: grid;
+  grid-template-columns: repeat(var(--cols), 1fr);
+  grid-auto-rows: 1fr;
+  gap: var(--sp-3);
+}
+
+.hide-cover {
+  position: relative;
+  min-height: 0;
+  border-radius: var(--r-lg);
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule);
+  transition: transform 0.14s var(--ease-press), background 0.2s ease;
+}
+
+.hide-cover:active { transform: scale(0.95); }
+
+/* Both layers fill the cover and centre their glyph, so the rock and whatever is
+   under it are in exactly the same place — the reveal is a swap, not a move. */
+.hide-cover__rock,
+.hide-cover__under {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: clamp(28px, 5.4vmin, 120px);
+  line-height: 1;
+  transition: opacity 0.3s ease, transform 0.4s var(--ease-press);
+}
+
+/* The rock slides off to reveal what is under it. Both layers are always in the
+   DOM, so opening one is two opacity flips and no reflow. */
+.hide-cover__under { opacity: 0; transform: scale(0.5); }
+
+.hide-cover.is-open { background: rgba(255, 255, 255, 0.06); }
+.hide-cover.is-open .hide-cover__rock {
+  opacity: 0;
+  transform: translate(38%, 34%) rotate(28deg);
+}
+.hide-cover.is-open .hide-cover__under { opacity: 1; transform: scale(1); }
+
+/* Each hider has its own idle, so the same rock twice is not the same event
+   twice. They only run once the rock is off. */
+.hide-cover.is-open .is-bob { animation: hide-bob 1.6s ease-in-out infinite; }
+.hide-cover.is-open .is-hover { animation: hide-hover 2.2s ease-in-out infinite; }
+.hide-cover.is-open .is-wobble { animation: hide-wobble 1.1s ease-in-out infinite; }
+.hide-cover.is-open .is-wiggle { animation: hide-wiggle 0.9s ease-in-out infinite; }
+
+@keyframes hide-bob {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-12%) scale(1.04); }
+}
+@keyframes hide-hover {
+  0%, 100% { transform: translate(-6%, 0) rotate(-4deg); }
+  50% { transform: translate(6%, -8%) rotate(4deg); }
+}
+@keyframes hide-wobble {
+  0%, 100% { transform: rotate(-9deg); }
+  50% { transform: rotate(9deg); }
+}
+@keyframes hide-wiggle {
+  0%, 100% { transform: translateX(-7%) scaleY(1); }
+  50% { transform: translateX(7%) scaleY(0.92); }
+}
+
+/* ── The cup game ──────────────────────────────────────────────────────── */
+
+/* Three slots wide, and each rock is placed by translating across whole slots.
+   The swap is one transition on a transform, so three rocks crossing costs the
+   compositor and nothing else. */
+/* An explicit `width` plus `align-self: center`, not `max-width` plus
+   `margin: 0 auto`. The three rocks are absolutely positioned, so they
+   contribute nothing to the intrinsic width — and an auto margin in the cross
+   axis cancels `align-self: stretch`, which left this box zero pixels wide with
+   all three rocks stacked on the same spot in the middle of the screen. A
+   definite width is what the percentage slots need. */
+.hide-cups {
+  flex: 1;
+  min-height: 0;
+  align-self: center;
+  width: min(100%, 150vh);
+  position: relative;
+}
+
+.hide-cup {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 33.333%;
+  height: clamp(120px, 26vmin, 580px);
+  display: grid;
+  place-items: center;
+  transform: translate(calc(var(--slot, 0) * 100%), -50%);
+  transition: transform 0.42s cubic-bezier(0.45, 0, 0.55, 1);
+}
+
+.hide-cup__rock,
+.hide-cup__alien {
+  position: absolute;
+  line-height: 1;
+}
+
+.hide-cup__rock {
+  font-size: clamp(52px, 11vmin, 250px);
+  transition: transform 0.3s var(--ease-press);
+  z-index: 2;
+}
+
+.hide-cup__alien {
+  font-size: clamp(34px, 7vmin, 156px);
+  opacity: 0;
+  transform: translateY(18%);
+  transition: opacity 0.2s ease, transform 0.3s var(--ease-press);
+  z-index: 1;
+}
+
+/* Lifted: the rock tips up and away, and whatever is under it shows. */
+.hide-cup.is-lifted .hide-cup__rock { transform: translate(30%, -42%) rotate(24deg); }
+.hide-cup.is-lifted.has-alien .hide-cup__alien { opacity: 1; transform: translateY(-6%); }
+
+.hide-cup.is-right .hide-cup__alien {
+  filter: drop-shadow(0 0 clamp(12px, 2.4vmin, 52px) rgba(255, 194, 74, 0.7));
+  animation: hide-bob 0.6s ease-in-out 2;
+}
+
+.hide-cup.is-wrong .hide-cup__rock { animation: hide-wobble 0.3s ease-in-out 2; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hide-cup { transition: none; }
+  .hide-cover.is-open .hide-cover__under,
+  .hide-cup .hide-cup__alien,
+  .hide-cup .hide-cup__rock { animation: none; }
+}
+
+.hide-hint { flex: 0 0 auto; }

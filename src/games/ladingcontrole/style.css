@@ -1,0 +1,248 @@
+/* Everything is content-sized and the column is centred. An earlier version let
+   the cargo bay take `flex: 1`, which on a 16:9 board stretched the hold into a
+   half-screen empty box with two crates rattling around in it — the panels
+   should be as big as what is in them. */
+.cargo-stage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  padding: calc(var(--touch) + var(--sp-2)) var(--sp-3) var(--sp-3);
+}
+
+/* ── The order ─────────────────────────────────────────────────────────── */
+
+.cargo-order {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-lg);
+  background: var(--panel);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule-mid);
+}
+
+.cargo-order__row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* Both notations, side by side and the same size, on purpose: this is the age
+   at which a child stops counting the pips and starts reading the numeral, and
+   they need to be able to check the one against the other while that happens. */
+.cargo-order__num {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs-h1);
+  line-height: 1;
+  color: var(--amber);
+  text-shadow: var(--glow-amber-text);
+  min-width: 1.4em;
+  text-align: center;
+}
+
+.cargo-order__op,
+.cargo-order__arrow {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs-h2);
+  line-height: 1;
+  color: var(--muted-warm);
+}
+
+/* ── Pips ──────────────────────────────────────────────────────────────── */
+
+/* Rows of five, with a gap after each five. Eighteen loose dots is a counting
+   task; three fives and a three is a reading task, and the gap is what turns
+   one into the other. */
+.cargo-pips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: clamp(2px, 0.4vmin, 9px);
+  max-width: clamp(150px, 30vmin, 660px);
+}
+
+.cargo-pips i {
+  width: clamp(11px, 1.7vmin, 38px);
+  height: clamp(11px, 1.7vmin, 38px);
+  border-radius: 50%;
+  background: var(--cream);
+  box-shadow: 0 0 clamp(4px, 0.8vmin, 18px) rgba(243, 236, 224, 0.35);
+}
+
+.cargo-pips i.is-group { margin-left: clamp(5px, 0.9vmin, 20px); }
+
+/* The crates that were already aboard, in the addition levels. */
+.cargo-pips.is-was i { background: var(--muted); box-shadow: none; }
+
+.cargo-pips.is-tally i { background: var(--teal); box-shadow: 0 0 clamp(4px, 0.8vmin, 18px) rgba(95, 227, 196, 0.45); }
+
+/* ── The bay ───────────────────────────────────────────────────────────── */
+
+.cargo-bay {
+  flex: 0 0 auto;
+  align-self: stretch;
+  max-width: min(100%, 180vh);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-lg);
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule-mid);
+  transition: transform 0.2s ease;
+}
+
+/* Wrong count: the hatch shakes its head. No red, no buzzer — the crates stay
+   put and the child counts again. */
+.cargo-bay.is-wrong { animation: cargo-shake 0.4s ease-in-out 2; }
+
+@keyframes cargo-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(clamp(-10px, -1.4vmin, -4px)); }
+  75% { transform: translateX(clamp(4px, 1.4vmin, 10px)); }
+}
+
+.cargo-bay.is-launching { animation: cargo-launch 1.2s ease-in forwards; }
+
+@keyframes cargo-launch {
+  0% { transform: translateY(0); opacity: 1; }
+  20% { transform: translateY(clamp(3px, 0.6vmin, 12px)); }
+  100% { transform: translateY(-140%); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cargo-bay.is-wrong,
+  .cargo-bay.is-launching { animation: none; }
+}
+
+.cargo-buddy {
+  width: clamp(70px, 12vmin, 270px);
+  display: grid;
+  place-items: center;
+}
+
+.cargo-buddy canvas {
+  width: 100%;
+  height: auto;
+}
+
+/* The hold itself. Crates wrap into rows, so twenty of them are still
+   countable rather than a single long line running off the panel. */
+.cargo-hold {
+  /* Room for three rows of crates, so the hold does not resize under the
+     child's hands as they load — a box that grows while you fill it makes
+     counting what is in it harder, which is the one thing this game is for. */
+  min-height: calc(clamp(38px, 5.6vmin, 124px) * 3 + clamp(3px, 0.5vmin, 11px) * 2 + var(--sp-2));
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  align-items: center;
+  gap: clamp(3px, 0.5vmin, 11px);
+  padding: var(--sp-1);
+  border-radius: var(--r-md);
+  background: rgba(5, 7, 15, 0.4);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule);
+  overflow: hidden;
+}
+
+.cargo-tally {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.cargo-tally__num {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs-h2);
+  line-height: 1;
+  color: var(--teal);
+}
+
+.cargo-tally .cargo-pips { max-width: clamp(80px, 14vmin, 310px); }
+
+/* ── Crates ────────────────────────────────────────────────────────────── */
+
+.cargo-crate {
+  width: clamp(38px, 5.6vmin, 124px);
+  height: clamp(38px, 5.6vmin, 124px);
+  border-radius: var(--r-sm);
+  display: grid;
+  place-items: center;
+  font-size: clamp(22px, 3.4vmin, 74px);
+  line-height: 1;
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule-mid);
+  transition: transform 0.12s var(--ease-press), background 0.14s ease;
+}
+
+.cargo-crate:active { transform: scale(0.9); background: var(--panel-press); }
+
+/* Already aboard before the child started: visibly not theirs to unload. */
+.cargo-crate.is-locked {
+  opacity: 0.5;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 var(--hair) var(--rule);
+}
+
+/* ── The pallet ────────────────────────────────────────────────────────── */
+
+.cargo-pile {
+  flex: 0 0 auto;
+  align-self: stretch;
+  max-width: min(100%, 180vh);
+  margin: 0 auto;
+  min-height: calc(clamp(38px, 5.6vmin, 124px) * 2 + var(--sp-4));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(4px, 0.7vmin, 15px);
+  padding: var(--sp-2);
+  border-radius: var(--r-lg);
+  background: var(--panel);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule);
+  align-content: center;
+  overflow: hidden;
+}
+
+/* ── Launch ────────────────────────────────────────────────────────────── */
+
+.cargo-launch {
+  width: var(--touch);
+  height: var(--touch);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: clamp(26px, 4.6vmin, 100px);
+  line-height: 1;
+  background: linear-gradient(180deg, var(--panel-hi), var(--panel));
+  box-shadow: inset 0 0 0 var(--hair) var(--rule-strong);
+  transition: transform 0.12s var(--ease-press), background 0.16s ease, box-shadow 0.16s ease;
+}
+
+.cargo-launch:active { transform: scale(0.93); }
+
+/* Lit the moment the hold is right. This is the game's only feedback that the
+   answer is correct *before* committing to it, and it is deliberately there:
+   the point is loading the crates, not guessing whether you are done. */
+.cargo-launch.is-ready {
+  background: linear-gradient(180deg, #8df59a, var(--green));
+  box-shadow: inset 0 0 0 var(--hair) rgba(255, 255, 255, 0.5),
+    0 0 clamp(12px, 2.4vmin, 52px) rgba(126, 231, 135, 0.45);
+}
+
+.cargo-hint { flex: 0 0 auto; }

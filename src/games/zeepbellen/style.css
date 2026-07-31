@@ -10,14 +10,81 @@
   height: 100%;
 }
 
-/* The one line of instruction sits at the bottom, out of the way of the
-   bubbles, which all rise through the middle of the screen. */
-.bub-hint {
+/* The rule as a picture, at the bottom where the bubbles have already left.
+   Four soap-film discs, the wanted one ticked and the rest crossed: a
+   two-year-old reads this and a sentence about "de blauwe bellen" is wasted on
+   them. It is deliberately a panel rather than the bare hint strip, because it
+   stays on screen for the whole level instead of fading like a message. */
+.bub-legend {
   position: absolute;
   left: 50%;
   bottom: var(--sp-3);
   transform: translateX(-50%);
-  max-width: 90vw;
-  pointer-events: none;
   z-index: 10;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-pill);
+  background: rgba(5, 7, 15, 0.72);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule-mid);
 }
+
+.bub-legend__item {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: clamp(40px, 6.4vmin, 140px);
+  height: clamp(40px, 6.4vmin, 140px);
+}
+
+/* Same recipe as the painted bubble: nearly clear in the middle, saturated at
+   the rim, one specular dot. The legend has to look like the thing it points
+   at, or it is just a coloured circle. */
+.bub-legend__bub {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 33% 27%, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0) 42%),
+    radial-gradient(circle, color-mix(in srgb, var(--c) 6%, transparent) 58%, var(--c) 92%, transparent);
+  box-shadow: inset 0 0 0 clamp(2px, 0.3vmin, 6px) var(--c);
+}
+
+/* The wanted colour is bigger and carries its own halo — the same "this one"
+   language the lit porthole uses everywhere else. */
+.bub-legend .is-yes {
+  width: clamp(52px, 8.4vmin, 185px);
+  height: clamp(52px, 8.4vmin, 185px);
+}
+
+.bub-legend .is-yes .bub-legend__bub {
+  filter: drop-shadow(0 0 clamp(8px, 1.6vmin, 34px) var(--c));
+}
+
+/* Crossed-out colours sit back: still identifiable, clearly not the target. */
+.bub-legend .is-no { opacity: 0.42; }
+
+.bub-legend__mark {
+  position: relative;
+  font-family: var(--font-display);
+  font-weight: 800;
+  line-height: 1;
+  font-size: clamp(20px, 3.4vmin, 74px);
+  text-shadow: 0 clamp(1px, 0.2vmin, 4px) clamp(3px, 0.6vmin, 12px) rgba(0, 0, 0, 0.8);
+}
+
+.bub-legend__mark--yes { color: var(--green); }
+.bub-legend__mark--no { color: var(--coral); }
+.bub-legend__mark--tap { font-size: clamp(22px, 3.8vmin, 82px); }
+
+.bub-legend__sep {
+  width: var(--hair);
+  align-self: stretch;
+  background: var(--rule-mid);
+}
+
+/* No colour task: one bubble with a finger on it, and nothing to compare it
+   against, so the panel closes up around it. */
+.bub-legend--simple { gap: 0; padding: var(--sp-1) var(--sp-2); }

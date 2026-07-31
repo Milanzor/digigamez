@@ -32,9 +32,26 @@
   box-shadow: inset 0 0 0 var(--hair) var(--rule-mid), var(--shadow-panel);
 }
 
+/* ── The tape ──────────────────────────────────────────────────────────
+   The program on the left, the room left in it on the right. Reading the
+   plan is the point of this game, so the strip gets its own recessed well
+   rather than floating loose above the keys. */
+.rov-tape {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule);
+}
+
 /* The program strip: the plan, left to right, exactly as the rover will read
    it. Tapping an instruction takes it back out again. */
 .rov-program {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -51,14 +68,27 @@
   color: var(--muted);
 }
 
+/* How full the program is. Amber only once it is actually full — until then
+   this is information, not a warning. */
+.rov-count {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--faint);
+  padding-right: var(--sp-1);
+}
+
+.rov-count.is-full { color: var(--amber); }
+
 .rov-chip {
+  position: relative;
   width: clamp(44px, 6vmin, 130px);
   height: clamp(44px, 6vmin, 130px);
   border-radius: var(--r-md);
   display: grid;
   place-items: center;
-  font-size: clamp(20px, 2.9vmin, 62px);
-  line-height: 1;
   color: var(--cream);
   background: var(--panel-hi);
   box-shadow: inset 0 0 0 var(--hair) var(--rule-mid);
@@ -66,6 +96,18 @@
 }
 
 .rov-chip:active { transform: scale(0.92); }
+
+/* Step number, bottom-right of its chip: small enough to ignore while
+   building, there the moment a child wants to talk about step four. */
+.rov-chip__n {
+  position: absolute;
+  right: clamp(2px, 0.35vmin, 8px);
+  bottom: clamp(0px, 0.2vmin, 5px);
+  font-family: var(--font-mono);
+  font-size: clamp(8px, 1.1vmin, 24px);
+  line-height: 1;
+  color: var(--faint);
+}
 
 /* The instruction being carried out right now, so the child can follow the
    rover in the strip as well as on the board. */
@@ -76,12 +118,43 @@
   transform: translateY(clamp(-6px, -0.8vmin, -2px));
 }
 
+.rov-chip.is-active .rov-chip__n { color: rgba(44, 28, 4, 0.55); }
+
+/* ── Console ───────────────────────────────────────────────────────────
+   Three named clusters instead of one row of near-identical circles. The
+   grouping is also a safety rail: ▶ no longer sits a thumb's width from the
+   arrows, where a stray tap launched a half-built plan. */
 .rov-keys {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
+  gap: clamp(6px, 1vmin, 22px);
+}
+
+.rov-cluster {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2px, 0.4vmin, 8px);
+}
+
+.rov-cluster__label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--faint);
+  padding-left: clamp(4px, 0.6vmin, 13px);
+}
+
+.rov-cluster__body {
+  display: flex;
+  align-items: center;
   gap: clamp(5px, 0.8vmin, 16px);
+  padding: clamp(5px, 0.8vmin, 17px);
+  border-radius: var(--r-lg);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule);
 }
 
 .rov-key {
@@ -90,8 +163,6 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  font-size: clamp(26px, 3.6vmin, 78px);
-  line-height: 1;
   color: var(--cream);
   background: linear-gradient(180deg, var(--panel-hi), var(--panel));
   box-shadow: inset 0 0 0 var(--hair) var(--rule-strong);
@@ -103,15 +174,19 @@
   background: var(--panel-press);
 }
 
-/* "×2" is a word, not a symbol, so it needs a smaller face to fit the key. */
-.rov-key--x { font-size: clamp(19px, 2.5vmin, 54px); font-weight: 800; }
-
-.rov-sep {
-  width: var(--hair);
-  height: clamp(34px, 5vmin, 108px);
-  background: var(--rule-mid);
-  flex-shrink: 0;
+/* Drawn icons rather than font glyphs: ⤺ and ⤻ were unreadable at this size
+   and rendered at a different weight on every platform. An SVG scales with
+   the key, so the console looks the same on a laptop and on a 4K board. */
+.rov-ico {
+  width: 56%;
+  height: 56%;
+  display: block;
+  overflow: visible;
 }
+
+/* Editing keys sit back a step: they undo work rather than make it. */
+.rov-key--edit { color: var(--muted-warm); }
+.rov-key--edit .rov-ico { width: 48%; height: 48%; }
 
 /* Same green ▶ as the Gekke Machine: the one key that has to be findable from
    the back of the classroom. */
@@ -127,3 +202,11 @@
   color: #2b0b08;
   background: linear-gradient(180deg, #ff8f80, var(--coral));
 }
+
+/* The run cluster carries the glow, so the eye lands on it first. */
+.rov-cluster--go .rov-cluster__body {
+  background: rgba(126, 231, 135, 0.08);
+  box-shadow: inset 0 0 0 var(--hair) rgba(126, 231, 135, 0.3);
+}
+
+.rov-cluster--go .rov-cluster__label { color: var(--muted-warm); }

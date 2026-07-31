@@ -10,7 +10,9 @@ export function renderGameGridView(container) {
   const recent = getItem('lastGame', null);
 
   const cards = GAMES.map((g, i) => {
-    const crewBadge = g.supportsTwoPlayers ? '<span class="tag">2P</span>' : '';
+    // The badge states the seat count rather than just "co-op", so the one
+    // four-player mission announces itself in the grid.
+    const crewBadge = g.maxPlayers > 1 ? `<span class="tag">${g.maxPlayers}P</span>` : '';
     const isRecent = g.slug === recent;
     return `
       <button class="mission${isRecent ? ' is-recent' : ''}" data-slug="${g.slug}">
