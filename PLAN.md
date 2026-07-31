@@ -233,9 +233,7 @@ geplaatst puzzelstuk zweeft terug. Er is dus altijd
 vooruitgang en nooit een moment waarop een kind te horen krijgt dat het
 verloren heeft. Score en level gaan alleen omhoog.
 
-**Uitbreidingen (post-MVP, alvast in registry-structuur voorzien)**:
-kleurplaten-only modus, bubble-pop reflex-spel, eenvoudig ritme-/muziekspel,
-tel-/rekenspelletje, "verstop-en-zoek" (Sago Mini-stijl).
+**Uitbreidingen**: zie §6c voor de uitgewerkte kandidatenlijst.
 
 ## 6b. Progressie en geluid
 
@@ -276,6 +274,152 @@ Nieuwe spellen hoeven daar niets voor te registreren.
   75"-scherm kunnen spelen zonder elkaars input te kapen.
 - **Coöperatief gedeeld** (Tekenen): beide spelers tekenen vrij op hetzelfde
   canvas, geen zone-scheiding nodig.
+
+## 6c. Kandidaat-spellen (bouwvoorraad na de redesign)
+
+Deze lijst is de voorraad voor ná de visuele redesign (via Claude Design):
+er wordt niets uit gebouwd voordat het nieuwe ontwerp staat, zodat elk nieuw
+spel meteen in de nieuwe huisstijl geboren wordt in plaats van erna
+omgebouwd te moeten worden.
+
+De keuzes komen niet uit een wensenlijst maar uit drie gaten in de negen
+bestaande spellen:
+
+1. **2–4 jaar is dun.** Alleen Sterrenvormen is echt op die leeftijd gemikt;
+   Ruimtetekenen is open, niet gericht.
+2. **2P is vooral om-de-beurt.** Alleen Ruimte Invasie en Asteroïdenveld
+   zetten twee kinderen gelijktijdig aan het bord — precies het enige wat een
+   75" multi-touch paneel kan en een tablet niet.
+3. **Hele genres ontbreken**: muziek, tellen, letters, logica/sequencing,
+   reactie. En er zijn maar twee open speelgoed-spellen (Tekenen, Machine).
+
+### Twee kinderen gelijktijdig
+
+- **Maanhockey** 🏒 — airhockey, 3–7, 2P + 1P tegen een robot. Elk kind
+  sleept een paddle in zijn eigen helft, de puck is een maantje. Diepte:
+  pucksnelheid → twee pucks → bumpers en magneetvelden. Coöperatieve modus
+  "houd de maan in de lucht" met één gedeelde teller, zodat er niemand
+  verliest. Hergebruikt de bal-/paddlefysica van Asteroïdenveld en is
+  daarmee het goedkoopste grote spel op deze lijst.
+- **Magneetstrijd** 🧲 — touwtrekken, 2–6, 2P. Een satelliet hangt tussen
+  twee tractorstralen. Niet op knoppen rammen (een zevenjarige walst dan
+  over een driejarige heen) maar **tik het paneel dat oplicht**: reactie in
+  plaats van snelheid, en één kant kan een voorsprong krijgen. Van de
+  overkant van het lokaal in één oogopslag te lezen.
+- **Meteoor Meppen** 🔨 — mollen meppen, 3–7, 1P & 2P op één *gedeeld*
+  bord. Aliens duiken uit kraters op en twee kinderen graaien naar dezelfde
+  krater. Diepte: opduiktempo, alientypes met verschillende waarde, en één
+  vriendelijk exemplaar dat alleen giechelt als je het raakt (geen punten,
+  ook geen straf).
+- **Sterrenrij** 🔴 — vier op een rij, 5–7, 2P om de beurt + een milde
+  computerspeler. Planeten in een kolom laten vallen, zwaartekracht stapelt
+  ze. Schaalt naar drie-op-een-rij op 3×3 voor de kleinsten. Er is nu geen
+  enkel spel waarin twee kinderen tegen elkaar *nadenken*.
+- **Raketrace** 🏁 — 4–7, 2P (en op dit paneel eerlijk gezegd 3–4P). Twee
+  pads links-rechts afwisselen als rennende benen om snelheid te maken.
+  Weer ritme in plaats van rammen, dus eerlijk over de leeftijden heen.
+
+### Muziek (bijna gratis in deze codebase)
+
+- **Sterrenecho** 🔔 — Simon says, 3–7, 1P & 2P. Vier grote oplichtende
+  panelen spelen een melodie voor, jij speelt hem na. `chime(n)` in
+  `audio.js` indexeert al op een pentatonische ladder, dus **elke reeks is
+  per constructie muzikaal** — geen stemwerk, geen valse noot mogelijk.
+  Diepte: lengte, 4→6 panelen, tempo, en daarna een stand waarin alleen het
+  geluid de aanwijzing is. 2P coöperatief: om de beurt één stap aan een
+  gedeelde reeks toevoegen.
+- **Sterrenorkest** 🎹 — stap-sequencer als speelgoed, 2–7, 2P coöperatief.
+  Raster van cellen, tik om noten te zetten, een leeskop veegt erover.
+  Rijen zijn bel / blub / ruisdrum / bas. Multi-touch betekent dat twee
+  kinderen tegelijk bouwen, en de lus wordt bewaard zoals Ruimtetekenen zijn
+  streken bewaart — het derde open speelgoed-spel. Zelfde pentatonische
+  garantie.
+
+### Logica en tellen (het gat bij 5–7)
+
+- **Rover Programmeren** 🤖 — commando's in een rij zetten, 5–7, 1P & 2P.
+  Zet ↑ ↰ ↱ in de wachtrij, druk op ▶, de rover rijdt over het raster naar
+  het kristal. Een muur is botsen-en-stoppen, geen mislukking. Diepte:
+  rastergrootte, obstakels, een **herhaal-2×-token**, en daarna alle
+  kristallen ophalen in een zelfgekozen orde. Bee-Bot/Lightbot is het genre
+  dat Nederlandse scholen al gebruiken, het sluit aan op het ▶/⏹-idioom dat
+  Gekke Machine heeft neergezet, en het is de grootste leerwinst op deze
+  lijst. 2P: elk een rover op zijn eigen helft, óf om de beurt één commando
+  aan één gedeeld programma.
+- **Ladingcontrole** 📦 — tellen, 3–6, 1P & 2P. Laad *precies* N kratten in
+  de raket; de teller laat zien wat je hebt en hij vertrekt alleen als het
+  klopt. Diepte: 1–5 → 1–10 → 1–20 → "er zaten 3 in, er komen 2 bij" →
+  meer/minder. Tastbaar in plaats van overhoring, dus het voelt nooit als
+  een toets.
+- **Sterrenpaden** ✨ — stip-naar-stip, 3–6, 1P. Sleep van ster 1 naar 2
+  naar 3; het sterrenbeeld licht op en wordt een raket, poes of vis.
+  Telvolgorde plus fijne motoriek, en de onthulling is de belofte. De
+  leveldata is niets meer dan een lijst punten, dus heel goedkoop.
+- **Letterplaneten** 🔤 — beginletters, 5–7, 1P. Er komt een krat met 🚀
+  aan, tik de planeet met de **R**. Diepte: eerste letter → laatste letter →
+  met lettertegels woorden van 3–4 letters bouwen. De bundel heeft nu nul
+  taalinhoud, en dit is het enige genre dat écht Nederlands moet zijn om te
+  werken.
+
+### Voor de kleinsten (2–4)
+
+- **Zeepbellen** 🫧 — bellen prikken, 2–4, 1P & 2P coöperatief. Bellen
+  drijven omhoog, tik ze weg met een belletje erbij, tien vingers tegelijk.
+  Diepte: maten, bellen die in tweeën splitsen, later een kleurenopdracht.
+  Hergebruikt `createBurst` en `chime`. Dit is het spel dat je een
+  tweejarige in handen geeft, en het is een middag werk.
+- **Alien Verstoppertje** 🙈 — verstop-en-zoek, 2–5, 1P & 2P. Kraters en
+  stenen in een tafereel; tik om op te lichten en er zit een beestje onder,
+  elk met zijn eigen animatie. Diepte: aantal verstopt, en daarna een
+  bekerspel (volg de alien onder drie schuivende bekers — echte
+  aandachtstraining). Mislukken is hier structureel onmogelijk.
+- **Maak je Maatje** 👽 — eigen wezen bouwen, 2–7, 1P & 2P coöperatief.
+  Koppen, ogen, antennes, armen en kleuren mengen; de alien knippert, danst
+  en toetert. Bewaard zoals Ruimtetekenen. Dit is het Toca Boca-vak, en er
+  ligt een mooie haak: **laat het gemaakte maatje in andere spellen
+  opduiken** — als kaart in Ruimtegeheugen, als piloot van de rover, op de
+  kratten van Ladingcontrole. Dan voelt de hub als één wereld in plaats van
+  negen losse kasten.
+- **Toren Bouwen** 🧱 — stapelen, 3–7, 1P & 2P om de beurt. Een kraan
+  zwaait een blok heen en weer, tik om te lossen. Elke speler legt er één
+  op: hoe hoog voordat het gaat wiebelen? Instorten is grappig, geen
+  verlies. De fysica van Gekke Machine doet het zware werk al.
+
+### Eerste vijf
+
+In deze volgorde, één spel per gat, en vier van de vijf leunen op code die
+er al staat:
+
+1. **Zeepbellen** — vult 2–4 en is vrijwel gratis.
+2. **Sterrenecho** — muziek voor niks, dankzij de bestaande pentatoniek.
+3. **Maanhockey** — het ontbrekende kop-op-kop spel, op bestaande balfysica.
+4. **Rover Programmeren** — het ontbrekende denkspel.
+5. **Sterrenorkest** — derde open speelgoed, bewaart zijn eigen werk.
+
+### Bewust niet
+
+- **Zoek-de-verschillen** — kost per level nieuw tekenwerk, en op 4K is een
+  verschil nauwelijks te verstoppen.
+- **Kantel-doolhof** — geen accelerometer op een bord dat door een laptop
+  wordt aangestuurd.
+- **Ritme-meetikken** — de mechaniek *is* mislukken; de sequencer levert de
+  muziek zonder die prijs.
+- **Tangram** — overlapt Sterrenvormen en Sterrenpuzzel.
+- **Slang tegen elkaar** — leunt op botsen en verliezen, wat slecht rijmt
+  met de regel uit §6.
+
+### Open keuzes
+
+- **3–4 spelers?** Raketrace en Meteoor Meppen worden beter met vier
+  kinderen, en het paneel kan het. Alleen: de spelerkeuze in de portal (§5)
+  kent nu 1P en 2P, en `supportsTwoPlayers` in de registry is een boolean.
+  Dat zou een `maxPlayers`-getal moeten worden. Beslissen vóór Raketrace,
+  niet erna.
+- **Gedeeld maatje tussen spellen.** Als Maak je Maatje zijn wezen in
+  `localStorage` zet, kan elk ander spel het lezen. Dat is een kleine
+  gedeelde module (`src/shell/maatje.js`) en een grote winst voor het gevoel
+  dat het één wereld is — maar het moet wel meteen goed, want spellen die er
+  eenmaal op leunen willen een vast formaat.
 
 ## 7. Toegankelijkheid & kindvriendelijkheid
 
@@ -349,7 +493,8 @@ te bewijzen. Drie echte bugs kwamen hieruit:
 - Accounts, cloud-opslag van voortgang/scores.
 - Uitgebreide screensaver/idle-detectie (kan later toegevoegd worden via de
   bestaande router).
-- Extra spellen uit de "uitbreidingen"-lijst.
+- Extra spellen uit de kandidatenlijst in §6c — die wachten bewust op de
+  visuele redesign, zodat ze in de nieuwe huisstijl geboren worden.
 - Diepgaande a11y voor screenreaders (niet relevant voor dit kiosk-gebruik,
   wel behouden we contrast/hitbox-richtlijnen).
 - Automatische Lighthouse/performance-gates in CI.
