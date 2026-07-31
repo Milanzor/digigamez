@@ -1,4 +1,31 @@
+/* De leesletter. Nederlandse kinderen leren lezen met kleine letters in een
+   letter die daarvoor gemaakt is: een `a` en een `g` uit één boog (niet de
+   dubbelverdiepings-`a` van een gewone tekstletter) en een `b`, `d`, `p` en `q`
+   die van elkaar te onderscheiden zijn. Andika is precies daarvoor ontworpen —
+   SIL maakte hem voor beginnende lezers — en is de enige plek in het pakket waar
+   Baloo 2 niet de letter is, omdat Baloo 2 juist wél die dubbele `a` heeft.
+
+   De twee bestanden staan in de map van dit spel en de @font-face staat in dit
+   stylesheet, dus ze worden pas opgehaald als deze missie geopend wordt. Het
+   portaal blijft twee fonts groot. */
+@font-face {
+  font-family: 'Andika';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./fonts/andika-400.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Andika';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./fonts/andika-700.woff2') format('woff2');
+}
+
 .let-stage {
+  --font-read: 'Andika', var(--font-display);
   width: 100%;
   height: 100%;
   display: flex;
@@ -45,8 +72,10 @@
   border-radius: var(--r-md);
   display: grid;
   place-items: center;
-  font-family: var(--font-display);
-  font-weight: 800;
+  font-family: var(--font-read);
+  /* 700, niet 800: Andika heeft geen zwaarder gewicht, en een gesynthetiseerde
+     vetter versie verdikt precies de haaltjes waar het onderscheid in zit. */
+  font-weight: 700;
   font-size: clamp(24px, 4.4vmin, 96px);
   line-height: 1;
   color: var(--cream);
@@ -98,8 +127,8 @@
 .let-planet:active { transform: scale(0.93); }
 
 .let-planet__letter {
-  font-family: var(--font-display);
-  font-weight: 800;
+  font-family: var(--font-read);
+  font-weight: 700;
   font-size: clamp(34px, 6.6vmin, 148px);
   line-height: 1;
   color: #12121f;

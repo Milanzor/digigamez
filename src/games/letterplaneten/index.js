@@ -13,10 +13,21 @@ import { setLevel, starsForLevel } from '../../shell/progress.js';
 // obvious Dutch name, because a picture a child calls "kat" while the game is
 // thinking "poes" teaches them that they were wrong when they were not.
 //
-// Letters are capitals. Dutch schools teach lowercase for reading, but this is
-// a wall screen read from two metres away, and a capital is the more
-// distinguishable shape at that distance — a lowercase b and d at the back of a
-// classroom is a needless trap.
+// Letters are lowercase, in Andika — the letters a Dutch child is actually
+// taught to read with. This game shipped in capitals on the reasoning that a
+// capital is the more distinguishable shape from two metres away, and that a
+// lowercase b next to a d is a trap. Both halves of that are true and it is
+// still the wrong trade: a five-year-old in group 2 has been taught the *small*
+// letters, so a board full of capitals asks them to read a second alphabet
+// before they can start on the exercise. Legibility at distance is worth
+// nothing if the shape is not the one they know.
+//
+// The b/d worry is answered where it actually lives instead. Andika is drawn by
+// SIL for beginning readers, so its a and g are single-storey and its b, d, p and
+// q are deliberately not each other's mirror; and CONFUSABLE below keeps the two
+// letters of a mirror pair out of the same row, so a child is never asked to
+// choose between a b and a d. That is a reading exercise for later, not a
+// distractor to trip over now.
 //
 // The ladder walks first letter -> last letter -> spelling the whole word,
 // which is roughly the order the skill actually arrives in.
@@ -55,8 +66,12 @@ const WORDS = [
 ];
 
 const PLANET_COLORS = ['#8fd6ff', '#ff8fc7', '#7ee787', '#b98cff', '#ffa14a', '#5fe3c4'];
-const ALPHABET = 'BDFGHJKLMNPRSTVWZ';
-const VOWELS = 'AEIOU';
+const ALPHABET = 'bdfghjklmnprstvwz';
+const VOWELS = 'aeiou';
+
+// Mirror pairs, kept out of the same row as each other. b/d is the pair every
+// Dutch teacher names first; n/u is the same mistake turned on its side.
+const CONFUSABLE = { b: 'd', d: 'b', n: 'u', u: 'n' };
 
 // Five crates to a level: long enough to be a round of work, short enough that
 // a five-year-old reaches the reward screen in one sitting.
@@ -164,22 +179,33 @@ function startLevel() {
   }
 
   function answerLetter(w) {
-    return (cfg.mode === 'last' ? w.word[w.word.length - 1] : w.word[0]).toUpperCase();
+    return cfg.mode === 'last' ? w.word[w.word.length - 1] : w.word[0];
   }
 
   // Distractors that are not the answer, not each other, and — in spelling mode
-  // — not a letter the word actually needs. A spare Z next to the word's own Z
+  // — not a letter the word actually needs. A spare z next to the word's own z
   // is not a distractor, it is a second correct answer, and a child who taps it
   // learns nothing from being right.
+  //
+  // The mirror partner of anything being avoided is blocked too, so a word
+  // starting with a b never gets a d offered alongside it. Telling those two
+  // apart is its own lesson; making it the difficulty of this one turns a
+  // reading exercise into a coin flip.
   function distractors(n, avoid = '') {
     const out = [];
     const bag = (ALPHABET + VOWELS).split('');
-    const blocked = avoid.toUpperCase();
+    const blocked = new Set();
+    for (const c of avoid) {
+      blocked.add(c);
+      if (CONFUSABLE[c]) blocked.add(CONFUSABLE[c]);
+    }
     // Guard against a word that somehow uses most of the alphabet.
     let guard = 0;
     while (out.length < n && guard++ < 400) {
       const c = bag[Math.floor(Math.random() * bag.length)];
-      if (blocked.includes(c) || out.includes(c)) continue;
+      if (blocked.has(c) || out.includes(c)) continue;
+      // A pair must not sneak in between two distractors either.
+      if (CONFUSABLE[c] && out.includes(CONFUSABLE[c])) continue;
       out.push(c);
     }
     return out;
@@ -212,7 +238,7 @@ function startLevel() {
 
   function renderBuild() {
     slots.classList.remove('hidden');
-    const word = item.word.toUpperCase();
+    const word = item.word;
     prompt.innerHTML = `
       <div class="eyebrow">Spel het woord</div>
       ${porthole(item.emoji, { className: 'let-crate', color: mission.color })}
@@ -271,7 +297,7 @@ function startLevel() {
     const letter = btn.dataset.letter;
 
     if (cfg.mode === 'build') {
-      const want = item.word[filled].toUpperCase();
+      const want = item.word[filled];
       if (letter !== want) {
         // Wrong tile: it wobbles back into the row. Nothing is lost and the
         // slot is still open, so trying again is the obvious next move.

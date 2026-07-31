@@ -75,7 +75,9 @@ enige felle op het scherm zijn.
   binnen als *gloed in de patrijspoort* — nooit als rand of vulling.
 - **Typografie**: `Baloo 2` (800/700/500) voor alles wat een kind leest.
   `Space Mono` (700) uitsluitend voor kleine hoofdletterlabels die de
-  ruimtevaart-toon zetten — nooit voor lopende tekst of knoppen.
+  ruimtevaart-toon zetten — nooit voor lopende tekst of knoppen. Er is één
+  uitzondering, en die staat in het spel waar de letter zelf de inhoud is:
+  Letterplaneten zet zijn letters in `Andika`. Zie "De leesletter" hieronder.
 - **Signatuur — de patrijspoort**: een ring instrumentglas met één emoji
   erin (`.port`). Hij is de missie-icoon in het rooster, de raket op het
   startscherm en de trofee op het beloningsscherm, dus een kind komt
@@ -126,6 +128,28 @@ dezelfde eigenschap ook transitioneert.** Een animatie met een vertraging
 die verborgen moet beginnen wil `backwards`, niet `both`. De harness
 controleert sindsdien of er na aankomst nog een afgelopen animatie staat te
 vullen.
+
+### De leesletter (Letterplaneten)
+Letterplaneten is begonnen in **hoofdletters**, met als redenering dat een
+hoofdletter van twee meter afstand de beter te onderscheiden vorm is en dat een
+kleine `b` naast een `d` een valkuil is. Beide helften daarvan zijn waar en het
+was toch de verkeerde afweging: een vijfjarige in groep 2 heeft de **kleine**
+letters geleerd, dus een bord vol hoofdletters vraagt eerst om een tweede
+alfabet te lezen voordat de oefening zelf kan beginnen. Leesbaarheid op afstand
+is niets waard als het niet de vorm is die het kind kent.
+
+Het zijn nu kleine letters in **Andika** — SIL tekende die letter voor
+beginnende lezers, dus de `a` en de `g` komen uit één boog in plaats van de
+dubbelverdiepings-`a` die een gewone tekstletter (en dus ook Baloo 2) heeft, en
+de `b`, `d`, `p` en `q` zijn opzettelijk niet elkaars spiegel. Twee woff2's van
+19 kB, in de map van het spel zelf en met de `@font-face` in zijn eigen
+stylesheet, dus ze worden pas opgehaald als deze missie geopend wordt; het
+portaal blijft twee fonts groot.
+
+En de zorg over `b`/`d` is opgelost waar hij thuishoort: `CONFUSABLE` houdt de
+twee letters van een spiegelpaar (`b`/`d`, `n`/`u`) uit dezelfde rij, ook tussen
+twee afleiders onderling. Een kind wordt dus nooit gevraagd om tussen een `b` en
+een `d` te kiezen. Dat is een leesles voor later, geen struikeldraad voor nu.
 
 ### Vaste schermgrammatica
 Elk scherm onder het startscherm opent met dezelfde balk: ronde terugknop
@@ -403,7 +427,7 @@ enige spel in de bundel dat écht Nederlands moet zijn om te werken.
 | **Meteoor Meppen**        | Mollen meppen        | 3–7      | 1P & 2P | Aliens duiken op uit maankraters en je bopt ze. Eén **gedeeld** bord en één gedeelde teller: met tien vingers op het glas is er geen eerlijke manier om te zeggen wiens vinger er eerst was. De schotel is dubbele punten, en één vriendelijke poes **giechelt alleen** als je hem raakt — geen punten, ook geen straf, en precies dat maakt het kijken-voor-je-slaat. |
 | **Toren Bouwen**          | Stapelen             | 3–7      | 1P & 2P | Een kraan zwaait een blok heen en weer, één tik laat het vallen. Hoe hoger de toren, hoe verder hij uit het lood komt te staan, en het **wiebelen waarschuwt** ruim voordat hij omgaat. Instorten is de grap, niet de straf: alles tuimelt weg en de kraan geeft je een nieuw blok op hetzelfde level. Een blok dat er te ver naast landt glijdt eraf en kost een beurt, nooit de toren. |
 | **Raketrace**             | Race                 | 4–7      | 2P (4P) | Twee pads per raket, af te wisselen als een paar rennende benen. Alleen de **volgende** pad is scherp en licht op, dus op één pad rammen brengt je nergens: ritme in plaats van snelheid, en daarmee eerlijk over vier jaar leeftijdsverschil heen. Het aantal raketten (2, 3 of 4) kies je op het startscherm van het spel zelf; lege banen vliegt het station. |
-| **Letterplaneten**        | Beginletters         | 5–7      | 1P      | Er komt een krat met 🚀 aan: tik de planeet met de **R**. Diepte: eerste letter → laatste letter → met lettertegels het hele woord spellen. Hoofdletters, want een kleine b en d zijn van twee meter afstand een valkuil. De plaatjes hebben allemaal één onmiskenbare Nederlandse naam — 🐱 (poes of kat?) staat er bewust *niet* in, want een kind dat "kat" denkt heeft geen fout gemaakt. |
+| **Letterplaneten**        | Beginletters         | 5–7      | 1P      | Er komt een krat met 🚀 aan: tik de planeet met de **r**. Diepte: eerste letter → laatste letter → met lettertegels het hele woord spellen. **Kleine letters in een leesletter** (zie hieronder). De plaatjes hebben allemaal één onmiskenbare Nederlandse naam — 🐱 (poes of kat?) staat er bewust *niet* in, want een kind dat "kat" denkt heeft geen fout gemaakt. |
 | **Sterrenrij**            | Vier op een rij      | 5–7      | 1P & 2P | Laat planeten in een kolom vallen; de zwaartekracht stapelt ze. Het enige spel waarin twee kinderen tégen elkaar **nadenken**. Het bord schaalt helemaal terug naar drie-op-een-rij op 3×3 — geen uitgeklede versie, maar hetzelfde spel met een horizon die in een kinderhoofd past. Alleen speel je de stationscomputer: die pakt een winst, blokkeert een verlies, en gaat vanaf level 4 ook niet meer meteen zitten weggeven.
 
 ### Ontwerpkeuze: geen verliesstatus

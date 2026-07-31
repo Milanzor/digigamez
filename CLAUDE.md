@@ -16,3 +16,9 @@ Commitberichten volgen de bestaande stijl in `git log`: Engels, een korte
 beschrijvende titel zonder prefix (geen `feat:`/`fix:`), en daaronder een body
 in proza die uitlegt *waarom* iets zo is gedaan — niet een opsomming van
 gewijzigde bestanden. Geen attributie-footer.
+
+**Nooit branches of pull requests aanmaken**, tenzij daar in de opdracht
+expliciet om gevraagd wordt. Werk gaat rechtstreeks als commit naar `main` en
+wordt gepusht; dat is de hele workflow van dit project. Een branch of PR
+verzinnen omdat het "netter" lijkt zet het werk stil in plaats van het op het
+bord te krijgen.
