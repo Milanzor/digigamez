@@ -76,9 +76,19 @@
   transform: translateX(-50%) translateY(0);
 }
 
+/* Seven colouring pages, so a wide grid would leave a ragged last row. */
+.draw-pop--pages {
+  grid-template-columns: repeat(4, auto);
+}
+
+/* Seventeen backdrops: nine columns puts them in two near-even rows. */
+.draw-pop--backdrops {
+  grid-template-columns: repeat(9, auto);
+}
+
 .swatch {
-  width: clamp(40px, 5.6vmin, 120px);
-  height: clamp(40px, 5.6vmin, 120px);
+  width: clamp(38px, 5.2vmin, 112px);
+  height: clamp(38px, 5.2vmin, 112px);
   border-radius: 50%;
   border: clamp(3px, 0.45vmin, 10px) solid rgba(255, 255, 255, 0.2);
   flex-shrink: 0;
@@ -93,13 +103,15 @@
   transform: scale(1.1);
 }
 
+/* Three rows of these now, so they are a touch smaller than a single-row bar
+   would allow — still well over the 44px minimum touch target at every size. */
 .tool {
-  width: clamp(44px, 6.1vmin, 132px);
-  height: clamp(44px, 6.1vmin, 132px);
+  width: clamp(44px, 5.7vmin, 120px);
+  height: clamp(44px, 5.7vmin, 120px);
   border-radius: 50%;
   display: grid;
   place-items: center;
-  font-size: clamp(19px, 2.9vmin, 62px);
+  font-size: clamp(19px, 2.8vmin, 58px);
   line-height: 1;
   background: linear-gradient(180deg, var(--panel-hi), var(--panel));
   border: clamp(2px, 0.3vmin, 7px) solid var(--panel-line);
