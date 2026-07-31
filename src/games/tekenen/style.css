@@ -2,37 +2,83 @@
   width: 100%;
   height: 100%;
   position: relative;
+  overflow: hidden;
 }
 
 .draw-canvas {
   width: 100%;
   height: 100%;
+  display: block;
+  touch-action: none;
+  cursor: crosshair;
 }
+
+.draw-canvas.is-panning { cursor: grab; }
+.draw-canvas.is-panning:active { cursor: grabbing; }
 
 .draw-bar {
   position: absolute;
-  bottom: var(--sp-3);
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: var(--sp-2);
+  /* Centred with auto margins rather than left:50% + translate: an absolutely
+     positioned box offset from the left can only shrink-to-fit the remaining
+     half of the screen, which folded the two rows into four. */
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: fit-content;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: clamp(6px, 1.1vmin, 22px);
-  padding: clamp(8px, 1.3vmin, 26px) clamp(12px, 1.8vmin, 36px);
-  border-radius: var(--r-pill);
-  background: rgba(8, 13, 42, 0.88);
+  gap: clamp(4px, 0.7vmin, 14px);
+  padding: clamp(6px, 1vmin, 20px) clamp(10px, 1.5vmin, 30px);
+  border-radius: var(--r-lg);
+  background: rgba(8, 13, 42, 0.9);
   border: clamp(2px, 0.3vmin, 7px) solid var(--panel-line);
   box-shadow: var(--shadow-panel);
   z-index: 20;
-  max-width: 96vw;
-  overflow-x: auto;
-  scrollbar-width: none;
+  max-width: 97vw;
 }
 
-.draw-bar::-webkit-scrollbar { display: none; }
+/* Each row wraps rather than scrolls: a toolbar that scrolls is a dead end
+   for a three-year-old who will never discover that it scrolls. */
+.draw-bar__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(4px, 0.7vmin, 14px);
+}
+
+/* Stamp drawer, anchored to the toolbar itself so it clears it whatever
+   height the rows end up at. */
+.draw-pop {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + var(--sp-2));
+  transform: translateX(-50%) translateY(clamp(8px, 1.4vmin, 28px));
+  display: grid;
+  grid-template-columns: repeat(8, auto);
+  gap: clamp(4px, 0.7vmin, 14px);
+  padding: clamp(8px, 1.2vmin, 24px);
+  border-radius: var(--r-md);
+  background: rgba(8, 13, 42, 0.94);
+  border: clamp(2px, 0.3vmin, 7px) solid var(--panel-line);
+  box-shadow: var(--shadow-panel);
+  z-index: 21;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+}
+
+.draw-pop.is-open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
 
 .swatch {
-  width: clamp(48px, 7.4vmin, 160px);
-  height: clamp(48px, 7.4vmin, 160px);
+  width: clamp(40px, 5.6vmin, 120px);
+  height: clamp(40px, 5.6vmin, 120px);
   border-radius: 50%;
   border: clamp(3px, 0.45vmin, 10px) solid rgba(255, 255, 255, 0.2);
   flex-shrink: 0;
@@ -44,16 +90,17 @@
 .swatch.is-active {
   border-color: var(--enamel);
   box-shadow: 0 0 clamp(8px, 1.6vmin, 32px) currentColor;
-  transform: scale(1.08);
+  transform: scale(1.1);
 }
 
 .tool {
-  width: clamp(48px, 7.4vmin, 160px);
-  height: clamp(48px, 7.4vmin, 160px);
+  width: clamp(44px, 6.1vmin, 132px);
+  height: clamp(44px, 6.1vmin, 132px);
   border-radius: 50%;
   display: grid;
   place-items: center;
-  font-size: clamp(20px, 3.2vmin, 68px);
+  font-size: clamp(19px, 2.9vmin, 62px);
+  line-height: 1;
   background: linear-gradient(180deg, var(--panel-hi), var(--panel));
   border: clamp(2px, 0.3vmin, 7px) solid var(--panel-line);
   color: var(--enamel);
@@ -70,9 +117,25 @@
   box-shadow: var(--glow-sun);
 }
 
+/* Thickness picker: a filled dot at (roughly) the size it paints. */
+.tool--dot .dot {
+  display: block;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.draw-zoom {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  color: var(--ice);
+  min-width: 5ch;
+  text-align: center;
+  padding: 0 var(--sp-1);
+}
+
 .bar-sep {
   width: clamp(2px, 0.3vmin, 6px);
-  height: clamp(34px, 5vmin, 100px);
+  height: clamp(30px, 4.4vmin, 92px);
   background: var(--panel-line);
   border-radius: var(--r-pill);
   flex-shrink: 0;
