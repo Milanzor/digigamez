@@ -89,6 +89,18 @@ want een kind staat dicht op een wandscherm.
   met delta-time zodat snelheid onafhankelijk is van de refresh rate.
 - **Object pooling** voor kortlevende objecten (kogels, deeltjes, puzzelstukjes)
   om garbage collection tijdens het spelen te minimaliseren.
+- **Gloed als voorgerenderde sprite, nooit als `shadowBlur`.** Dit is de duurste
+  val in canvas 2D: de browser doet een blur-pass per *fill of stroke* onder een
+  `shadowBlur`, en een alien die uit acht vormen bestaat kost dus acht blurs.
+  Bij een volle golf van veertig aliens waren dat ~200 blur-passes per frame en
+  zakte een 4K-bord naar ~50fps (en op 4K softwarerendering naar 16fps). De
+  gloed staat nu één keer per kleur in een klein offscreen canvas
+  (`drawGlow` in `canvas-utils.js`): één `drawImage` per glimmend object,
+  ongeacht uit hoeveel vormen het bestaat. Resultaat: 3 blur-passes per frame en
+  een vaste 60fps.
+- **Deeltjes-plafond**: een golf die in één frame wordt weggevaagd zet honderden
+  deeltjes in de rij; boven het budget vallen de oudste af. Een feestje mag
+  nooit meer kosten dan het spel zelf.
 - **Sprite-atlassen** (1 PNG/WebP per spel-thema) i.p.v. losse imagebestanden
   → minder HTTP-requests, minder draw-call overhead.
 - **Canvas-schaling**: canvas intern renderen op een vaste logische resolutie
@@ -178,6 +190,14 @@ Zo kan de shell spellen los laden/verwijderen zonder geheugenlekken
 4. **In-game**: elk spel heeft een consistente terug-knop (linksboven, groot,
    duimvriendelijk) die teruggaat naar het rooster zonder de portal opnieuw
    te laden.
+4b. **Instellingen** (`#/instellingen`): het enige scherm voor de grote mensen,
+   bereikbaar via ⚙️ op het opstartscherm én in de portaalbalk. Geluid aan/uit,
+   volume in drie stappen (zacht/gewoon/hard), sterrenhemel bewegend of rustig
+   (voor wie minder prikkels wil), volledig scherm aan/uit, en **alle voortgang
+   wissen**. Dat laatste zit achter een knop die je 1,6 seconde vast moet
+   houden: een kleuter tikt door een "weet je het zeker?" heen, maar houdt niet
+   per ongeluk anderhalve seconde stil. Instellingen zelf blijven na het wissen
+   staan, zodat het bord ingesteld blijft zoals de klas het wil.
 5. **Idle/screensaver** (nice-to-have, niet MVP): na X minuten inactiviteit
    terug naar opstartscherm met rustgevende animatie, zodat het digibord niet
    "vast" blijft staan in een spel.
@@ -198,9 +218,9 @@ Alle negen spellen zitten in hetzelfde ruimtethema en hebben een
 | **Sterrenvormen**         | Shape-sort           | 2–4      | 1P      | Sleep vracht naar de bijpassende luchtsluis. Diepte via drie knoppen: aantal stukken 3→6, vanaf level 3 driften de sluizen zijwaarts, vanaf level 5 moet ook de **kleur** kloppen. |
 | **Ruimtegeheugen**        | Memory / matching    | 3–6      | 1P & 2P | Kaarten met planeten en aliens. Bord groeit 4→12 paren; vanaf level 2 is er één gouden **komeetpaar** dat dubbel telt. 2P om de beurt met scores. |
 | **Sterrenpuzzel**         | Jigsaw               | 3–7      | 1P & 2P | Ruimtescènes (inline SVG, dus scherp op 4K) in stukjes. 4→20 stukjes; **👁️-knop** ghost het voorbeeld over het bord als hint in plaats van een moeilijkheidsmuur. |
-| **Ruimtetekenen**         | Creatief             | 2–7      | 1P & 2P | Vrij tekenen op een bord van **drie schermen breed** dat je met ✋ verschuift en met knijpen/wiel zoomt. Zeven kwasten (stift, neon, krijt, regenboog, sterrenstof, spuitbus, gum), vier vormen met vulknop, zestien stempels, **spiegel- en viervoudige symmetrie**, vier achtergronden, undo/redo en opslaan als PNG. Streken zijn vectoren, dus scherp op elke zoom. Multi-touch: twee kinderen tekenen gelijktijdig. |
-| **Gekke Machine**         | Fysica-zandbak       | 4–7      | 1P      | Bouw een knikkerbaan van dertien onderdelen (knikker, stuiterbal, ballon, raket, plank, trampoline, ventilator, molen, magneet, zwart gat, bom, knikkerkraan, emmer), **teken banen** die meedoen als vaste botsingslijnen, en druk op ▶ om alles los te laten. ⏹ zet elk onderdeel terug waar het gebouwd is, dus experimenteren kost niks. |
-| **Zuurstofleidingen**     | Pipe-connect         | 4–7      | 1P      | Draai buizen zodat zuurstof de tank haalt. Puzzels zijn **solvable-by-construction** (pad eerst uitgelopen, dan geschud). Raster groeit 3×3→6×6; vanaf level 3 zitten er dichtgesoldeerde tegels in, vanaf level 4 zijn er **twee onafhankelijke netwerken**. |
+| **Ruimtetekenen**         | Creatief             | 2–7      | 1P & 2P | Vrij tekenen op een bord van **drie schermen breed** dat je met ✋ verschuift en met knijpen/wiel zoomt. Elf kwasten (stift, neon, krijt, regenboog, sterrenstof, spuitbus, waterverf, lint dat dun wordt als je snel beweegt, stippellijn, stempelspoor, gum), zes vormen met vulknop, **32 stempels**, spiegel-, viervoudige én **caleidoscoop-symmetrie (zes kanten)**, **zeventien achtergronden** achter één keuzelade (ruimte, nachtlucht, raster, onder water, zonsondergang, op de maan, Mars, stad bij nacht, bos, weiland, sneeuw, vulkaan, regenboog, schoolbord, ruitjes, papier, schrijflijntjes) — elk een eigen schilderfunctie over de hele wereld, dus met een échte horizon, zon of skyline; de sierlijke onderdelen (kraters, ramen, boomstammen, vlokken) worden één keer als `Path2D` opgebouwd en daarna elk frame hergebruikt, zodat pannen twee path-fills kost in plaats van duizenden arcs, **zes kleurplaten** (raket, poes, bloem, vis, vlinder, huis) als vaste onderlaag die niet mee-gumt, undo/redo en opslaan als PNG. Streken zijn vectoren, dus scherp op elke zoom, en de tekening staat er na een rondje portal nog. Multi-touch: twee kinderen tekenen gelijktijdig. |
+| **Gekke Machine**         | Fysica-zandbak       | 4–7      | 1P      | Bouw een knikkerbaan van **twintig onderdelen** (knikker, stuiterbal, ballon, raket, plank, trampoline, transportband, wip, molen, kegel, klokkenspel, ventilator, kanon, magneet, zwart gat, stroop, bom, knikkerkraan, beamer-paar, emmer), **teken banen** die meedoen als vaste botsingslijnen, en druk op ▶ om alles los te laten. 🎲 laadt vijf voorbeeldmachines, 🐢 zet alles in slow motion, 💫 laat de sporen van de knikkers zien, ↩️ neemt de laatste bouwstap terug en met ✋ tik je een ventilator, band of bel een standje verder. ⏹ zet elk onderdeel terug waar het gebouwd is, en de werkbank staat er na een rondje portal nog — experimenteren kost dus niks. |
+| **Zuurstofleidingen**     | Pipe-connect         | 4–7      | 1P      | Draai buizen zodat zuurstof de tank haalt. Puzzels zijn **solvable-by-construction** (pad eerst uitgelopen, dan geschud). Raster groeit 3×3→6×6; vanaf level 3 zitten er dichtgesoldeerde tegels in, vanaf level 4 zijn er **twee onafhankelijke netwerken**. Als het klopt **stroomt de zuurstof zichtbaar door**: tegel voor tegel vanaf de kraan naar de tank, met een oplopend klokkenspel-toontje bij elke bocht — het moment dat het kind gebouwd heeft, dus dat wordt getoond in plaats van alleen gemeld. |
 | **Brandstof Sorteren**    | Water-sort           | 5–7      | 1P      | Giet raketbrandstof tot elke tank één kleur is. Kleuren 3→7 en reservetanks 2→1 met het level. **Undo** altijd beschikbaar, want de puzzel kan doodlopen en dan moet een kind niet opnieuw hoeven beginnen. |
 | **Ruimte Invasie**        | Space Invaders       | 5–7      | 1P & 2P | **Moeilijkheidskeuze vooraf** (makkelijk / gewoon / moeilijk; op moeilijk schieten de aliens terug en hebben de schepen een schildbalk). Vijf alientypes met eigen silhouet en gedrag — inktvis, schotel, kever, splitser die in tweeën breekt, en zijn kleintjes — plus **drie afwisselende eindbosses** (Kwalmonster, Sterrenkrab, Het Grote Oog), een bonusschotel en power-ups (drievoudig schot, sneller vuren, schild). De zwerm keert altijd om ruim **boven de schepen**, zodat aliens nooit onschietbaar laag komen. |
 | **Asteroïdenveld**        | Breakout             | 6–7      | 1P & 2P | Asteroïden met 1–3 hits, vier **veldpatronen** (vol / schaakbord / piramide / kloof), power-ups (brede vanger, multi-bal, trage bal). 2P = paddles boven én onder, coöperatief. |
@@ -225,6 +245,12 @@ levellampjes op de missieknop, zodat een kind ziet hoe ver het in elk spel
 is — de hub voelt daardoor als één geheel in plaats van negen losse spellen
 die elke sessie op nul beginnen.
 
+De twee open spellen bewaren niet een level maar het **werk zelf**: de Gekke
+Machine schrijft de hele werkbank (onderdelen plus getekende banen) weg en
+Ruimtetekenen de streken als vectoren. Beide zijn zo klein dat ze in
+`localStorage` passen, en het scheelt het verdriet van een half uur bouwen of
+tekenen dat verdwijnt zodra iemand op ◀ drukt.
+
 **Geluid** (`src/shell/audio.js`): volledig procedureel gesynthetiseerd via
 de Web Audio API — oscillatoren voor tonen en arpeggio's, één gedeelde
 noise-buffer met filters voor stuwraketten, inslagen en whooshes. Geen
@@ -232,7 +258,14 @@ audiobestanden betekent geen downloadkosten, geen licenties en nul
 decode-latency. De keten eindigt op een limiter zodat snel vuren niet
 gaat clippen op harde digibord-speakers. De kit is ruimte-specifiek:
 `launch`, `thruster`, `laser`, `explode`, `impact`, `dock`, `pour`, `flow`,
-`powerup`, `levelUp`, `missionComplete`. Mute-knop zit in de portaalbalk.
+`powerup`, `levelUp`, `missionComplete`. Daarnaast `chime(n)`, een
+klokkenspeltoon die indexeert op een **pentatonische** toonladder: welke
+combinatie van bellen een kind ook in de Gekke Machine neerzet, er kan geen
+valse noot uit komen. Mute-knop zit in de portaalbalk; geluid en volume worden
+onthouden in `localStorage` onder een eigen `set:`-prefix, wat ook de reden is
+dat "alle voortgang wissen" (`resetProgress()`) veilig per prefix kan vegen:
+alle levels, tekeningen en machines gaan eruit, de instellingen blijven staan.
+Nieuwe spellen hoeven daar niets voor te registreren.
 
 ### 2-speler aanpak per spel
 - **Om-de-beurt** (Geheugenspel, Legpuzzel-race): duidelijke "Speler 1 / Speler

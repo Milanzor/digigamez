@@ -148,8 +148,10 @@ function connsOf(tile) {
   return rotSet(BASE[tile.type], tile.rotation);
 }
 
-// Walks the oxygen from one source and reports which cells it fills and
-// whether it reached that network's drain.
+// Walks the oxygen from one source and reports which cells it fills, in the
+// order it fills them, and whether it reached that network's drain. The order
+// matters: it is what the finish animation follows to send the gas visibly down
+// the pipe instead of lighting the whole run at once.
 //
 // `entry` is the side of the current tile the gas arrives through, so the tile
 // must have a connection on exactly that side. Leaving a tile through `out`
@@ -157,7 +159,7 @@ function connsOf(tile) {
 // tile's west face.
 function traceFlow(puzzle, endpoint) {
   const { grid, cols, totalCols } = puzzle;
-  const wet = new Set();
+  const path = [];
   let row = endpoint.sourceRow;
   let col = 1;
   let entry = DIR.W;
@@ -165,13 +167,13 @@ function traceFlow(puzzle, endpoint) {
 
   while (col >= 1 && col <= cols && row >= 0 && row < puzzle.rows) {
     const key = `${row},${col}`;
-    if (seen.has(key)) return { solved: false, wet };
+    if (seen.has(key)) return { solved: false, path };
     seen.add(key);
 
     const conns = connsOf(grid[row][col]);
-    if (!conns.includes(entry)) return { solved: false, wet };
+    if (!conns.includes(entry)) return { solved: false, path };
 
-    wet.add(key);
+    path.push(key);
     const out = conns.find((d) => d !== entry);
     const [dr, dc] = VEC[out];
     row += dr;
@@ -179,10 +181,10 @@ function traceFlow(puzzle, endpoint) {
     entry = OPP(out);
 
     if (col === totalCols - 1) {
-      return { solved: row === endpoint.drainRow && entry === DIR.W, wet };
+      return { solved: row === endpoint.drainRow && entry === DIR.W, path };
     }
   }
-  return { solved: false, wet };
+  return { solved: false, path };
 }
 
 function pipeSvg(type) {
@@ -275,6 +277,9 @@ function startRound() {
 
         if (!tileData.locked) {
           const onTap = () => {
+            // The board is frozen while the oxygen runs through, so a child
+            // cannot rotate a pipe out from under the gas.
+            if (done) return;
             tileData.rotation = (tileData.rotation + 1) % 4;
             art.style.transform = `rotate(${tileData.rotation * 90}deg)`;
             sfx.blip();
@@ -295,31 +300,67 @@ function startRound() {
   let done = false;
 
   function evaluate() {
+    if (done) return;
     const results = puzzle.endpoints.map((e) => traceFlow(puzzle, e));
+
+    if (results.every((r) => r.solved)) {
+      done = true;
+      runFlow(results);
+      return;
+    }
+
+    // Work in progress: light the run as far as the gas actually gets, which is
+    // the clue a child reads to find the tile that broke the chain.
     const wetAll = new Set();
-    results.forEach((res) => res.wet.forEach((k) => wetAll.add(k)));
-
+    results.forEach((res) => res.path.forEach((k) => wetAll.add(k)));
     tileEls.forEach((el, key) => el.classList.toggle('is-wet', wetAll.has(key)));
-
-    // Light the endpoints of any network that is fully connected.
+    // On a two-network board one side can be finished while the other is not,
+    // and lighting that tank is how a child knows to leave it alone.
     results.forEach((res, i) => {
       const e = puzzle.endpoints[i];
-      tileEls.get(`${e.sourceRow},0`)?.classList.toggle('is-wet', res.wet.size > 0);
+      tileEls.get(`${e.sourceRow},0`)?.classList.toggle('is-wet', res.path.length > 0);
       tileEls.get(`${e.drainRow},${totalCols - 1}`)?.classList.toggle('is-wet', res.solved);
     });
+  }
 
-    if (!done && results.every((r) => r.solved)) {
-      done = true;
-      finishRound();
-    }
+  // The payoff: rather than the whole pipe turning teal the instant the last
+  // tile lines up, the oxygen sets off from the tap and travels tile by tile to
+  // the tank, with a rising note at each junction. It is the moment the child
+  // built, so it is worth showing rather than asserting.
+  function runFlow(results) {
+    const paths = results.map((res, i) => [
+      `${puzzle.endpoints[i].sourceRow},0`,
+      ...res.path,
+      `${puzzle.endpoints[i].drainRow},${totalCols - 1}`,
+    ]);
+
+    tileEls.forEach((el) => el.classList.remove('is-wet'));
+    sfx.flow();
+
+    const STEP = 95;
+    let longest = 0;
+    paths.forEach((path, net) => {
+      longest = Math.max(longest, path.length);
+      path.forEach((key, i) => {
+        later(() => {
+          const el = tileEls.get(key);
+          if (!el) return;
+          el.classList.add('is-wet', 'is-surging');
+          later(() => el.classList.remove('is-surging'), 300);
+          // One network sings the scale; a second one would only muddy it.
+          if (net === 0) sfx.chime(i);
+        }, i * STEP);
+      });
+    });
+
+    later(() => finishRound(), longest * STEP + 260);
   }
 
   evaluate();
 }
 
 function finishRound() {
-  sfx.flow();
-  later(() => sfx.missionComplete(), 350);
+  sfx.missionComplete();
   level += 1;
   setLevel(slug, level);
   hud.banner('Zuurstof stroomt! 💨', { sub: `Level ${level} vrijgespeeld`, ms: 2000 });

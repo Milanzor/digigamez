@@ -3,6 +3,7 @@ import { createHud } from '../../shared/ui-components.js';
 import {
   setupCanvas, LOGICAL_WIDTH, LOGICAL_HEIGHT, ObjectPool,
   createStars, drawSpaceBackdrop, createBurst, updateAndDrawParticles, roundRect,
+  drawGlow,
 } from '../../shared/canvas-utils.js';
 import { sfx } from '../../shell/audio.js';
 import { setLevel } from '../../shell/progress.js';
@@ -205,6 +206,17 @@ export function init(container, opts) {
     return a;
   }
 
+  // Clearing the last of a wave can queue several hundred particles in one
+  // frame, and each one costs a transform and a fill. Past the budget the
+  // oldest are dropped — they were about to fade out anyway, and a celebration
+  // should never cost more than the game it is celebrating.
+  const MAX_PARTICLES = 300;
+  function burst(x, y, colors, opts) {
+    particles.push(...createBurst(x, y, colors, opts));
+    const over = particles.length - MAX_PARTICLES;
+    if (over > 0) particles.splice(0, over);
+  }
+
   const alienPos = (a) => {
     const wobble = a.type === 'zigzag' ? Math.sin(t * 1.8 + a.phase) * 46 : 0;
     const bob = a.type === 'boss' ? Math.sin(t * 1.1) * 26 : Math.sin(t * 2 + a.phase) * 7;
@@ -275,16 +287,16 @@ export function init(container, opts) {
     a.hp -= 1;
     if (a.hp > 0) {
       sfx.impact();
-      particles.push(...createBurst(pos.x, pos.y, [a.spec.color], { count: 8, speed: 200 }));
+      burst(pos.x, pos.y, [a.spec.color], { count: 8, speed: 200 });
       return;
     }
     a.alive = false;
     ship.score += a.spec.score;
     hud.setScore(shipIdx, ship.score);
     const boss = a.type === 'boss';
-    particles.push(...createBurst(pos.x, pos.y, BURST_COLORS, {
+    burst(pos.x, pos.y, BURST_COLORS, {
       count: boss ? 60 : 20, speed: boss ? 520 : 320,
-    }));
+    });
     sfx.explode();
 
     // A splitter bursts into two smaller ones — killing it makes the wave
@@ -317,7 +329,7 @@ export function init(container, opts) {
         // Never a game over: the ship is rebuilt and the swarm falls back.
         ship.repair = 2.6;
         ship.power = null;
-        particles.push(...createBurst(ship.x, SHIP_Y, BURST_COLORS, { count: 40, speed: 420 }));
+        burst(ship.x, SHIP_Y, BURST_COLORS, { count: 40, speed: 420 });
         sfx.explode();
         hud.banner('Schip geraakt! 🛠️', { sub: 'We repareren hem', ms: 1800 });
         retreat();
@@ -344,14 +356,28 @@ export function init(container, opts) {
     t += dt;
     if (!diff) return;
 
-    const living = aliens.filter((a) => a.alive);
-
-    if (living.length) {
+    // One pass over the swarm for all three measurements. This used to be a
+    // filter plus three spread-and-map calls, which allocated five arrays every
+    // frame for forty aliens.
+    let alive = 0;
+    let leftEdge = Infinity;
+    let rightEdge = -Infinity;
+    let lowest = -Infinity;
+    const base = LOGICAL_WIDTH / 2 + swarmX;
+    for (const a of aliens) {
+      if (!a.alive) continue;
+      alive++;
       // Measure the real silhouette — half-width plus any teleport offset —
       // so a 300px-wide boss turns back before it slides off the screen.
-      const base = LOGICAL_WIDTH / 2 + swarmX;
-      const leftEdge = Math.min(...living.map((a) => base + a.ox + (a.blink || 0) - a.spec.w / 2));
-      const rightEdge = Math.max(...living.map((a) => base + a.ox + (a.blink || 0) + a.spec.w / 2));
+      const half = a.spec.w / 2;
+      const x = base + a.ox + (a.blink || 0);
+      if (x - half < leftEdge) leftEdge = x - half;
+      if (x + half > rightEdge) rightEdge = x + half;
+      const low = a.oy + a.spec.h / 2;
+      if (low > lowest) lowest = low;
+    }
+
+    if (alive) {
       swarmX += swarmDir * swarmSpeed * dt;
       if (leftEdge < 40 && swarmDir < 0) { swarmDir = 1; swarmY += diff.step; }
       else if (rightEdge > LOGICAL_WIDTH - 40 && swarmDir > 0) { swarmDir = -1; swarmY += diff.step; }
@@ -359,16 +385,14 @@ export function init(container, opts) {
       // The retreat line is measured from the lowest living alien, so a tall
       // formation turns back earlier than a shallow one and nothing ever
       // sinks to the ships' altitude.
-      const lowest = Math.max(...living.map((a) => a.oy + a.spec.h / 2));
       if (SWARM_TOP + swarmY + lowest > DANGER_Y) {
         retreat();
         sfx.thruster();
-        hud.banner('De aliens trekken terug! 🌌', { ms: 1300, hint: true });
       }
     }
 
-    updateBosses(dt, living);
-    updateSwarmFire(dt, living);
+    updateBosses(dt);
+    updateSwarmFire(dt);
     updateMystery(dt);
 
     ships.forEach((ship, idx) => {
@@ -390,7 +414,7 @@ export function init(container, opts) {
     updateFoeShots(dt);
     updatePowerups(dt);
 
-    if (!clearing && aliens.length && aliens.every((a) => !a.alive)) {
+    if (!clearing && aliens.length && !alive) {
       clearing = true;
       wave += 1;
       setLevel(slug, wave);
@@ -400,9 +424,9 @@ export function init(container, opts) {
     }
   }
 
-  function updateBosses(dt, living) {
-    for (const a of living) {
-      if (a.type !== 'boss') continue;
+  function updateBosses(dt) {
+    for (const a of aliens) {
+      if (!a.alive || a.type !== 'boss') continue;
       const pos = alienPos(a);
 
       if (a.blinkIn) {
@@ -416,7 +440,7 @@ export function init(container, opts) {
           const halfW = a.spec.w / 2 + 40;
           const target = Math.max(halfW, Math.min(LOGICAL_WIDTH - halfW, home + rnd(-420, 420)));
           a.blink = target - home;
-          particles.push(...createBurst(pos.x, pos.y, ['#ff5f4d', '#ffffff'], { count: 18, speed: 300 }));
+          burst(pos.x, pos.y, ['#ff5f4d', '#ffffff'], { count: 18, speed: 300 });
           sfx.laser();
         }
       }
@@ -456,12 +480,14 @@ export function init(container, opts) {
     }
   }
 
-  function updateSwarmFire(dt, living) {
+  function updateSwarmFire(dt) {
     if (!diff.fireRate) return;
-    const shooters = living.filter((a) => a.type !== 'boss');
-    if (!shooters.length) return;
     foeShotIn -= dt * diff.fireRate;
     if (foeShotIn > 0) return;
+    // The shooter list is only built on the frames a shot actually goes out —
+    // once every second or so rather than sixty times a second.
+    const shooters = aliens.filter((a) => a.alive && a.type !== 'boss');
+    if (!shooters.length) return;
     foeShotIn = rnd(0.9, 2.1);
     // Only the alien lowest in its column fires, so shots never come out of
     // the middle of the formation.
@@ -508,7 +534,7 @@ export function init(container, opts) {
         const ship = ships[b.owner];
         ship.score += 10;
         hud.setScore(b.owner, ship.score);
-        particles.push(...createBurst(mystery.x, mystery.y, BURST_COLORS, { count: 34, speed: 420 }));
+        burst(mystery.x, mystery.y, BURST_COLORS, { count: 34, speed: 420 });
         dropPower(mystery.x, mystery.y);
         hud.banner('Bonusschotel! +10 ⭐', { ms: 1200, hint: true });
         sfx.powerup();
@@ -548,7 +574,7 @@ export function init(container, opts) {
         if (ship.repair > 0) continue;
         const reach = ship.shield > 0 ? 76 : 48;
         if (Math.hypot(s.x - ship.x, s.y - SHIP_Y) < reach + s.r) {
-          particles.push(...createBurst(s.x, s.y, ['#ff5f4d', '#ffe066'], { count: 10, speed: 220 }));
+          burst(s.x, s.y, ['#ff5f4d', '#ffe066'], { count: 10, speed: 220 });
           hurtShip(ship);
           foeShots.splice(i, 1);
           break;
@@ -773,11 +799,11 @@ export function init(container, opts) {
     const { x, y } = alienPos(a);
     const { w, h, color } = a.spec;
 
-    ctx.save();
-    ctx.shadowColor = color;
-    ctx.shadowBlur = a.type === 'boss' ? 42 : 18;
+    // Halo first, artwork on top. Every alien is drawn from five to ten shapes,
+    // so glowing them with shadowBlur meant a blur pass per shape — two hundred
+    // a frame on a full wave, which is what made the later waves stutter.
+    drawGlow(ctx, color, x, y, Math.max(w, h) * (a.type === 'boss' ? 0.64 : 0.7));
     ART[a.spec.art](a, x, y, w, h);
-    ctx.restore();
 
     if (a.type === 'boss') {
       const frac = Math.max(0, a.hp / a.maxHp);
@@ -921,27 +947,23 @@ export function init(container, opts) {
     for (const a of aliens) if (a.alive) drawAlien(a);
     if (mystery) drawMystery();
 
-    ctx.save();
-    ctx.shadowColor = '#ffe66d';
-    ctx.shadowBlur = 16;
+    // Shots glow the same cheap way. With a spread gun and two players there
+    // can be thirty of them in the air.
+    for (const b of bullets) drawGlow(ctx, '#ffe66d', b.x, b.y, 22);
     ctx.fillStyle = '#ffe66d';
     for (const b of bullets) {
       ctx.beginPath();
       ctx.arc(b.x, b.y, 9, 0, Math.PI * 2);
       ctx.fill();
     }
-    ctx.restore();
 
-    ctx.save();
-    ctx.shadowColor = '#ff5f4d';
-    ctx.shadowBlur = 20;
+    for (const s of foeShots) drawGlow(ctx, s.big ? '#ff8a3d' : '#ff5f4d', s.x, s.y, s.r * 2.3);
     for (const s of foeShots) {
       ctx.fillStyle = s.big ? '#ff8a3d' : '#ff5f4d';
       ctx.beginPath();
       ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
       ctx.fill();
     }
-    ctx.restore();
 
     powerups.forEach(drawPowerup);
     ships.forEach(drawShip);

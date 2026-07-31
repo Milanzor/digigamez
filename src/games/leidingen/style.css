@@ -46,6 +46,26 @@
   filter: drop-shadow(0 0 clamp(4px, 0.9vmin, 18px) var(--teal));
 }
 
+/* The oxygen front passing through: the tile swells for a moment and the pipe
+   inside it flashes near-white before settling to teal, so the eye can follow
+   the gas from the tap to the tank. */
+@keyframes pipe-surge {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.14); }
+  100% { transform: scale(1); }
+}
+
+.pipe-tile.is-surging {
+  animation: pipe-surge 300ms cubic-bezier(0.3, 0.9, 0.3, 1.2);
+  /* Lifted so the swell is not overlapped by the neighbours it grows into. */
+  z-index: 2;
+}
+
+.pipe-tile.is-surging .pipe-pipe {
+  fill: #eafffb;
+  filter: drop-shadow(0 0 clamp(6px, 1.4vmin, 28px) var(--teal));
+}
+
 .pipe-tile.is-locked {
   background: linear-gradient(160deg, #2a3670, #1d2650);
 }

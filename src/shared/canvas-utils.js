@@ -155,12 +155,55 @@ export function drawSpaceBackdrop(ctx, stars, t, { scrollSpeed = 14 } = {}) {
   ctx.globalAlpha = 1;
 }
 
-export function withGlow(ctx, color, blur, fn) {
-  ctx.save();
-  ctx.shadowColor = color;
-  ctx.shadowBlur = blur;
-  fn();
-  ctx.restore();
+// --- Glow -----------------------------------------------------------------
+
+// `shadowBlur` is the obvious way to make something glow, but the browser runs
+// a blur pass for every single fill and stroke drawn under it. A screen full of
+// aliens, each built from half a dozen shapes, asked for two hundred blurs a
+// frame and dropped a 4K digiboard well under 60fps.
+//
+// So the glow is pre-rendered once per colour into a small offscreen canvas and
+// blitted behind the artwork instead: one `drawImage` per glowing thing, no
+// matter how many shapes it is drawn from. A round halo is not a silhouette-
+// hugging blur, but at digiboard viewing distance the difference is invisible.
+const GLOW_PX = 128;
+const glowCache = new Map();
+
+// Accepts the palette's #rrggbb (and #rgb) and returns it at the given alpha.
+// Needed because a gradient stop cannot fade a hex colour to `transparent`
+// without passing through black on the way.
+export function withAlpha(color, a) {
+  if (color[0] !== '#') return color;
+  const hex = color.length === 4
+    ? color[1] + color[1] + color[2] + color[2] + color[3] + color[3]
+    : color.slice(1);
+  const n = parseInt(hex, 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+}
+
+function glowSprite(color) {
+  let sprite = glowCache.get(color);
+  if (sprite) return sprite;
+  sprite = document.createElement('canvas');
+  sprite.width = GLOW_PX;
+  sprite.height = GLOW_PX;
+  const g = sprite.getContext('2d');
+  const r = GLOW_PX / 2;
+  const grad = g.createRadialGradient(r, r, 0, r, r, r);
+  grad.addColorStop(0, withAlpha(color, 0.55));
+  grad.addColorStop(0.4, withAlpha(color, 0.26));
+  grad.addColorStop(1, withAlpha(color, 0));
+  g.fillStyle = grad;
+  g.fillRect(0, 0, GLOW_PX, GLOW_PX);
+  glowCache.set(color, sprite);
+  return sprite;
+}
+
+// Soft halo of `radius` centred on (x, y). Draw it before the artwork.
+export function drawGlow(ctx, color, x, y, radius, alpha = 1) {
+  if (alpha !== 1) ctx.globalAlpha = alpha;
+  ctx.drawImage(glowSprite(color), x - radius, y - radius, radius * 2, radius * 2);
+  if (alpha !== 1) ctx.globalAlpha = 1;
 }
 
 // --- Particles ------------------------------------------------------------

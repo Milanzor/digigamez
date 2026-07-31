@@ -21,9 +21,8 @@
   width: fit-content;
   max-width: 97vw;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: clamp(4px, 0.7vmin, 14px);
   padding: clamp(6px, 1vmin, 20px) clamp(10px, 1.5vmin, 30px);
   border-radius: var(--r-lg);
@@ -31,6 +30,25 @@
   border: clamp(2px, 0.3vmin, 7px) solid var(--panel-line);
   box-shadow: var(--shadow-panel);
   z-index: 20;
+}
+
+/* Parts on the top row, what-to-do-with-them on the bottom row. Each row wraps
+   rather than scrolls: a toolbar that scrolls is a dead end for a four-year-old
+   who will never discover that it scrolls. */
+.mach-bar__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(4px, 0.7vmin, 14px);
+}
+
+.mach-sep {
+  width: clamp(2px, 0.3vmin, 6px);
+  height: clamp(30px, 4.4vmin, 92px);
+  background: var(--panel-line);
+  border-radius: var(--r-pill);
+  flex-shrink: 0;
 }
 
 .mach-tool {
