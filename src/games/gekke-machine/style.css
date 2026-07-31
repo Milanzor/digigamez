@@ -1,0 +1,83 @@
+.mach-stage {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.mach-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+.mach-bar {
+  position: absolute;
+  bottom: var(--sp-2);
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: fit-content;
+  max-width: 97vw;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(4px, 0.7vmin, 14px);
+  padding: clamp(6px, 1vmin, 20px) clamp(10px, 1.5vmin, 30px);
+  border-radius: var(--r-lg);
+  background: rgba(8, 13, 42, 0.9);
+  border: clamp(2px, 0.3vmin, 7px) solid var(--panel-line);
+  box-shadow: var(--shadow-panel);
+  z-index: 20;
+}
+
+.mach-tool {
+  width: clamp(48px, 6.6vmin, 142px);
+  height: clamp(48px, 6.6vmin, 142px);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: clamp(21px, 3.1vmin, 66px);
+  line-height: 1;
+  background: linear-gradient(180deg, var(--panel-hi), var(--panel));
+  border: clamp(2px, 0.3vmin, 7px) solid var(--panel-line);
+  color: var(--enamel);
+  flex-shrink: 0;
+  transition: transform 0.1s ease, border-color 0.1s ease, background 0.1s ease;
+}
+
+.mach-tool:active { transform: scale(0.9); }
+
+.mach-tool.is-active {
+  border-color: var(--sun);
+  background: linear-gradient(180deg, #ffd469, var(--sun));
+  box-shadow: var(--glow-sun);
+}
+
+/* The play key is the one control that must be findable from across the
+   classroom, so it is bigger and green rather than panel-blue. */
+.mach-tool--go {
+  width: clamp(60px, 8.4vmin, 180px);
+  height: clamp(60px, 8.4vmin, 180px);
+  background: linear-gradient(180deg, #8df59a, var(--leaf));
+  border-color: #3aa14a;
+}
+
+.mach-tool--go.is-running {
+  background: linear-gradient(180deg, #ff8f80, var(--mars));
+  border-color: #a8281a;
+}
+
+.mach-hint {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: calc(var(--touch) + var(--sp-2));
+  pointer-events: none;
+  z-index: 10;
+  transition: opacity 0.4s ease;
+}
+
+.mach-hint.is-gone { opacity: 0; }

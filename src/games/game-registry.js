@@ -40,6 +40,15 @@ export const GAMES = [
     load: () => import('./tekenen/index.js'),
   },
   {
+    slug: 'gekke-machine',
+    title: 'Gekke Machine',
+    icon: '⚙️',
+    ageLabel: '4-7 jr',
+    supportsTwoPlayers: false,
+    color: '#ff7ab8',
+    load: () => import('./gekke-machine/index.js'),
+  },
+  {
     slug: 'leidingen',
     title: 'Zuurstofleidingen',
     icon: '🔧',
