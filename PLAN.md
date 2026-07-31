@@ -422,7 +422,7 @@ enige spel in de bundel dat écht Nederlands moet zijn om te werken.
 | **Alien Verstoppertje**   | Verstop-en-zoek      | 2–5      | 1P & 2P | Tik een steen om en er zit een beestje onder, elk met zijn eigen animatie. Een omgekeerde steen blíjft omgekeerd — onthouden waar je al gekeken hebt is precies wat een tweejarige nog niet kan, dus doet het bord dat. Vanaf level 4 wordt het een **bekerspel**: volg de alien onder drie schuivende stenen, met elk level één schuif meer en één tel sneller. Mislukken is hier structureel onmogelijk; een misgok laat zien waar hij wél zat. |
 | **Magneetstrijd**         | Touwtrekken          | 2–6      | 1P & 2P | Een satelliet hangt tussen twee tractorstralen. Niet op knoppen rammen maar **tik het paneel dat oplicht** — precies één paneel per kant is scherp, dus hameren levert niets op en het is reactie in plaats van snelheid. Vooraf kies je op een pictogramscherm wie een **voorsprong** krijgt, zodat een zevenjarige en een driejarige een eerlijke partij kunnen spelen. Alleen speel je tegen een robot die net te laat is. |
 | **Maak je Maatje**        | Creatief             | 2–7      | 1P & 2P | Bouw een alien uit vier lijven, vier ogen, vier antennes, vier armen, vijf monden en twaalf kleuren. Elke keuzeknop is een **tekening van het maatje met dat onderdeel erin**, dus er valt niets te lezen. 🎲 verzint er een, 🎉 laat hem dansen en toeteren. Hij wordt bewaard via `shell/maatje.js` en duikt daarna op in andere missies — als laadmeester in Ladingcontrole en als piloot van de rover. |
-| **Ladingcontrole**        | Tellen               | 3–6      | 1P & 2P | Laad *precies* N kratten in en de raket vertrekt alleen als het klopt. Elk aantal staat er twee keer — als **stippen in groepjes van vijf én als cijfer** — want dat is de brug die deze leeftijd oversteekt. Diepte: 1–5 → 1–10 → 1–20 → "er zaten er 3 in, er komen 2 bij" → meer/minder. Fout drukken laat de luik schudden en de twee aantallen naast elkaar zien; de kratten blijven staan. |
+| **Ladingcontrole**        | Tellen               | 3–6      | 1P & 2P | Laad *precies* N kratten in en druk zelf op de raket. Elk aantal staat er twee keer — als **stippen in groepjes van vijf én als cijfer** — want dat is de brug die deze leeftijd oversteekt. Vanaf level 4 wegen de kratten 1, 2 en 5, dus dertien moet *gebouwd* worden; vanaf level 5 staat de teller op `?` tot je hem aantikt en het maatje het ruim hardop uittelt. Zes soorten opdracht (precies, erbij, eruit, meer/minder, ertussen, twee keer zoveel), een premiebalk die alleen punten kan *opleveren*, en een reeksbonus. Fout drukken laat de luik schudden en zet de twee aantallen als stippenrijen onder elkaar; de kratten blijven staan. Zie "De raket die niet groen wordt". |
 | **Sterrenpaden**          | Stip-naar-stip       | 3–6      | 1P      | Sleep van ster 1 naar 2 naar 3; het sterrenbeeld licht op en wordt een huis, vis, kroon, boot, poes, ster, raket of vlinder. Alleen de volgende ster gloeit, dus een kind dat nog niet tot tien komt weet toch waar het heen moet — de cijfers zijn er voor wie ze aan het leren is. Elke verbinding is de volgende toon omhoog, dus een afgemaakte tekening heeft onderweg een liedje gespeeld. |
 | **Meteoor Meppen**        | Mollen meppen        | 3–7      | 1P & 2P | Aliens duiken op uit maankraters en je bopt ze. Eén **gedeeld** bord en één gedeelde teller: met tien vingers op het glas is er geen eerlijke manier om te zeggen wiens vinger er eerst was. De schotel is dubbele punten, en één vriendelijke poes **giechelt alleen** als je hem raakt — geen punten, ook geen straf, en precies dat maakt het kijken-voor-je-slaat. |
 | **Toren Bouwen**          | Stapelen             | 3–7      | 1P & 2P | Een kraan zwaait een blok heen en weer, één tik laat het vallen. Hoe hoger de toren, hoe verder hij uit het lood komt te staan, en het **wiebelen waarschuwt** ruim voordat hij omgaat. Instorten is de grap, niet de straf: alles tuimelt weg en de kraan geeft je een nieuw blok op hetzelfde level. Een blok dat er te ver naast landt glijdt eraf en kost een beurt, nooit de toren. |
@@ -441,8 +441,8 @@ gaat door met de volgende opdracht.
 De tien nieuwste spellen zijn langs dezelfde lat gebouwd, en dat was bij een
 paar ervan het echte ontwerpwerk. Een toren die instort tuimelt spectaculair
 weg en je krijgt een nieuw blok op hetzelfde level. Een verkeerd getelde vracht
-laat de luik schudden en zet de twee aantallen naast elkaar — de kratten blijven
-staan waar ze stonden. Een verkeerde letter wiebelt terug in de rij en het vakje
+laat de luik schudden en zet de twee aantallen als stippenrijen onder elkaar — de
+kratten blijven staan waar ze stonden. Een verkeerde letter wiebelt terug in de rij en het vakje
 blijft open. Een misgok in het bekerspel laat zien waar de alien wél zat. En de
 vriendelijke poes in Meteoor Meppen giechelt alleen: geen punten, maar ook geen
 aftrek, want de enige prijs voor het aantikken hoort de seconde te zijn die je
@@ -454,6 +454,49 @@ hoe goed je was. Bij die vier zegt het beloningsscherm wél eerlijk wie er won �
 dat is het eerste wat twee kinderen willen lezen — maar het level gaat hoe dan
 ook omhoog. Er is dus altijd vooruitgang en nooit een moment waarop een kind te
 horen krijgt dat het verloren heeft. Score en level gaan alleen omhoog.
+
+### De raket die niet groen wordt (Ladingcontrole, herbouwd)
+
+De eerste versie van Ladingcontrole was geen spel, en de oorzaak was één regel
+CSS: de raketknop lichtte gróen op zodra het ruim klopte. Daarmee was de winnende
+strategie "tik kratten aan en kijk naar de knop" — tellen was optioneel, dus
+niemand telde. Het lampje is weg en er staan drie dingen in de plaats, en dat is
+tegelijk het antwoord op de vraag hoe je een spel *moeilijker* maakt voor een
+zesjarige zonder het onmogelijk te maken voor een driejarige: je verandert niet
+de getallen, je verandert wie het antwoord mag weten.
+
+1. **De handel is altijd scherp.** Beslissen dat je klaar bent is de zet waar dit
+   spel over gaat, dus de console mag hem niet voor je doen. Fout drukken kost nog
+   steeds niets, en die tweede blik is nu een *plaatje*: de vrachtbrief boven wat
+   er in het ruim ligt, uitgelijnd, met wat er mist als lege ringetjes en wat er
+   te veel is doorgestreept. Het verschil is een lengte in plaats van een
+   aftreksom.
+2. **Kratten die meer dan één wegen.** Vanaf level 4 liggen er kratten van 1, 2 en
+   5 op de pallet, in drie breedtes en met stippen op de deksel. Dertien is dan
+   5+5+2+1: het aantal tikken en het antwoord zijn losgekoppeld, en wat overblijft
+   is een getal samenstellen — de vaardigheid waar het eigenlijk om ging.
+3. **Een vertrekvenster.** Een dunne amberen balk loopt leeg; lanceren terwijl er
+   nog iets in zit levert premie op, en foutloze lanceringen op rij vermenigvuldigen
+   die. Hij kan alleen maar *geven* — leeglopen doet helemaal niets — want een
+   aftellende klok die een vierjarige iets afpakt koopt spanning voor een prijs die
+   dit pakket nergens anders betaalt (zie "geen verliesstatus" hierboven).
+
+De meelopende teller was het tweede ding dat het antwoord weggaf: met "13" boven
+het ruim en "13" erin is twee cijfers vergelijken geen tellen. Vanaf level 5 staat
+er dus `?`, en tikken op de teller laat het maatje het ruim hardop uittellen — één
+stip, één toon, en de toonhoogte begint elke vijf opnieuw, zodat tellen in vijven
+te *horen* is. Het is ongelimiteerd en gratis: een kind dat hulp nodig heeft
+krijgt die door erom te vragen, en dat is iets anders dan het verteld worden.
+
+De ladder is daarmee 1–5 → 1–10 → erbij → gewogen kratten → teller dicht →
+alle zes soorten met een korter venster. De vier lagen die kinderen van drie
+tot zeven scheiden zitten dus niet in grotere getallen maar in vier keer een
+andere vraag over dezelfde stapel kratten. Aan de gedeelde laag is er niets voor
+bij gekomen: dit past op `createHud` (nu ook met `showScore`), `showMissionComplete`,
+`onTap`-semantiek en `progress.js` zoals die er al waren. De sterren blijven
+`starsForLevel`, want de score van dit spel maakt het niet plotseling het enige
+spel met een prestatiecijfer — die staat in de balk en in de titel van het
+beloningsscherm.
 
 **Uitbreidingen**: de kandidatenlijst in §6c is afgebouwd. Wat daar nog staat is
 de lijst van vijf spellen die er bewust *niet* komen, plus de twee open keuzes
@@ -467,8 +510,12 @@ amberen voortgangsbalk op de missierij, zodat een kind ziet hoe ver het in
 elk spel is — de hub voelt daardoor als één geheel in plaats van vierentwintig
 losse spellen die elke sessie op nul beginnen. Dezelfde vijf-levelladder voedt de
 drie sterren op het beloningsscherm (`starsForLevel`); die sterren zijn
-bewust géén prestatiecijfer, want geen van deze spellen meet *hoe goed* een
-level is opgelost en een verzonnen score zou de sterren willekeurig maken.
+bewust géén prestatiecijfer. Op één na meet geen van deze spellen *hoe goed* een
+level is opgelost, en een verzonnen score zou de sterren willekeurig maken.
+Ladingcontrole is die ene — het houdt punten en een reeks bij — en juist daarom
+staat die score in de balk en in de titel van het beloningsscherm, en níet in de
+sterren: dan zou hetzelfde beeld in het ene spel een prestatie zijn en in de
+andere drieëntwintig een teller.
 
 Het spel dat het laatst gespeeld is wordt onthouden (`lastGame`) en licht op
 in het rooster, zodat een kind dat terugkomt bij het bord ziet waar het was.
@@ -742,9 +789,18 @@ zo gelaten, niet vergeten.
 Naast de generieke sweep worden de nieuwe spellen ook echt *gespeeld* in de
 harness — een reeks echoën in Sterrenecho, een programma laten lopen tot de
 rover zijn kristal heeft, vier planeten in een kolom laten vallen, een toren van
-vijf hoog stapelen, kratten inladen tot de raket groen wordt — want een spel dat
-niet crasht is nog geen spel dat werkt. En de screenshots worden ook echt
-*bekeken*: de helft van de bugs hieronder gaf geen enkele foutmelding.
+vijf hoog stapelen, elke soort vrachtbrief in Ladingcontrole uitladen en
+lanceren — want een spel dat niet crasht is nog geen spel dat werkt. En de
+screenshots worden ook echt *bekeken*: de helft van de bugs hieronder gaf geen
+enkele foutmelding.
+
+Ladingcontrole heeft er bij zijn herbouw drie eigen controles bij gekregen, en
+alle drie omdat ze precies dat vangen wat een spel *speelbaar* houdt in plaats
+van foutloos: dat de raketknop er **niet anders uit gaat zien** op het moment dat
+het ruim klopt (de klasse vóór en ná wordt vergeleken, want dat groene lampje was
+de hele bug), dat een gevraagd aantal met de gewogen kratten ook echt te bouwen
+is, en dat de raket bij het opstijgen klimt én daarna weer op zijn plaats staat —
+gelezen uit de computed transform, net als bij de raket op het startscherm.
 
 Drie echte bugs kwamen uit de eerste ronde:
 

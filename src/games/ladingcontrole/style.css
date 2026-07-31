@@ -1,8 +1,15 @@
-/* Everything is content-sized and the column is centred. An earlier version let
-   the cargo bay take `flex: 1`, which on a 16:9 board stretched the hold into a
-   half-screen empty box with two crates rattling around in it — the panels
-   should be as big as what is in them. */
+/* The column is centred and every panel gets its height from its content. An
+   earlier version let the cargo bay take `flex: 1`, which on a 16:9 board
+   stretched the hold into a half-screen empty box with two crates rattling
+   around in it — a panel should be as tall as what is in it.
+
+   Width is the one exception, and it goes the other way: the bay and the pallet
+   are given an explicit `min(100%, 118vh)` rather than being content-sized,
+   because the hold must *not* change size while a child fills it. A box that
+   grows under your hands while you count into it makes counting harder, which is
+   the one thing this game is for. */
 .cargo-stage {
+  position: relative;
   width: 100%;
   height: 100%;
   display: flex;
@@ -58,41 +65,121 @@
   color: var(--muted-warm);
 }
 
+/* ── The departure window ──────────────────────────────────────────────────
+   A bonus, never a threat: it drains, and when it is empty precisely nothing
+   happens. That is what buys this game its urgency without buying a
+   four-year-old a countdown that takes something away from them.
+
+   One CSS animation for the whole round rather than a bar redrawn from a rAF —
+   the score reads the remaining time off `performance.now()` at the moment of
+   launch, so nothing is sampled while it runs. */
+.cargo-timer {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+  max-width: clamp(200px, 44vmin, 900px);
+}
+
+.cargo-timer__track {
+  flex: 1;
+  height: clamp(5px, 0.7vmin, 15px);
+  border-radius: var(--r-pill);
+  background: rgba(5, 7, 15, 0.5);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule);
+  overflow: hidden;
+}
+
+.cargo-timer__track i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--amber-lo), var(--amber-hi));
+  box-shadow: var(--glow-sun);
+  transform-origin: left center;
+  /* Filling forwards is deliberate here and is the case §2b allows: the resting
+     state (empty) has to differ from the element's own style, the element
+     carries no transition that the fill could shadow, and it is rebuilt from
+     scratch every round — which is also how the animation is restarted. */
+  animation-name: cargo-drain;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+@keyframes cargo-drain {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
 /* ── Pips ──────────────────────────────────────────────────────────────── */
 
 /* Rows of five, with a gap after each five. Eighteen loose dots is a counting
    task; three fives and a three is a reading task, and the gap is what turns
    one into the other. */
+/* The three pip metrics are variables so the row's width can be *derived* from
+   them: exactly two groups of five per line. With a guessed max-width the wrap
+   landed mid-group — nineteen came out as thirteen-and-six across two lines,
+   which is precisely the reading the grouping exists to prevent. */
 .cargo-pips {
+  --pip: clamp(11px, 1.7vmin, 38px);
+  --pip-gap: clamp(2px, 0.4vmin, 9px);
+  --pip-group: clamp(5px, 0.9vmin, 20px);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: clamp(2px, 0.4vmin, 9px);
-  max-width: clamp(150px, 30vmin, 660px);
+  gap: var(--pip-gap);
+  max-width: calc(var(--pip) * 10 + var(--pip-gap) * 9 + var(--pip-group));
 }
 
 .cargo-pips i {
-  width: clamp(11px, 1.7vmin, 38px);
-  height: clamp(11px, 1.7vmin, 38px);
+  position: relative;
+  width: var(--pip);
+  height: var(--pip);
   border-radius: 50%;
   background: var(--cream);
   box-shadow: 0 0 clamp(4px, 0.8vmin, 18px) rgba(243, 236, 224, 0.35);
 }
 
-.cargo-pips i.is-group { margin-left: clamp(5px, 0.9vmin, 20px); }
+.cargo-pips i.is-group { margin-left: var(--pip-group); }
 
 /* The crates that were already aboard, in the addition levels. */
 .cargo-pips.is-was i { background: var(--muted); box-shadow: none; }
 
 .cargo-pips.is-tally i { background: var(--teal); box-shadow: 0 0 clamp(4px, 0.8vmin, 18px) rgba(95, 227, 196, 0.45); }
 
+/* Three states that only exist to make an amount *readable as a difference*:
+   what is still missing is an empty ring, what is one too many is struck
+   through, and what has to come out again is struck through and greyed. A
+   struck-out dot is a picture a five-year-old reads; "13 − 9" is not. */
+.cargo-pips i.is-gap {
+  background: transparent;
+  box-shadow: inset 0 0 0 clamp(2px, 0.28vmin, 6px) var(--muted-warm);
+}
+
+.cargo-pips i.is-over { background: var(--coral); box-shadow: none; }
+.cargo-pips i.is-out { background: var(--muted); box-shadow: none; }
+
+.cargo-pips i.is-over::after,
+.cargo-pips i.is-out::after {
+  content: '';
+  position: absolute;
+  inset: 45% -25%;
+  border-radius: var(--r-pill);
+  background: var(--cream);
+  transform: rotate(-45deg);
+}
+
 /* ── The bay ───────────────────────────────────────────────────────────── */
 
+/* A real width and `align-self: center`, not `align-self: stretch` with
+   `margin: 0 auto` — the second one silently cancels the first (§2b), which left
+   the bay content-sized: the hold shrank to whatever was in it, so the box a
+   child is counting into changed shape under their hands while they filled it. */
 .cargo-bay {
   flex: 0 0 auto;
-  align-self: stretch;
-  max-width: min(100%, 180vh);
-  margin: 0 auto;
+  align-self: center;
+  width: min(100%, 118vh);
   display: grid;
   grid-template-columns: auto 1fr auto auto;
   align-items: center;
@@ -101,7 +188,6 @@
   border-radius: var(--r-lg);
   background: rgba(255, 255, 255, 0.03);
   box-shadow: inset 0 0 0 var(--hair) var(--rule-mid);
-  transition: transform 0.2s ease;
 }
 
 /* Wrong count: the hatch shakes its head. No red, no buzzer — the crates stay
@@ -114,19 +200,6 @@
   75% { transform: translateX(clamp(4px, 1.4vmin, 10px)); }
 }
 
-.cargo-bay.is-launching { animation: cargo-launch 1.2s ease-in forwards; }
-
-@keyframes cargo-launch {
-  0% { transform: translateY(0); opacity: 1; }
-  20% { transform: translateY(clamp(3px, 0.6vmin, 12px)); }
-  100% { transform: translateY(-140%); opacity: 0; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .cargo-bay.is-wrong,
-  .cargo-bay.is-launching { animation: none; }
-}
-
 .cargo-buddy {
   width: clamp(70px, 12vmin, 270px);
   display: grid;
@@ -136,6 +209,22 @@
 .cargo-buddy canvas {
   width: 100%;
   height: auto;
+}
+
+/* The loadmaster has an opinion about the shipment. Two short animations, and
+   both are the reason to have a creature standing there at all. */
+.cargo-buddy.is-cheer { animation: cargo-hop 0.42s ease-out 3; }
+.cargo-buddy.is-doubt { animation: cargo-tilt 0.5s ease-in-out 2; }
+
+@keyframes cargo-hop {
+  0%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-14%) scale(1.04); }
+}
+
+@keyframes cargo-tilt {
+  0%, 100% { transform: rotate(0); }
+  30% { transform: rotate(-6deg); }
+  70% { transform: rotate(6deg); }
 }
 
 /* The hold itself. Crates wrap into rows, so twenty of them are still
@@ -157,11 +246,33 @@
   overflow: hidden;
 }
 
+/* ── The tally, which is also the count-along key ──────────────────────────
+   The readout is the button. From level 5 it shows a `?` instead of the total,
+   and pressing it makes the hold be counted out loud — one pip, one chime,
+   pitch restarting every five. Making the readout itself the control keeps the
+   touch target the size of the readout; a separate little "count for me" key
+   would have landed under the 88px floor. */
 .cargo-tally {
+  min-width: var(--touch);
+  min-height: var(--touch);
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: var(--sp-1);
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--r-md);
+  background: var(--panel);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule-mid);
+  transition: transform 0.12s var(--ease-press), background 0.16s ease;
+}
+
+.cargo-tally:active { transform: scale(0.94); background: var(--panel-press); }
+
+.cargo-tally.is-counting {
+  background: var(--panel-hi);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule-strong),
+    0 0 clamp(10px, 2vmin, 44px) rgba(95, 227, 196, 0.3);
 }
 
 .cargo-tally__num {
@@ -172,21 +283,62 @@
   color: var(--teal);
 }
 
-.cargo-tally .cargo-pips { max-width: clamp(80px, 14vmin, 310px); }
+.cargo-tally__hint {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--fs-micro);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+/* One group of five per line here: the tally sits in a narrow column, and five
+   under five under five is the shape of the amount. */
+.cargo-tally .cargo-pips {
+  justify-content: center;
+  max-width: calc(var(--pip) * 5 + var(--pip-gap) * 4);
+}
 
 /* ── Crates ────────────────────────────────────────────────────────────── */
 
+/* Three widths for three amounts. From level 4 the pallet carries crates worth
+   1, 2 and 5, and that is what finally makes this a counting game instead of a
+   tapping game: the number of taps and the answer have come apart, so thirteen
+   has to be *built* (5+5+2+1) rather than tapped out one at a time while
+   watching for something to light up. The width says "this one is bigger", the
+   pips on the lid say exactly how much bigger. */
 .cargo-crate {
   width: clamp(38px, 5.6vmin, 124px);
   height: clamp(38px, 5.6vmin, 124px);
   border-radius: var(--r-sm);
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1px, 0.2vmin, 5px);
   font-size: clamp(22px, 3.4vmin, 74px);
   line-height: 1;
   background: rgba(255, 255, 255, 0.05);
   box-shadow: inset 0 0 0 var(--hair) var(--rule-mid);
   transition: transform 0.12s var(--ease-press), background 0.14s ease;
+}
+
+.cargo-crate.is-v2 { width: clamp(50px, 7.3vmin, 160px); }
+.cargo-crate.is-v5 { width: clamp(64px, 9.4vmin, 208px); }
+
+.cargo-crate__box { display: block; }
+
+.cargo-crate .cargo-pips.is-mark {
+  --pip: clamp(4px, 0.62vmin, 14px);
+  --pip-gap: clamp(2px, 0.25vmin, 6px);
+  --pip-group: 0px;
+  flex-wrap: nowrap;
+  max-width: none;
+}
+
+.cargo-crate .cargo-pips.is-mark i {
+  background: var(--amber);
+  box-shadow: none;
 }
 
 .cargo-crate:active { transform: scale(0.9); background: var(--panel-press); }
@@ -198,14 +350,20 @@
   box-shadow: inset 0 0 0 var(--hair) var(--rule);
 }
 
+/* Lit while the count-along is standing on it. */
+.cargo-crate.is-counting {
+  background: rgba(95, 227, 196, 0.22);
+  box-shadow: inset 0 0 0 var(--hair) var(--teal),
+    0 0 clamp(8px, 1.6vmin, 36px) rgba(95, 227, 196, 0.4);
+}
+
 /* ── The pallet ────────────────────────────────────────────────────────── */
 
 .cargo-pile {
   flex: 0 0 auto;
-  align-self: stretch;
-  max-width: min(100%, 180vh);
-  margin: 0 auto;
-  min-height: calc(clamp(38px, 5.6vmin, 124px) * 2 + var(--sp-4));
+  align-self: center;
+  width: min(100%, 118vh);
+  min-height: calc(clamp(38px, 5.6vmin, 124px) + var(--sp-4));
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -221,7 +379,19 @@
 
 /* ── Launch ────────────────────────────────────────────────────────────── */
 
+.cargo-rocket {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+/* No ready-light. The old version turned this button green the moment the hold
+   was right, which made the whole game "tap crates until the button changes
+   colour" — the counting was optional and so nobody counted. Deciding you are
+   done is the move this game is about, so the console cannot make it for you.
+   Getting it wrong still costs nothing but a second look. */
 .cargo-launch {
+  position: relative;
   width: var(--touch);
   height: var(--touch);
   border-radius: 50%;
@@ -234,15 +404,155 @@
   transition: transform 0.12s var(--ease-press), background 0.16s ease, box-shadow 0.16s ease;
 }
 
-.cargo-launch:active { transform: scale(0.93); }
+.cargo-launch:active {
+  transform: scale(0.93);
+  background: var(--panel-press);
+  box-shadow: inset 0 0 0 var(--hair) var(--amber), var(--glow-sun);
+}
 
-/* Lit the moment the hold is right. This is the game's only feedback that the
-   answer is correct *before* committing to it, and it is deliberately there:
-   the point is loading the crates, not guessing whether you are done. */
-.cargo-launch.is-ready {
-  background: linear-gradient(180deg, #8df59a, var(--green));
-  box-shadow: inset 0 0 0 var(--hair) rgba(255, 255, 255, 0.5),
-    0 0 clamp(12px, 2.4vmin, 52px) rgba(126, 231, 135, 0.45);
+.cargo-launch__ship {
+  display: block;
+  position: relative;
+  z-index: 1;
+}
+
+/* The flame only exists while the ship is actually climbing, which is the beat
+   the old version skipped: the whole cargo bay used to slide off the top of the
+   screen, loadmaster and pallet included. Now the rocket leaves and the bay
+   stays standing, so what departed is legible. */
+.cargo-launch__flame {
+  position: absolute;
+  left: 50%;
+  bottom: 4%;
+  width: 34%;
+  height: 60%;
+  transform: translate(-50%, 60%);
+  border-radius: 50% 50% 40% 40%;
+  background: radial-gradient(ellipse at 50% 20%, var(--amber-hi), var(--flame) 45%, rgba(255, 107, 107, 0) 78%);
+  opacity: 0;
+  filter: blur(clamp(2px, 0.4vmin, 9px));
+}
+
+.cargo-launch.is-off .cargo-launch__flame {
+  opacity: 1;
+  animation: cargo-flame 0.14s ease-in-out infinite alternate;
+}
+
+@keyframes cargo-flame {
+  from { transform: translate(-50%, 60%) scaleY(0.8); }
+  to { transform: translate(-50%, 64%) scaleY(1.25); }
+}
+
+/* Perfect launches in a row. The multiplier is the only place a score shows up
+   inside the bay itself, and it appears from two — one is just a launch. */
+.cargo-combo {
+  position: absolute;
+  top: calc(var(--sp-1) * -1);
+  right: calc(var(--sp-1) * -1);
+  min-width: clamp(24px, 3.6vmin, 78px);
+  padding: 0 var(--sp-1);
+  border-radius: var(--r-pill);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs-label);
+  line-height: 1.5;
+  text-align: center;
+  color: var(--ink);
+  background: var(--amber);
+  box-shadow: var(--glow-sun);
+  opacity: 0;
+}
+
+.cargo-combo.is-visible { opacity: 1; }
+
+.cargo-float {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs-h2);
+  line-height: 1;
+  color: var(--amber);
+  text-shadow: var(--glow-amber-text);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* ── The second look ──────────────────────────────────────────────────────
+   The order above what is in the hold, aligned, so the mistake is a length
+   instead of a subtraction. It floats over the bay for two seconds and takes no
+   input: there is nothing to acknowledge, the crates are all still where they
+   were, and the child goes back to counting. */
+.cargo-check {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -46%) scale(0.96);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-lg);
+  background: rgba(5, 7, 15, 0.94);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule-strong), var(--shadow-panel);
+  pointer-events: none;
+  /* `visibility`, not `display`: adding the class and the opacity in the same
+     frame gives a `display` change no starting frame to transition from, so the
+     panel would appear as a hard cut. */
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.24s var(--ease-out), visibility 0.2s;
+  z-index: 4;
+}
+
+.cargo-check.is-visible {
+  visibility: visible;
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.cargo-check__head {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-h2);
+  line-height: 1;
+  color: var(--cream);
+  text-align: center;
+}
+
+/* The label column is `auto` rather than a guessed width: "INGELADEN" in mono
+   with the house letter-spacing is wider than any clamp I would have picked, and
+   it ran straight over the first pip. */
+.cargo-check__row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.cargo-check__row .eyebrow { white-space: nowrap; }
+
+.cargo-check__num {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs-h2);
+  line-height: 1;
+  color: var(--amber);
+  min-width: 1.4em;
+  text-align: right;
 }
 
 .cargo-hint { flex: 0 0 auto; }
+
+/* Everything that loops, bobs or arrives, switched off in one place. The two
+   that stay are the drain bar and the shake: one is a meter being read, the
+   other is the only signal that a launch was refused. */
+:root[data-calm] :where(
+  .cargo-buddy.is-cheer,
+  .cargo-buddy.is-doubt,
+  .cargo-launch.is-off .cargo-launch__flame
+) {
+  animation: none;
+}
