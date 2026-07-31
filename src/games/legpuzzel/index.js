@@ -130,42 +130,18 @@ export function init(container, opts) {
 }
 
 function startRound() {
+  // The previous round's nodes are about to be replaced; drop their listeners
+  // (including the window resize hook) so nothing accumulates per level.
+  listeners.forEach((off) => off());
+  listeners = [];
+
   const cfg = LEVELS[Math.min(level, LEVELS.length) - 1];
   hud.setLevel(level);
 
   const url = sceneUrl(SCENES[Math.floor(Math.random() * SCENES.length)]);
 
-  // Budget the vertical space explicitly: HUD strip, then board, then tray.
-  // Doing the arithmetic here (rather than leaning on flex) is what keeps the
-  // board's 4:3 ratio exact, which the sliced background depends on.
-  const HUD_RESERVE = Math.max(150, window.innerHeight * 0.15);
-  const TOOLS_RESERVE = Math.max(110, window.innerHeight * 0.11);
-  // The 90px covers the flex gaps plus the stage's bottom padding.
-  const available = window.innerHeight - HUD_RESERVE - TOOLS_RESERVE - 90;
-
-  const boardH = Math.min(available * 0.66, window.innerWidth * 0.8 * (SCENE_H / SCENE_W));
-  const boardW = boardH * (SCENE_W / SCENE_H);
-  const pieceW = boardW / cfg.cols;
-  const pieceH = boardH / cfg.rows;
-
-  // Tray pieces are shown smaller so every piece fits on screen at once; a
-  // piece grows to full size as it snaps into the board.
-  const trayH = available - boardH;
-  const total = cfg.cols * cfg.rows;
-  // Capped below 1 so tray pieces read as "not yet placed" and leave the
-  // board the larger share of the screen.
-  const trayScale = Math.min(
-    0.85,
-    trayH / pieceH,
-    (window.innerWidth * 0.88) / (total * pieceW)
-  );
-  const trayW = pieceW * trayScale;
-  const trayPieceH = pieceH * trayScale;
-
   const board = document.createElement('div');
   board.className = 'jig-board';
-  board.style.width = `${boardW}px`;
-  board.style.height = `${boardH}px`;
   board.style.gridTemplateColumns = `repeat(${cfg.cols}, 1fr)`;
   board.style.gridTemplateRows = `repeat(${cfg.rows}, 1fr)`;
 
@@ -188,9 +164,6 @@ function startRound() {
 
   const tray = document.createElement('div');
   tray.className = 'jig-tray';
-  // Must match the width used in the trayScale calculation below, otherwise
-  // the pieces wrap onto a second row and fall off the bottom of the screen.
-  tray.style.maxWidth = `${window.innerWidth * 0.9}px`;
 
   const tools = document.createElement('div');
   tools.className = 'jig-tools';
@@ -223,44 +196,115 @@ function startRound() {
     for (let c = 0; c < cfg.cols; c++) coords.push({ r, c });
   }
 
+  const total = cfg.cols * cfg.rows;
   let placed = 0;
 
-  shuffle(coords).forEach(({ r, c }) => {
+  const pieces = shuffle(coords).map(({ r, c }) => {
     const piece = document.createElement('div');
     piece.className = 'jig-piece';
     piece.dataset.row = String(r);
     piece.dataset.col = String(c);
-    piece.style.width = `${trayW}px`;
-    piece.style.height = `${trayPieceH}px`;
     piece.style.backgroundImage = url;
-    piece.style.backgroundSize = `${boardW * trayScale}px ${boardH * trayScale}px`;
-    piece.style.backgroundPosition = `-${c * trayW}px -${r * trayPieceH}px`;
+    // Slice with percentages rather than pixels: the same two declarations
+    // then render correctly at tray size, at slot size, and after a resize,
+    // so nothing has to be recomputed when the layout changes.
+    piece.style.backgroundSize = `${cfg.cols * 100}% ${cfg.rows * 100}%`;
+    piece.style.backgroundPosition = `${pct(c, cfg.cols)} ${pct(r, cfg.rows)}`;
     tray.appendChild(piece);
 
-    attachDrag(piece, slots, { boardW, boardH, pieceW, pieceH }, () => {
+    attachDrag(piece, slots, () => {
       placed++;
       if (placed === total) finishRound();
     });
+    return piece;
   });
+
+  // Budget the vertical space explicitly: HUD strip, then board, then tray.
+  // Doing the arithmetic here (rather than leaning on flex) is what keeps the
+  // board's 4:3 ratio exact, which the sliced background depends on.
+  function layout() {
+    const HUD_RESERVE = Math.max(150, window.innerHeight * 0.15);
+    const TOOLS_RESERVE = Math.max(110, window.innerHeight * 0.11);
+    // The 90px covers the flex gaps plus the stage's bottom padding.
+    const available = window.innerHeight - HUD_RESERVE - TOOLS_RESERVE - 90;
+
+    const boardH = Math.min(available * 0.66, window.innerWidth * 0.8 * (SCENE_H / SCENE_W));
+    const boardW = boardH * (SCENE_W / SCENE_H);
+    board.style.width = `${boardW}px`;
+    board.style.height = `${boardH}px`;
+
+    // Tray pieces are shown smaller so every piece fits on screen at once; a
+    // piece grows to full size as it snaps into the board. The gap is set
+    // here rather than in CSS so the width budget below can account for it.
+    const gap = Math.max(6, Math.min(22, Math.min(window.innerWidth, window.innerHeight) * 0.011));
+    const trayRoom = window.innerWidth * 0.9;
+    const pieceW = boardW / cfg.cols;
+    const pieceH = boardH / cfg.rows;
+    // Capped below 1 so tray pieces read as "not yet placed", and sized so the
+    // whole row fits in one line — a second row would push past the screen.
+    const trayScale = Math.max(0.12, Math.min(
+      0.85,
+      (available - boardH) / pieceH,
+      (trayRoom - gap * (total - 1)) / (total * pieceW)
+    ));
+
+    tray.style.gap = `${gap}px`;
+    tray.style.maxWidth = `${trayRoom}px`;
+    // A fixed tray height is what stops the board from shifting: pieces leave
+    // the tray as they are picked up and placed, and without a reserved height
+    // the centred column would re-flow under the child's finger mid-drag.
+    tray.style.height = `${pieceH * trayScale}px`;
+
+    for (const piece of pieces) {
+      if (piece.classList.contains('is-placed') || piece.classList.contains('is-dragging')) continue;
+      piece.style.width = `${pieceW * trayScale}px`;
+      piece.style.height = `${pieceH * trayScale}px`;
+    }
+  }
+
+  layout();
+  window.addEventListener('resize', layout);
+  listeners.push(() => window.removeEventListener('resize', layout));
 }
 
-function attachDrag(piece, slots, full, onPlaced) {
-  let startRect = null;
+// Background-position percentage for slice `i` of `n` — with a single row or
+// column there is nothing to interpolate and the slice sits at 0.
+function pct(i, n) {
+  return n > 1 ? `${(i / (n - 1)) * 100}%` : '0%';
+}
+
+function attachDrag(piece, slots, onPlaced) {
+  let holder = null;
   let offsetX = 0;
   let offsetY = 0;
   let dragging = false;
+  let settle = null;
 
+  // While the piece floats under the finger it is out of the tray's flow, so
+  // a same-sized placeholder takes its slot in the row. Without it the tray
+  // re-centres on every pick-up and the whole board jumps sideways.
   const onDown = (e) => {
-    if (piece.classList.contains('is-placed')) return;
+    if (dragging || piece.classList.contains('is-placed')) return;
+    clearTimeout(settle);
     piece.setPointerCapture(e.pointerId);
-    startRect = piece.getBoundingClientRect();
-    offsetX = e.clientX - startRect.left;
-    offsetY = e.clientY - startRect.top;
+    const rect = piece.getBoundingClientRect();
+    offsetX = e.clientX - rect.left;
+    offsetY = e.clientY - rect.top;
+
+    holder = document.createElement('div');
+    holder.className = 'jig-holder';
+    holder.style.width = `${rect.width}px`;
+    holder.style.height = `${rect.height}px`;
+    piece.after(holder);
+
     Object.assign(piece.style, {
       position: 'fixed',
-      left: `${startRect.left}px`,
-      top: `${startRect.top}px`,
+      left: `${rect.left}px`,
+      top: `${rect.top}px`,
+      width: `${rect.width}px`,
+      height: `${rect.height}px`,
       margin: '0',
+      transition: '',
     });
     piece.classList.add('is-dragging');
     dragging = true;
@@ -271,6 +315,14 @@ function attachDrag(piece, slots, full, onPlaced) {
     if (!dragging) return;
     piece.style.left = `${e.clientX - offsetX}px`;
     piece.style.top = `${e.clientY - offsetY}px`;
+  };
+
+  const returnToTray = () => {
+    holder.replaceWith(piece);
+    holder = null;
+    Object.assign(piece.style, {
+      position: '', left: '', top: '', margin: '', transition: '',
+    });
   };
 
   const onUp = () => {
@@ -297,22 +349,31 @@ function attachDrag(piece, slots, full, onPlaced) {
       piece.style.transition = 'left 0.18s ease, top 0.18s ease, width 0.18s ease, height 0.18s ease';
       piece.style.left = `${sr.left}px`;
       piece.style.top = `${sr.top}px`;
-      // Grow from tray scale to the full slot, rescaling the slice with it.
-      piece.style.width = `${full.pieceW}px`;
-      piece.style.height = `${full.pieceH}px`;
-      piece.style.backgroundSize = `${full.boardW}px ${full.boardH}px`;
-      piece.style.backgroundPosition =
-        `-${Number(piece.dataset.col) * full.pieceW}px -${Number(piece.dataset.row) * full.pieceH}px`;
+      // Grow from tray scale to the full slot; the percentage slice follows.
+      piece.style.width = `${sr.width}px`;
+      piece.style.height = `${sr.height}px`;
       piece.classList.add('is-placed');
       sfx.dock();
+      // Once the flight is over the piece moves inside its slot, so it is
+      // anchored to the board instead of to a viewport position that a later
+      // resize (or the tray emptying) would leave stale.
+      settle = setTimeout(() => {
+        holder?.remove();
+        holder = null;
+        Object.assign(piece.style, {
+          position: '', left: '', top: '', width: '', height: '', margin: '', transition: '',
+        });
+        slot.appendChild(piece);
+      }, 200);
+      timers.push(settle);
       onPlaced();
     } else {
       piece.style.transition = 'left 0.28s ease, top 0.28s ease';
-      piece.style.left = `${startRect.left}px`;
-      piece.style.top = `${startRect.top}px`;
-      setTimeout(() => {
-        Object.assign(piece.style, { position: '', left: '', top: '', margin: '', transition: '' });
-      }, 300);
+      const hr = holder.getBoundingClientRect();
+      piece.style.left = `${hr.left}px`;
+      piece.style.top = `${hr.top}px`;
+      settle = setTimeout(returnToTray, 300);
+      timers.push(settle);
     }
   };
 
