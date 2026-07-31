@@ -2,7 +2,6 @@ import './style.css';
 import { createHud } from '../../shared/ui-components.js';
 import { sfx } from '../../shell/audio.js';
 import { setLevel } from '../../shell/progress.js';
-import { setChildren, flatMap } from '../../shared/dom.js';
 
 // "Ruimtegeheugen" — match pairs of space objects.
 //
@@ -77,7 +76,7 @@ function startRound() {
   const chosen = shuffle(ICONS).slice(0, normalPairs);
 
   const deck = shuffle([
-    ...flatMap(chosen, (icon) => [
+    ...chosen.flatMap((icon) => [
       { icon, bonus: false },
       { icon, bonus: false },
     ]),
@@ -98,22 +97,11 @@ function startRound() {
   players > 1 && hud.setTurn(current);
   scores.forEach((s, i) => i < players && hud.setScore(i, 0));
 
-  // Explicit pixel sizing: cards stay square and the grid always fits the
-  // space left by the HUD and hint strip. Replaces a CSS aspect-ratio, which
-  // the target digiboard's Chromium is too old to support.
-  const availW = window.innerWidth * 0.92;
-  const availH = window.innerHeight - Math.max(150, window.innerHeight * 0.15)
-    - Math.max(70, window.innerHeight * 0.08) - 40;
-  const gapPx = window.innerHeight * 0.014;
-  const cell = Math.floor(Math.min(
-    (availW - gapPx * (cols - 1)) / cols,
-    (availH - gapPx * (rows - 1)) / rows
-  ));
-
   const grid = document.createElement('div');
   grid.className = 'mem-grid';
-  grid.style.gridTemplateColumns = `repeat(${cols}, ${cell}px)`;
-  grid.style.gridTemplateRows = `repeat(${rows}, ${cell}px)`;
+  grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+  grid.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+  grid.style.setProperty('--grid-ratio', String(cols / rows));
 
   const hint = document.createElement('div');
   hint.className = 'hint-strip';
@@ -135,7 +123,7 @@ function startRound() {
     return card;
   });
 
-  setChildren(stage, hint, grid);
+  stage.replaceChildren(hint, grid);
 
   const onTap = (e) => {
     if (locked) return;

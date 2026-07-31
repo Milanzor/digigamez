@@ -16,9 +16,9 @@
      layout would shrink it and break the aspect ratio of the sliced art. */
   flex: 0 0 auto;
   border-radius: var(--r-md);
-  border: 0.6vmin solid var(--bezel);
+  border: clamp(3px, 0.6vmin, 13px) solid var(--bezel);
   background: rgba(6, 10, 36, 0.7);
-  box-shadow: var(--shadow-panel), inset 0 0 3vmin rgba(0, 0, 0, 0.7);
+  box-shadow: var(--shadow-panel), inset 0 0 clamp(14px, 3vmin, 60px) rgba(0, 0, 0, 0.7);
   overflow: hidden;
 }
 
@@ -29,10 +29,7 @@
 /* Faint ghost of the finished picture, toggled by the peek key */
 .jig-board__ghost {
   position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  inset: 0;
   background-size: 100% 100%;
   opacity: 0;
   transition: opacity 0.25s ease;
@@ -47,21 +44,21 @@
   flex-wrap: wrap;
   justify-content: center;
   align-content: center;
-  gap: 1.1vmin;
+  gap: clamp(6px, 1.1vmin, 22px);
   max-width: 92vw;
 }
 
 .jig-piece {
   touch-action: none;
-  border-radius: 0.5vmin;
+  border-radius: clamp(3px, 0.5vmin, 10px);
   background-repeat: no-repeat;
-  box-shadow: 0 0.6vmin 1.2vmin rgba(0, 0, 0, 0.55);
+  box-shadow: 0 clamp(3px, 0.6vmin, 12px) clamp(6px, 1.2vmin, 24px) rgba(0, 0, 0, 0.55);
   will-change: transform;
 }
 
 .jig-piece.is-dragging {
   z-index: 60;
-  box-shadow: 0 1.6vmin 2.6vmin rgba(0, 0, 0, 0.7);
+  box-shadow: 0 clamp(8px, 1.6vmin, 32px) clamp(14px, 2.6vmin, 52px) rgba(0, 0, 0, 0.7);
 }
 
 .jig-piece.is-placed {

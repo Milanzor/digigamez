@@ -2,7 +2,6 @@ import './style.css';
 import { createHud } from '../../shared/ui-components.js';
 import { sfx } from '../../shell/audio.js';
 import { setLevel } from '../../shell/progress.js';
-import { setChildren } from '../../shared/dom.js';
 
 // "Sterrenpuzzel" — reassemble a space scene.
 //
@@ -204,7 +203,7 @@ function startRound() {
   hint.textContent = 'Sleep de stukjes op hun plek — houd 👁️ vast voor een kijkje';
   tools.append(peekBtn, hint);
 
-  setChildren(stage, board, tools, tray);
+  stage.replaceChildren(board, tools, tray);
 
   const showGhost = () => { ghost.classList.add('is-on'); sfx.blip(); };
   const hideGhost = () => ghost.classList.remove('is-on');

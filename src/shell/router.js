@@ -3,8 +3,6 @@
 // element and returns an optional cleanup function, called before the next
 // route renders (so games can cancel their rAF loop / remove listeners).
 
-import { setChildren } from '../shared/dom.js';
-
 const routes = new Map();
 let currentCleanup = null;
 let mountEl = null;
@@ -52,7 +50,7 @@ async function handleChange() {
     }
   }
   currentCleanup = null;
-  setChildren(mountEl);
+  mountEl.replaceChildren();
 
   if (!match) {
     navigate('/');

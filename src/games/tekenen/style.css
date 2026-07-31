@@ -16,11 +16,11 @@
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 1.1vmin;
-  padding: 1.3vmin 1.8vmin;
+  gap: clamp(6px, 1.1vmin, 22px);
+  padding: clamp(8px, 1.3vmin, 26px) clamp(12px, 1.8vmin, 36px);
   border-radius: var(--r-pill);
   background: rgba(8, 13, 42, 0.88);
-  border: 0.3vmin solid var(--panel-line);
+  border: clamp(2px, 0.3vmin, 7px) solid var(--panel-line);
   box-shadow: var(--shadow-panel);
   z-index: 20;
   max-width: 96vw;
@@ -31,10 +31,10 @@
 .draw-bar::-webkit-scrollbar { display: none; }
 
 .swatch {
-  width: 7.4vmin;
-  height: 7.4vmin;
+  width: clamp(48px, 7.4vmin, 160px);
+  height: clamp(48px, 7.4vmin, 160px);
   border-radius: 50%;
-  border: 0.45vmin solid rgba(255, 255, 255, 0.2);
+  border: clamp(3px, 0.45vmin, 10px) solid rgba(255, 255, 255, 0.2);
   flex-shrink: 0;
   transition: transform 0.1s ease, border-color 0.1s ease;
 }
@@ -43,19 +43,19 @@
 
 .swatch.is-active {
   border-color: var(--enamel);
-  box-shadow: 0 0 1.6vmin currentColor;
+  box-shadow: 0 0 clamp(8px, 1.6vmin, 32px) currentColor;
   transform: scale(1.08);
 }
 
 .tool {
-  width: 7.4vmin;
-  height: 7.4vmin;
+  width: clamp(48px, 7.4vmin, 160px);
+  height: clamp(48px, 7.4vmin, 160px);
   border-radius: 50%;
   display: grid;
   place-items: center;
-  font-size: 3.2vmin;
+  font-size: clamp(20px, 3.2vmin, 68px);
   background: linear-gradient(180deg, var(--panel-hi), var(--panel));
-  border: 0.3vmin solid var(--panel-line);
+  border: clamp(2px, 0.3vmin, 7px) solid var(--panel-line);
   color: var(--enamel);
   flex-shrink: 0;
   transition: transform 0.1s ease, border-color 0.1s ease, background 0.1s ease;
@@ -71,8 +71,8 @@
 }
 
 .bar-sep {
-  width: 0.3vmin;
-  height: 5vmin;
+  width: clamp(2px, 0.3vmin, 6px);
+  height: clamp(34px, 5vmin, 100px);
   background: var(--panel-line);
   border-radius: var(--r-pill);
   flex-shrink: 0;

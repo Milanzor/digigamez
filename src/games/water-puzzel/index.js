@@ -2,7 +2,6 @@ import './style.css';
 import { createHud } from '../../shared/ui-components.js';
 import { sfx } from '../../shell/audio.js';
 import { setLevel } from '../../shell/progress.js';
-import { setChildren, flatMap } from '../../shared/dom.js';
 
 // "Brandstof Sorteren" — the water-sort mechanic as rocket fuel tanks.
 // Tap a tank to pick it up, tap another to pour; a pour is only legal onto
@@ -68,7 +67,7 @@ function isSolved(tanks) {
 
 function build(cfg) {
   const colors = shuffle(FUELS).slice(0, cfg.colors);
-  const units = shuffle(flatMap(colors, (c) => Array(CAP).fill(c)));
+  const units = shuffle(colors.flatMap((c) => Array(CAP).fill(c)));
   const tanks = [];
   for (let i = 0; i < cfg.colors; i++) tanks.push(units.slice(i * CAP, (i + 1) * CAP));
   for (let i = 0; i < cfg.spares; i++) tanks.push([]);
@@ -129,10 +128,10 @@ function startRound() {
   newBtn.textContent = '🔄';
 
   tools.append(undoBtn, hint, newBtn);
-  setChildren(stage, row, tools);
+  stage.replaceChildren(row, tools);
 
   function render() {
-    setChildren(row);
+    row.replaceChildren();
     tanks.forEach((tank, i) => {
       const el = document.createElement('div');
       const full = tank.length === CAP && tank.every((c) => c === tank[0]);

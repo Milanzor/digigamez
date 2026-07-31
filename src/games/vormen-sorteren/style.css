@@ -13,7 +13,7 @@
    centred huddle wastes the space and puts drop targets close together,
    which makes mis-drops more likely for small hands. */
 .dock-row {
-  width: 92vw;
+  width: min(92vw, 1700px);
   display: flex;
   justify-content: space-evenly;
   align-items: center;
@@ -23,14 +23,14 @@
 
 /* An airlock port: the silhouette the cargo must be docked into. */
 .dock-port {
-  width: 18vmin;
-  height: 18vmin;
+  width: clamp(90px, 18vmin, 380px);
+  height: clamp(90px, 18vmin, 380px);
   border-radius: var(--r-md);
   display: grid;
   place-items: center;
   background: rgba(8, 13, 42, 0.55);
-  border: 0.5vmin dashed rgba(124, 196, 255, 0.45);
-  box-shadow: inset 0 0 2vmin rgba(0, 0, 0, 0.6);
+  border: clamp(3px, 0.5vmin, 11px) dashed rgba(124, 196, 255, 0.45);
+  box-shadow: inset 0 0 clamp(10px, 2vmin, 40px) rgba(0, 0, 0, 0.6);
   transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
 }
 
@@ -54,10 +54,10 @@
 
 /* Cargo pieces waiting to be docked */
 .cargo {
-  width: 17vmin;
-  height: 17vmin;
+  width: clamp(86px, 17vmin, 360px);
+  height: clamp(86px, 17vmin, 360px);
   touch-action: none;
-  filter: drop-shadow(0 0.7vmin 1.4vmin rgba(0, 0, 0, 0.55));
+  filter: drop-shadow(0 clamp(3px, 0.7vmin, 14px) clamp(6px, 1.4vmin, 28px) rgba(0, 0, 0, 0.55));
   transition: transform 0.16s ease;
 }
 
@@ -76,7 +76,7 @@
 .cargo.is-dragging {
   z-index: 60;
   animation: none;
-  filter: drop-shadow(0 1.6vmin 2.4vmin rgba(0, 0, 0, 0.7));
+  filter: drop-shadow(0 clamp(8px, 1.6vmin, 34px) clamp(12px, 2.4vmin, 50px) rgba(0, 0, 0, 0.7));
 }
 
 .cargo.is-docked {
