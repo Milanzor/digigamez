@@ -69,8 +69,48 @@ async function handleChange() {
     navigate('/');
     return;
   }
-  const result = await match.render(mountEl, match.params);
+
+  let result;
+  try {
+    result = await match.render(mountEl, match.params);
+  } catch (err) {
+    // A view that throws used to leave the board on an empty black screen with
+    // no way out, which on a kiosk means someone has to find the keyboard. One
+    // amber button back to the archive is always recoverable.
+    console.error(`Fout bij openen van ${path}`, err);
+    renderRouteError();
+    return;
+  }
   if (typeof result === 'function') currentCleanup = result;
+  markEntering();
+}
+
+// The router owns the arrival animation rather than each view: it is the thing
+// that knows a navigation just happened, and doing it here means a new screen
+// gets the transition for free. Re-adding the class on every mount is why it is
+// stripped first — a class already present would not restart the animation.
+function markEntering() {
+  for (const child of mountEl.children) {
+    child.classList.remove('screen-enter');
+    // Reading offsetWidth forces the removal to take effect before the re-add,
+    // so the animation restarts instead of being treated as unchanged.
+    void child.offsetWidth;
+    child.classList.add('screen-enter');
+  }
+}
+
+function renderRouteError() {
+  mountEl.replaceChildren();
+  const el = document.createElement('div');
+  el.className = 'loading';
+  el.innerHTML = `
+    <div class="loading__inner">
+      <div class="loading__label">Dit scherm wil niet openen</div>
+      <button class="btn">Terug naar de missies</button>
+    </div>
+  `;
+  el.querySelector('button').addEventListener('pointerup', () => navigate('/rooster'));
+  mountEl.appendChild(el);
 }
 
 export function startRouter(el) {

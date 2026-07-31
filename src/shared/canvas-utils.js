@@ -124,34 +124,79 @@ export function createStars(count = 140) {
   return stars;
 }
 
-// Fills the whole logical canvas with the space gradient + drifting stars.
-export function drawSpaceBackdrop(ctx, stars, t, { scrollSpeed = 14 } = {}) {
-  const g = ctx.createLinearGradient(0, 0, LOGICAL_WIDTH * 0.3, LOGICAL_HEIGHT);
+// The gradient half of the backdrop never changes, so it is built once into an
+// offscreen canvas at logical resolution and blitted from then on. It used to be
+// two `create*Gradient` calls and two full-screen gradient fills per frame, in
+// eight games — and on a 4K board a full-screen gradient fill is per-pixel
+// interpolation across eight million pixels, where a blit is a straight copy.
+let backdropSprite = null;
+
+function spaceBackdrop() {
+  if (backdropSprite) return backdropSprite;
+  backdropSprite = document.createElement('canvas');
+  backdropSprite.width = LOGICAL_WIDTH;
+  backdropSprite.height = LOGICAL_HEIGHT;
+  const g2 = backdropSprite.getContext('2d');
+
   // Near-black at the top opening out to a lit indigo at the bottom, matching
   // the CSS backdrop the portal uses so a game does not read as a different app.
+  const g = g2.createLinearGradient(0, 0, LOGICAL_WIDTH * 0.3, LOGICAL_HEIGHT);
   g.addColorStop(0, '#05070f');
   g.addColorStop(0.65, '#0e1030');
   g.addColorStop(1, '#141642');
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
+  g2.fillStyle = g;
+  g2.fillRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
 
-  // Nebula wash for depth — two soft radial blooms.
-  const neb = ctx.createRadialGradient(
+  // Nebula wash for depth — a soft radial bloom lit from one corner.
+  const neb = g2.createRadialGradient(
     LOGICAL_WIDTH * 0.8, LOGICAL_HEIGHT * 0.2, 0,
     LOGICAL_WIDTH * 0.8, LOGICAL_HEIGHT * 0.2, LOGICAL_HEIGHT * 0.85
   );
   neb.addColorStop(0, 'rgba(185,140,255,0.20)');
   neb.addColorStop(1, 'rgba(185,140,255,0)');
-  ctx.fillStyle = neb;
-  ctx.fillRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
+  g2.fillStyle = neb;
+  g2.fillRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
 
+  return backdropSprite;
+}
+
+// Stars are grouped by how bright they are this frame and each group filled as
+// one path, so a hundred and fifty stars cost ten fills instead of a hundred and
+// fifty. Reused between frames rather than reallocated, because this runs inside
+// every render loop that has a starfield.
+const STAR_BUCKETS = Array.from({ length: 10 }, () => []);
+
+// Fills the whole logical canvas with the space gradient + drifting stars.
+export function drawSpaceBackdrop(ctx, stars, t, { scrollSpeed = 14 } = {}) {
+  ctx.drawImage(spaceBackdrop(), 0, 0);
+
+  for (const b of STAR_BUCKETS) b.length = 0;
   for (const s of stars) {
     const y = (s.y + t * scrollSpeed * s.depth) % LOGICAL_HEIGHT;
     const a = 0.45 + 0.55 * Math.sin(t * 1.6 + s.twinkle) * 0.5 + 0.25;
-    ctx.globalAlpha = Math.min(1, Math.max(0.15, a));
-    ctx.fillStyle = '#ffffff';
+    const clamped = Math.min(1, Math.max(0.15, a));
+    // Quantised to tenths: the difference between alpha 0.62 and 0.60 on a
+    // two-pixel star is not a thing anybody can see, and it is what lets the
+    // stars be batched at all.
+    STAR_BUCKETS[Math.min(9, Math.round(clamped * 10) - 1)].push(s.x, y, s.r);
+  }
+
+  ctx.fillStyle = '#ffffff';
+  for (let b = 0; b < STAR_BUCKETS.length; b++) {
+    const bucket = STAR_BUCKETS[b];
+    if (!bucket.length) continue;
+    ctx.globalAlpha = (b + 1) / 10;
     ctx.beginPath();
-    ctx.arc(s.x, y, s.r, 0, Math.PI * 2);
+    for (let i = 0; i < bucket.length; i += 3) {
+      const x = bucket[i];
+      const y = bucket[i + 1];
+      const r = bucket[i + 2];
+      // moveTo before every arc: without it the arc starts with a line from
+      // wherever the path currently is, which is what once fused craters and
+      // alien eyes into one blob.
+      ctx.moveTo(x + r, y);
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+    }
     ctx.fill();
   }
   ctx.globalAlpha = 1;

@@ -1,0 +1,38 @@
+/* Self-hosted type. Both faces used to come from the Google Fonts CDN, which
+   made the whole UI wait on a third-party render-blocking stylesheet before it
+   could paint — on a classroom board behind a captive portal or a slow uplink
+   that is a white screen, and after the first load it is a request that buys
+   nothing. Two files in `public/fonts` cost 50 kB, cannot fail, and make the
+   board work with the network unplugged.
+
+   Baloo 2 ships as one variable font, so a single 33 kB file covers the whole
+   500–800 range. That also fixes a quiet bug: the CDN link only ever requested
+   600 and 800, while the stylesheets ask for 500, 700 and 800 — every
+   `font-weight: 700` in the app was being snapped to a neighbour, so half the
+   type hierarchy the design specifies was not actually happening.
+
+   The files sit next to this stylesheet rather than in `public/` so Vite emits
+   them itself: the build then applies the `/digigamez/` base and a content
+   hash, neither of which a hand-written absolute path would get right. */
+
+@font-face {
+  font-family: 'Baloo 2';
+  font-style: normal;
+  font-weight: 500 800;
+  font-display: swap;
+  src: url('./fonts/baloo-2-var.woff2') format('woff2-variations');
+  /* Latin only: Dutch needs nothing outside it, and the en dash in "2–7 jr"
+     lives in the same subset. */
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+2000-206F, U+20AC, U+2122, U+2212, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Space Mono';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./fonts/space-mono-700.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+2000-206F, U+20AC, U+2122, U+2212, U+FEFF, U+FFFD;
+}

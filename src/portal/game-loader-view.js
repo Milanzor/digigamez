@@ -17,7 +17,10 @@ export async function renderGameLoaderView(container, params) {
   container.innerHTML = `
     <div class="loading">
       <div class="loading__inner">
-        ${porthole(game.icon, { className: 'loading__port', color: game.color })}
+        <div class="loading__medal">
+          <div class="loading__orbit"></div>
+          ${porthole(game.icon, { className: 'loading__port', color: game.color })}
+        </div>
         <div class="loading__label">${game.title} laden…</div>
       </div>
     </div>
@@ -30,7 +33,7 @@ export async function renderGameLoaderView(container, params) {
     console.error(`Kon spel ${game.slug} niet laden`, err);
     container.innerHTML = `
       <div class="loading">
-        <div>
+        <div class="loading__inner">
           <div class="loading__label">Dit spel wil niet starten</div>
           <button class="btn" id="load-back">Terug naar de missies</button>
         </div>

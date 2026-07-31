@@ -1,9 +1,17 @@
 import { navigate } from '../shell/router.js';
 import { getItem } from '../shell/storage.js';
-import { GAMES } from '../games/game-registry.js';
+import { GAMES, getGame } from '../games/game-registry.js';
 import { sfx, toggleMuted, isMuted } from '../shell/audio.js';
+import { onTap, onTapAll } from '../shell/pointer.js';
 import { getLamps, MAX_LAMPS } from '../shell/progress.js';
 import { progressBar, porthole } from '../shared/ui-components.js';
+
+// Rows arrive one after another, but the archive is never allowed to take longer
+// than the cap to finish assembling — twenty-four rows at 22 ms sit comfortably
+// under it, and the cap is what stops a longer archive from turning the entrance
+// into a wait.
+const ROW_STAGGER_MS = 22;
+const STAGGER_CAP_MS = 500;
 
 export function renderGameGridView(container) {
   const playerCount = getItem('playerCount', 1);
@@ -14,8 +22,9 @@ export function renderGameGridView(container) {
     // four-player mission announces itself in the grid.
     const crewBadge = g.maxPlayers > 1 ? `<span class="tag">${g.maxPlayers}P</span>` : '';
     const isRecent = g.slug === recent;
+    const delay = Math.min(i * ROW_STAGGER_MS, STAGGER_CAP_MS);
     return `
-      <button class="mission${isRecent ? ' is-recent' : ''}" data-slug="${g.slug}">
+      <button class="mission${isRecent ? ' is-recent' : ''}" data-slug="${g.slug}" style="--in-delay:${delay}ms">
         ${porthole(g.icon, {
           className: 'mission__icon',
           color: g.color,
@@ -56,6 +65,7 @@ export function renderGameGridView(container) {
     </div>
   `;
 
+  const grid = container.querySelector('.missions__grid');
   const backBtn = container.querySelector('#grid-back');
   const muteBtn = container.querySelector('#grid-mute');
   const settingsBtn = container.querySelector('#grid-settings');
@@ -78,24 +88,51 @@ export function renderGameGridView(container) {
     sfx.select();
     navigate('/instellingen');
   };
-
-  backBtn.addEventListener('pointerup', onBack);
-  crewReadout.addEventListener('pointerup', onCrew);
-  muteBtn.addEventListener('pointerup', onMute);
-  settingsBtn.addEventListener('pointerup', onSettings);
-
-  const missionBtns = container.querySelectorAll('.mission');
   const onPick = (e) => {
     sfx.select();
     navigate(`/spel/${e.currentTarget.dataset.slug}`);
   };
-  missionBtns.forEach((c) => c.addEventListener('pointerup', onPick));
+
+  // A mission's module is fetched the moment a finger lands on its row, a good
+  // hundred milliseconds before the tap finishes and the route changes. The
+  // import cache means the loader's own `load()` then resolves immediately, so
+  // most missions open with no loading screen at all. A press that turns out to
+  // be a drag has cost one prefetch of a module the child was reaching for
+  // anyway.
+  const prefetch = (slug) => {
+    getGame(slug)?.load().catch(() => {
+      // Reporting is the loader's job — that is the screen that can offer a way
+      // back out.
+    });
+  };
+  const onRowDown = (e) => {
+    const row = e.target.closest('.mission');
+    if (row) prefetch(row.dataset.slug);
+  };
+  grid.addEventListener('pointerdown', onRowDown, { passive: true });
+
+  // The mission they were last playing is fetched while the grid just sits
+  // there, because carrying on with it is the likeliest next tap of all.
+  const idle = recent
+    ? window.requestIdleCallback?.(() => prefetch(recent), { timeout: 2000 })
+    : undefined;
+
+  const offBack = onTap(backBtn, onBack);
+  const offCrew = onTap(crewReadout, onCrew);
+  const offMute = onTap(muteBtn, onMute);
+  const offSettings = onTap(settingsBtn, onSettings);
+  // onTap rather than a bare pointerup listener: pointerup fires wherever the
+  // finger happens to be when it lifts, so dragging across the archive and
+  // letting go used to launch whatever row was underneath.
+  const offMissions = onTapAll(container.querySelectorAll('.mission'), onPick);
 
   return () => {
-    backBtn.removeEventListener('pointerup', onBack);
-    crewReadout.removeEventListener('pointerup', onCrew);
-    muteBtn.removeEventListener('pointerup', onMute);
-    settingsBtn.removeEventListener('pointerup', onSettings);
-    missionBtns.forEach((c) => c.removeEventListener('pointerup', onPick));
+    if (idle !== undefined) window.cancelIdleCallback?.(idle);
+    grid.removeEventListener('pointerdown', onRowDown);
+    offBack();
+    offCrew();
+    offMute();
+    offSettings();
+    offMissions();
   };
 }

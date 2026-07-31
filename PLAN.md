@@ -37,6 +37,7 @@ geoptimaliseerd voor grote touchscreens en soepele 60fps-animaties.
 | UI-chrome      | HTML/CSS (portal, menu's, knoppen)       | Toegankelijker or styling van grote touch-knoppen, canvas alleen voor de spellen zelf |
 | State/routing  | Eigen minimale hash-router (`#/portal`, `#/spel/breakout`) | Geen noodzaak voor React/Vue; scheelt kB's en hydration-overhead |
 | Audio          | Web Audio API + korte gecomprimeerde `.ogg`/`.mp3` sample sprites | Lage latency geluidseffecten, één audio-sprite per categorie i.p.v. veel bestanden |
+| Typografie     | Twee woff2-bestanden in `src/styles/fonts/`, geen Google Fonts-CDN | Het bord wachtte op een render-blokkerende stylesheet van een derde partij; achter een captive portal of op een traag schoolnetwerk is dat een wit scherm. Baloo 2 is één variabel bestand (33 kB) dus 500–800 komt uit één download, en het geheel werkt met de stekker eruit |
 | Assets         | SVG voor UI-iconen (schaalt naar 75" zonder wazig te worden), PNG/WebP sprite-atlassen voor spel-graphics | SVG blijft scherp op groot scherm; atlassen verminderen HTTP-requests en draw calls |
 | State-opslag   | `localStorage` (laatste spelerskeuze, highscores optioneel) | Geen backend nodig, werkt offline na eerste load |
 | Hosting        | GitHub Pages (`gh-pages` branch of `docs/`-output via Actions) | Gratis, past bij "later deployen via GitHub Actions" |
@@ -86,7 +87,45 @@ enige felle op het scherm zijn.
 - **Sterrenveld**: drie getilede gradient-lagen die met CSS-transforms
   driften (parallax), plus een twinkelende opacity op de verste laag. Puur
   compositor-werk, dus het kost geen main-thread tijd terwijl een spel
-  zijn eigen renderloop draait.
+  zijn eigen renderloop draait. Elke laag drift **precies één tegel** in
+  beide richtingen: de verticale poot was een halve tegel, en dus sprong
+  elke laag zichtbaar 105, 160 of 260 pixels op het moment dat zijn
+  animatie omliep — zeldzaam genoeg (elke 90 tot 240 seconden) om op een
+  storing in het paneel te lijken in plaats van op een fout in de
+  stylesheet. Zie ook §3 voor waarom de lagen niet langer 200% × 200% zijn.
+- **Een vignet** over de nevel. Op 75" liggen de hoeken bijna in het
+  ooghoekgebied; ze een stop terugbrengen zet het gewicht terug in het
+  midden waar de missies staan. Eén extra gradient in de bestaande stapel,
+  dus geen element en geen kosten.
+
+### Aankomst en vertrek
+Schermen werden met `replaceChildren()` verwisseld, dus elke navigatie was
+een harde knip — op een wandgroot paneel leest dat als geflikker in plaats
+van als een verplaatsing. De router zet nu `.screen-enter` op wat hij net
+gemonteerd heeft: één korte stijging met een fade, altijd dezelfde curve
+(`--ease-out`). Het missierooster laat zijn vierentwintig rijen daarbovenop
+achter elkaar binnenkomen (22 ms per rij, afgekapt op een halve seconde) en
+elke voortgangsbalk veegt vanaf links open zodra zijn rij landt.
+
+Het startscherm heeft als enige een échte vertrekanimatie. `sfx.launch()` is
+anderhalve seconde motor en het scherm was binnen de eerste vijftig
+milliseconden daarvan al weg. Nu ruimt het paneel eerst op (titel, knop en
+voetregel zakken weg in 180 ms), klimt de raket met een vlam het beeld uit,
+en pas daarna wisselt de route. Het geluid en het beeld vertellen hetzelfde
+verhaal, en het wachten is de beloning in plaats van vertraging.
+
+### De valkuil van `animation-fill-mode` (de derde CSS-les)
+Een animatie die vooruit blijft vullen (`forwards`, en dus ook `both`) staat
+voor de eigenschappen die hij aanraakt **boven transitions en boven gewone
+declaraties** — voor de rest van het leven van dat element. `.screen-enter`
+begon als `both`, en daarmee sloeg de fade-out van het startscherm over in
+een harde sprong en zou `.mission:active` op alle vierentwintig rijen nooit
+meer ingedrukt zijn. De regel voor dit project: **vul alleen vooruit waar de
+ruststand van een element verschilt van zijn eigen CSS, en nooit op iets dat
+dezelfde eigenschap ook transitioneert.** Een animatie met een vertraging
+die verborgen moet beginnen wil `backwards`, niet `both`. De harness
+controleert sindsdien of er na aankomst nog een afgelopen animatie staat te
+vullen.
 
 ### Vaste schermgrammatica
 Elk scherm onder het startscherm opent met dezelfde balk: ronde terugknop
@@ -159,6 +198,31 @@ want een kind staat dicht op een wandscherm.
   stroop). Daarmee schaalt de kost met wat er *naast* een knikker ligt in
   plaats van met de hele bank, en past er **900 onderdelen en 600 knikkers**
   in met ~3ms hoofddraad-werk per frame.
+- **De ruimte-achtergrond is een sprite, niet een tekening.** Acht spellen
+  riepen `drawSpaceBackdrop` elk frame aan, en die bouwde twee gradients op en
+  vulde het hele logische canvas twee keer — op een 4K-bord is een
+  schermvullende gradient-fill per-pixel interpolatie over acht miljoen pixels,
+  waar een blit een rechte kopie is. De gradientlagen staan nu één keer in een
+  offscreen canvas op logische resolutie. De sterren blijven per frame getekend
+  (ze scrollen en twinkelen) maar worden **op helderheid gegroepeerd** in tien
+  emmers en per emmer als één pad gevuld: honderdvijftig sterren kosten tien
+  fills in plaats van honderdvijftig. Gemeten op de software-rasteriser, het
+  geval dat dit document al als gevaarlijk aanwees: **31 ms → 16 ms** per
+  achtergrond bij een 4K-pixelbuffer.
+- **Het sterrenveld van de portal is niet langer 200% × 200%.** Drie lagen van
+  het dubbele van het scherm in beide richtingen vraagt de compositor op een
+  3840×2160-bord om een textuur van 7680×4320 per laag — zo'n 400 MB
+  GPU-geheugen voor drie lagen die samen een paar honderd pixels bewegen. Elke
+  laag is nu zo groot als het scherm plus één tegel van zijn eigen patroon,
+  wat de kost ruim halveert en op het scherm niets verandert.
+- **Vooruitladen bij `pointerdown`.** De module van een missie wordt opgehaald
+  zodra een vinger op de rij landt, ruim honderd milliseconde voordat de tik af
+  is en de route wisselt; de import-cache maakt de `load()` van de loader daarna
+  onmiddellijk, dus de meeste missies openen zonder laadscherm. Daarnaast wordt
+  de laatst gespeelde missie in een `requestIdleCallback` opgehaald terwijl het
+  rooster staat te wachten, want doorgaan waar je was is de waarschijnlijkste
+  volgende tik. Een druk die een sleep blijkt te zijn heeft één module gekost
+  waar het kind toch naar reikte.
 - **Canvas-schaling**: canvas intern renderen op een vaste logische resolutie
   (bv. 1920×1080) en via CSS opschalen naar het fysieke 75"-paneel, met
   `devicePixelRatio`-correctie alleen waar nodig (crisp-canvas techniek) om
@@ -274,9 +338,21 @@ Zo kan de shell spellen los laden/verwijderen zonder geheugenlekken
    houden: een kleuter tikt door een "weet je het zeker?" heen, maar houdt niet
    per ongeluk anderhalve seconde stil. Instellingen zelf blijven na het wissen
    staan, zodat het bord ingesteld blijft zoals de klas het wil.
-5. **Idle/screensaver** (nice-to-have, niet MVP): na X minuten inactiviteit
-   terug naar opstartscherm met rustgevende animatie, zodat het digibord niet
-   "vast" blijft staan in een spel.
+5. **Idle-reset** (`src/shell/idle.js`): na vier minuten zonder aanraking gaat
+   het bord terug naar het opstartscherm. Een digibord wordt voortdurend
+   halverwege een scherm achtergelaten — de bel gaat, de les gaat door, en het
+   archief staat open tot iemand langsloopt; het volgende kind hoort aan het
+   begin van de flow te beginnen in plaats van halverwege iemand anders zijn
+   keuze. Bewust **alleen op de portaalschermen** gewapend: een open spel wordt
+   nooit onderbroken, want een vierjarige die vijf minuten naar een puzzel
+   staart is aan het nadenken, en dat is van buiten niet te onderscheiden van
+   niets doen.
+6. **Laadscherm met een drempel.** Het laadscherm verschijnt pas na 200 ms. Een
+   dynamisch geïmporteerde spelmodule is er meestal eerder dan dat, en een
+   laadpaneel dat één frame flitst is erger dan geen laadpaneel: dat leest als
+   een storing. Alleen een laadtijd die echt lang is mag dat zeggen — en die
+   krijgt dan één amberen pip die om de patrijspoort van de missie draait, de
+   enige spinner in het pakket.
 
 ## 6. Spellenlijst
 
@@ -578,7 +654,23 @@ wel voor wie leest — maar hij is nergens de enige.
 - Geluid staat aan met duidelijke, vriendelijke feedback-sounds; mute-knop
   altijd zichtbaar in de shell-header.
 - Kleurenpalet met voldoende contrast; geen fel knipperende content (i.v.m.
-  fotosensitiviteit bij jonge kinderen).
+  fotosensitiviteit bij jonge kinderen). Twee kleuren zijn hierop nagemeten en
+  bijgewerkt: `--faint` haalde 3,3:1 tegen de leegte en `.hint-line` 4,3:1,
+  terwijl dat juist de kleine mono-regels zijn die van achter uit een lokaal
+  gelezen worden. Nu 5,6:1 en 6,4:1, zonder dat er een tweede crème bijkomt.
+- **Elke tik moet op zijn eigen knop beginnen én eindigen.** De portaalknoppen
+  hingen aan een kale `pointerup`, en die vuurt op wat er onder de vinger zit op
+  het moment van optillen: een hand die het bord oversteekt en ergens anders
+  loslaat koos dus een missie, een crew of — het ergste geval — de terugknop
+  linksboven in een spel, precies waar zo'n hand langskomt. Alles loopt nu via
+  `onTap` uit `pointer.js`, dat de druk op hetzelfde element wil zien beginnen
+  en niet verder dan 24 pixels wil hebben bewogen.
+- **Toegankelijke motie**: "rustig" in de instellingen en de
+  `prefers-reduced-motion`-voorkeur van het besturingssysteem zijn hetzelfde
+  verzoek van twee verschillende mensen, dus `applyCalm()` vouwt de media query
+  in hetzelfde `data-calm`-attribuut. Zo staat er één lijst met animaties in de
+  stylesheet in plaats van twee die uit elkaar gaan lopen, en volgt het bord een
+  omgezette systeemvoorkeur zonder herladen.
 
 ## 7b. Verificatie
 
@@ -598,7 +690,21 @@ simuleren, en per spel controleren op:
   het; dit is de check die het overlopende stenenveld van Alien Verstoppertje
   ving;
 - het missierooster: vierentwintig rijen die op één scherm passen zonder
-  scrollen, en geen titel die over twee regels breekt.
+  scrollen, en geen titel die over twee regels breekt;
+- **een afgelopen animatie die nog vooruit staat te vullen** — de check die uit
+  de fill-mode-les van §2b is gegroeid, en die de volgende keer meteen aanwijst
+  waarom een transition of een `:active` niets meer doet;
+- **een sleep die op een knop eindigt**: de harness drukt onderaan het scherm,
+  sleept naar een crewkaart en laat los, en controleert dat er *niets* gekozen
+  is;
+- de raket: dat hij bij het opstijgen echt klimt en zijn vlam uitslaat, gelezen
+  uit de computed transform in plaats van uit een plaatje, want een headless
+  screenshot landt zelden waar je hem wilt hebben;
+- de typografie: dat Baloo 2 en Space Mono geladen zijn en dat er **geen enkel
+  verzoek naar `fonts.googleapis.com` of `fonts.gstatic.com`** meer uitgaat;
+- het beloningsscherm los van een spel, door `showMissionComplete` rechtstreeks
+  uit de bron te monteren: de ring die eruit golft, het juiste aantal sterren,
+  en drie knoppen die binnen het scherm vallen en de 88px halen.
 
 Alles is op zowel 1920×1080 als 3840×2160 gemeten om de vmin-schaalregel
 te bewijzen.
@@ -681,10 +787,16 @@ screenshot te zien waren:
   loading, object pooling waar relevant.
 - GitHub Actions-workflow voor automatische deploy.
 
+- Shell-polijstwerk: zelfgehoste fonts, aankomstanimaties per scherm, de
+  vertrekanimatie van de raket, idle-reset op de portaalschermen, vooruitladen
+  van spelmodules bij `pointerdown`, en een `manifest.webmanifest` zodat een
+  tablet het bord chromeloos van zijn beginscherm kan starten.
+
 **Later / bewust buiten scope**:
 - Accounts, cloud-opslag van voortgang/scores.
-- Uitgebreide screensaver/idle-detectie (kan later toegevoegd worden via de
-  bestaande router).
+- Een echte screensaver met een eigen animatie. De idle-reset van §5 stuurt het
+  bord terug naar het startscherm, en dat startscherm is met zijn driftende
+  sterrenveld en dobberende raket al wat een screensaver zou moeten zijn.
 - Diepgaande a11y voor screenreaders (niet relevant voor dit kiosk-gebruik,
   wel behouden we contrast/hitbox-richtlijnen).
 - Automatische Lighthouse/performance-gates in CI.

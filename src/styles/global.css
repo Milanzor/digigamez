@@ -49,17 +49,24 @@ canvas {
   z-index: 0;
   pointer-events: none;
   background:
+    /* A soft vignette on top of the nebula. On a 75" panel the corners are
+       nearly in a child's peripheral vision, and pulling them down a stop puts
+       the weight back in the middle where the missions are. */
+    radial-gradient(124% 104% at 50% 46%, transparent 42%, rgba(3, 4, 10, 0.6) 100%),
     radial-gradient(58% 46% at 50% 0%, rgba(120, 90, 220, 0.22), transparent 72%),
     radial-gradient(90% 70% at 76% 6%, var(--nebula-lit) 0%, var(--void) 55%, var(--void-deep) 100%);
   overflow: hidden;
 }
 
+/* Each drifting layer is only as large as the viewport plus one tile of its own
+   pattern, set by --tile. It used to be 200% × 200% in both axes, which on a
+   3840×2160 board asks the compositor for a 7680×4320 texture per layer —
+   about 400 MB of GPU memory for three layers that between them move a few
+   hundred pixels. Sizing each layer to its actual travel cuts that by well
+   over half and changes nothing on screen. */
 .space-bg__stars {
   position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
+  inset: calc(var(--tile) * -1.2);
   will-change: transform;
 }
 
@@ -67,6 +74,7 @@ canvas {
    "dots on a moving sheet" — one compositor-only opacity animation for a
    whole layer, not one per star. */
 .space-bg__stars--far {
+  --tile: 210px;
   background-image:
     radial-gradient(1.2px 1.2px at 24px 38px, rgba(255, 255, 255, 0.85), transparent),
     radial-gradient(1.2px 1.2px at 132px 96px, rgba(201, 214, 255, 0.7), transparent),
@@ -77,6 +85,7 @@ canvas {
 }
 
 .space-bg__stars--mid {
+  --tile: 320px;
   background-image:
     radial-gradient(1.6px 1.6px at 60px 70px, rgba(255, 255, 255, 0.9), transparent),
     radial-gradient(1.4px 1.4px at 190px 140px, rgba(143, 214, 255, 0.75), transparent),
@@ -86,6 +95,7 @@ canvas {
 }
 
 .space-bg__stars--near {
+  --tile: 520px;
   background-image:
     radial-gradient(2.2px 2.2px at 120px 90px, rgba(255, 255, 255, 1), transparent),
     radial-gradient(2px 2px at 380px 260px, rgba(255, 194, 74, 0.8), transparent);
@@ -93,17 +103,22 @@ canvas {
   animation: drift-near 90s linear infinite;
 }
 
+/* Each drift travels exactly one tile in *both* axes, so the loop restart lands
+   on an identical pattern. The vertical leg used to be half a tile, which meant
+   every layer visibly jumped 105, 160 or 260 pixels the moment its animation
+   wrapped — rare enough (every 90 to 240 seconds) to look like a glitch in the
+   panel rather than a bug in the stylesheet. */
 @keyframes drift-far {
   from { transform: translate3d(0, 0, 0); }
-  to { transform: translate3d(-210px, 105px, 0); }
+  to { transform: translate3d(-210px, 210px, 0); }
 }
 @keyframes drift-mid {
   from { transform: translate3d(0, 0, 0); }
-  to { transform: translate3d(-320px, 160px, 0); }
+  to { transform: translate3d(-320px, 320px, 0); }
 }
 @keyframes drift-near {
   from { transform: translate3d(0, 0, 0); }
-  to { transform: translate3d(-520px, 260px, 0); }
+  to { transform: translate3d(-520px, 520px, 0); }
 }
 @keyframes twinkle {
   0%, 100% { opacity: 0.62; }
@@ -142,24 +157,56 @@ canvas {
   50% { transform: translate3d(-1.4vmin, 1vmin, 0); }
 }
 
-/* "Rustig" in the settings, and the OS-level preference, park the backdrop:
-   same effect, two different people asking for it. */
-:root[data-calm] .space-bg__stars,
-:root[data-calm] .space-bg__planet,
-:root[data-calm] .port,
-:root[data-calm] .port__halo,
-:root[data-calm] .launch__rocket,
-:root[data-calm] .done__spark {
-  animation: none !important;
-}
-
-@media (prefers-reduced-motion: reduce) {
+/* "Rustig" in the settings and the OS-level reduced-motion preference are the
+   same request from two different people, so `applyCalm()` folds the media
+   query into this one attribute rather than the stylesheet carrying a second
+   copy of the list. Everything that loops, bobs or arrives is named here; every
+   animation in the app is written so that switching it off leaves the element
+   in its resting state, never mid-flight. */
+:root[data-calm] :where(
   .space-bg__stars,
   .space-bg__planet,
   .port,
   .port__halo,
-  .done__spark {
-    animation: none !important;
+  .launch__rocket,
+  .done__spark,
+  .done__wave,
+  .screen-enter,
+  .screen-enter > *,
+  .mission,
+  .mission .bar__fill,
+  .loading,
+  .loading__orbit
+) {
+  animation: none !important;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Arrival
+   Screens used to be swapped in with replaceChildren(), so every
+   navigation was a hard cut — on a wall-sized panel that reads as a
+   flicker rather than as a move. One short rise-and-fade, applied by the
+   router to whatever it just mounted, makes the board feel like it is
+   travelling between screens. Translate and opacity only: a scale would
+   change the box a game measures its canvas against.
+   ───────────────────────────────────────────────────────────── */
+/* No fill-mode, and that is load-bearing rather than an omission. An animation
+   that keeps filling forwards stays in the cascade above transitions and
+   declarative styles for the properties it touches, so `both` here silently
+   killed every later opacity or transform change on the same element: the launch
+   screen's fade-out jumped instead of transitioning, and `.mission:active` would
+   have stopped depressing. With no fill the element is only under the
+   animation's control while it is actually running. The rule for this file:
+   fill forwards only where the resting state has to differ from the element's
+   own CSS, and never on something that also transitions the same property. */
+.screen-enter {
+  animation: screen-in 0.34s var(--ease-out);
+}
+
+@keyframes screen-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 1.4vmin, 0);
   }
 }
 
@@ -561,7 +608,9 @@ button:focus-visible {
   font-size: var(--fs-micro);
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: #6d7290;
+  /* Lifted from #6d7290 (4.3:1 on the void) so the one line of instruction in
+     an action game clears the contrast floor as well as the rest of the type. */
+  color: #8a90b0;
   text-align: center;
 }
 
@@ -594,6 +643,27 @@ button:focus-visible {
   position: relative;
   display: grid;
   place-items: center;
+}
+
+/* One amber ring expanding out of the trophy, twice. The reward screen already
+   fades in and pops its stars, but both of those happen *to* the panel; a wave
+   leaving the porthole is the screen reacting to what the child just did. Pure
+   transform and opacity, so it costs a compositor layer and nothing else. */
+.done__wave {
+  position: absolute;
+  width: clamp(96px, 20vmin, 440px);
+  height: clamp(96px, 20vmin, 440px);
+  border-radius: 50%;
+  box-shadow: 0 0 0 var(--hair) rgba(255, 194, 74, 0.55);
+  pointer-events: none;
+  /* forwards, because the ring's resting state (invisible) is not its CSS
+     default — it has to stay gone after the second pass. */
+  animation: done-wave 1.5s ease-out 2 forwards;
+}
+
+@keyframes done-wave {
+  from { transform: scale(0.9); opacity: 0.9; }
+  to { transform: scale(2.1); opacity: 0; }
 }
 
 .done__port {

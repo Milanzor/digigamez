@@ -27,6 +27,21 @@ export function setSetting(key, value) {
 
 // The starfield drift is pure CSS, so "rustig" is one attribute on the root
 // element rather than animations to chase down and stop.
+//
+// The OS-level reduced-motion preference is folded in here rather than into a
+// second `@media` block in the stylesheet. Both are the same request from two
+// different people, and with one attribute deciding it there is only one list of
+// animations to keep up to date instead of two that drift apart.
+const reducedMotion = () =>
+  window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+
 export function applyCalm() {
-  document.documentElement.toggleAttribute('data-calm', getSetting('calm'));
+  document.documentElement.toggleAttribute('data-calm', getSetting('calm') || reducedMotion());
+}
+
+// A teacher can flip the OS setting mid-session; the board should follow without
+// a reload.
+export function watchMotionPreference() {
+  window.matchMedia?.('(prefers-reduced-motion: reduce)')
+    .addEventListener('change', applyCalm);
 }

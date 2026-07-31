@@ -21,12 +21,27 @@ export function onTap(el, handler, opts = {}) {
     }
     startId = null;
   }
+  function cancel() {
+    startId = null;
+  }
   el.addEventListener('pointerdown', down);
   el.addEventListener('pointerup', up);
+  el.addEventListener('pointercancel', cancel);
   return () => {
     el.removeEventListener('pointerdown', down);
     el.removeEventListener('pointerup', up);
+    el.removeEventListener('pointercancel', cancel);
   };
+}
+
+// Binds `onTap` to a list of elements and returns one function that unbinds them
+// all, which is the shape every portal view's cleanup wants.
+export function onTapAll(elements, handler, opts) {
+  const offs = [];
+  for (const el of elements) {
+    if (el) offs.push(onTap(el, handler, opts));
+  }
+  return () => offs.forEach((off) => off());
 }
 
 // Tracks active pointers by id, useful for drag interactions and

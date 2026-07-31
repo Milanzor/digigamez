@@ -8,6 +8,7 @@
 // accident while poking at a touchscreen.
 
 import { navigate, previousPath } from '../shell/router.js';
+import { onTap } from '../shell/pointer.js';
 import { sfx, setMuted, isMuted, setVolume, getVolume } from '../shell/audio.js';
 import { getSetting, setSetting } from '../shell/settings.js';
 import { resetProgress } from '../shell/progress.js';
@@ -56,7 +57,7 @@ export function renderSettingsView(container) {
         <div class="bar-top__spacer"></div>
       </div>
 
-      <div class="settings__panel" id="settings-panel">
+      <div class="settings__panel" id="settings-panel" data-scroll>
         ${row({
           icon: '🔊',
           name: 'Geluid',
@@ -115,9 +116,17 @@ export function renderSettingsView(container) {
 
   // --- the three segmented settings, handled by one delegated listener ------
 
+  // Delegated from the panel because the picker is a scrolling region: with the
+  // press and the release both having to land inside the same segment button,
+  // dragging the list past a "Hard" and letting go no longer turns the volume up.
+  let segDown = null;
+  const onSegmentDown = (e) => {
+    segDown = e.target.closest('.seg__btn');
+  };
   const onSegment = (e) => {
     const btn = e.target.closest('.seg__btn');
-    if (!btn || !panel.contains(btn)) return;
+    if (!btn || btn !== segDown || !panel.contains(btn)) return;
+    segDown = null;
     const group = btn.parentElement;
     const { value } = btn.dataset;
 
@@ -140,6 +149,7 @@ export function renderSettingsView(container) {
     // audible at the setting you just picked.
     sfx.select();
   };
+  panel.addEventListener('pointerdown', onSegmentDown);
   panel.addEventListener('pointerup', onSegment);
 
   // --- fullscreen ----------------------------------------------------------
@@ -153,13 +163,14 @@ export function renderSettingsView(container) {
     syncFs();
   };
   syncFs();
-  fsBtn.addEventListener('pointerup', onFs);
+  const offFs = onTap(fsBtn, onFs);
   // Escape leaves fullscreen without touching our button, so follow the event.
   document.addEventListener('fullscreenchange', syncFs);
 
   // --- press and hold to wipe ----------------------------------------------
 
   let holdTimer = 0;
+  let leaveTimer = 0;
   let wiped = false;
 
   const stopHold = () => {
@@ -182,8 +193,10 @@ export function renderSettingsView(container) {
       wipeText.textContent = 'Alles gewist ✨';
       sfx.missionComplete();
       // Straight back to the launch screen: the crew choice was wiped too, so
-      // there is nothing sensible left to show on the mission grid.
-      setTimeout(() => navigate('/'), 1500);
+      // there is nothing sensible left to show on the mission grid. Tracked so
+      // that a grown-up who presses ◀ during the confirmation is not yanked back
+      // to the start a second later.
+      leaveTimer = setTimeout(() => navigate('/'), 1500);
     }, HOLD_MS);
   };
 
@@ -198,17 +211,19 @@ export function renderSettingsView(container) {
     sfx.back();
     navigate(backTo);
   };
-  backBtn.addEventListener('pointerup', onBack);
+  const offBack = onTap(backBtn, onBack);
 
   return () => {
     clearTimeout(holdTimer);
+    clearTimeout(leaveTimer);
+    panel.removeEventListener('pointerdown', onSegmentDown);
     panel.removeEventListener('pointerup', onSegment);
-    fsBtn.removeEventListener('pointerup', onFs);
+    offFs();
     document.removeEventListener('fullscreenchange', syncFs);
     wipeBtn.removeEventListener('pointerdown', onHoldStart);
     wipeBtn.removeEventListener('pointerup', stopHold);
     wipeBtn.removeEventListener('pointercancel', stopHold);
     wipeBtn.removeEventListener('pointerleave', stopHold);
-    backBtn.removeEventListener('pointerup', onBack);
+    offBack();
   };
 }

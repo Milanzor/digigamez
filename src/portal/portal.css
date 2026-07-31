@@ -41,6 +41,80 @@
   animation-duration: 5.5s;
 }
 
+/* Pressing "Start de raket" plays a second and a half of engine, and the screen
+   used to be gone in the first fifty milliseconds of it. Now the rocket
+   actually leaves: it climbs out of the top of the frame on a flame while the
+   screen fades, and the route change waits for it. The sound and the picture
+   agree, and the wait is the reward rather than a delay. */
+.launch {
+  transition: opacity 0.3s ease;
+}
+
+.launch.is-launching {
+  opacity: 0;
+  transition-delay: 0.2s;
+}
+
+.launch.is-launching .launch__medal {
+  /* forwards: the rocket has to stay gone once it is out of frame. Nothing
+     transitions the medal's transform, so holding it here is safe. */
+  animation: rocket-away 0.52s cubic-bezier(0.45, 0, 0.8, 0.2) forwards;
+}
+
+@keyframes rocket-away {
+  to { transform: translate3d(0, -62vmin, 0) scale(0.55); }
+}
+
+/* Everything that is not the rocket drops away first. Partly choreography — a
+   pad clearing before a launch — and partly because the exhaust plume is long
+   enough to reach down through the wordmark, and a flame crossing the letters
+   just looks like two things drawn on top of each other. */
+.launch.is-launching :is(
+  .launch__eyebrow,
+  .launch__title,
+  .launch__sub,
+  .launch__btn,
+  .launch__meta,
+  .launch__settings
+) {
+  animation: launch-clear 0.18s ease forwards;
+}
+
+@keyframes launch-clear {
+  to {
+    opacity: 0;
+    transform: translate3d(0, 1.6vmin, 0);
+  }
+}
+
+/* Exhaust: a blurred plume that scales out of the porthole's underside.
+   scaleY on a fixed box rather than an animated height, so it stays on the
+   compositor like everything else that moves here. */
+.launch__trail {
+  position: absolute;
+  top: 58%;
+  width: clamp(16px, 3.2vmin, 72px);
+  height: 34vmin;
+  border-radius: var(--r-pill);
+  background: linear-gradient(180deg, rgba(255, 246, 229, 0.95), rgba(255, 194, 74, 0.75) 30%, rgba(255, 107, 107, 0.45) 62%, transparent);
+  filter: blur(clamp(3px, 0.5vmin, 11px));
+  transform-origin: 50% 0;
+  transform: scaleY(0);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.launch.is-launching .launch__trail {
+  /* No fill needed: the plume ends invisible, which is where it started. */
+  animation: rocket-trail 0.52s ease-out;
+}
+
+@keyframes rocket-trail {
+  0% { transform: scaleY(0); opacity: 0; }
+  28% { transform: scaleY(0.85); opacity: 1; }
+  100% { transform: scaleY(1.3); opacity: 0; }
+}
+
 .launch__title {
   margin: var(--sp-4) 0 0;
   font-size: var(--fs-hero);
@@ -292,11 +366,38 @@
   background: transparent;
   box-shadow: none;
   transition: background 0.2s ease, transform 0.16s var(--ease-press);
+  /* Set per row from the grid view, capped so the whole archive is in by half
+     a second: twenty-four rows arriving one after another reads as the board
+     loading its manifest, but only if it never becomes a wait.
+     `backwards` and not `both` — backwards keeps the row hidden through its
+     delay, while filling forwards would leave the animation permanently above
+     the cascade and stop `:active` from depressing the row for the rest of the
+     screen's life. */
+  animation: mission-in 0.42s var(--ease-out) var(--in-delay, 0s) backwards;
+}
+
+@keyframes mission-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 1.6vmin, 0);
+  }
 }
 
 .mission:active {
   transform: translateY(clamp(1px, 0.3vmin, 6px)) scale(0.99);
   background: var(--panel-press);
+}
+
+/* The bar sweeps out from the left as its row lands, so a child sees how far
+   they got rather than finding it already drawn. scaleX on the inline width the
+   progress helper already sets, so the value stays the single source of truth. */
+.mission .bar__fill {
+  transform-origin: left center;
+  animation: bar-sweep 0.5s var(--ease-out) calc(var(--in-delay, 0s) + 0.16s) backwards;
+}
+
+@keyframes bar-sweep {
+  from { transform: scaleX(0); }
 }
 
 /* The mission a child played last is already lit, so returning to the board
@@ -363,8 +464,13 @@
   justify-content: center;
   gap: var(--sp-2);
   /* The five rows fit a 16:9 board; on an odd aspect ratio scrolling beats
-     squashing the touch targets. */
+     squashing the touch targets. `pan-y` plus the [data-scroll] hook are what
+     make that scroll reachable by finger: the shell suppresses touchmove
+     globally to kill pull-to-refresh, and this is the one place that has to
+     opt back in. */
   overflow-y: auto;
+  touch-action: pan-y;
+  overscroll-behavior: contain;
 }
 
 .setting {
@@ -501,12 +607,21 @@
 
 /* ── Game loading state ────────────────────────────────────────────── */
 
+/* Held back for 200 ms before it appears. A dynamically imported game module is
+   usually on screen faster than that, and a loading panel that flashes for one
+   frame is worse than no loading panel at all — it reads as a glitch. Only a
+   load that is genuinely slow gets to say so. */
 .loading {
   width: 100%;
   height: 100%;
   display: grid;
   place-items: center;
   text-align: center;
+  animation: loading-in 0.3s ease 0.2s backwards;
+}
+
+@keyframes loading-in {
+  from { opacity: 0; }
 }
 
 .loading__inner {
@@ -514,6 +629,39 @@
   flex-direction: column;
   align-items: center;
   gap: var(--sp-4);
+}
+
+.loading__medal {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+/* A single amber pip orbiting the mission's own porthole. It is the only
+   spinner in the app, and it is the porthole again rather than a borrowed
+   circle-of-dashes, so even waiting looks like the same instrument. */
+.loading__orbit {
+  position: absolute;
+  inset: calc(var(--sp-3) * -1);
+  border-radius: 50%;
+  animation: orbit 2.2s linear infinite;
+}
+
+.loading__orbit::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: clamp(7px, 1.3vmin, 28px);
+  height: clamp(7px, 1.3vmin, 28px);
+  margin: calc(clamp(7px, 1.3vmin, 28px) / -2) 0 0 calc(clamp(7px, 1.3vmin, 28px) / -2);
+  border-radius: 50%;
+  background: var(--amber);
+  box-shadow: var(--glow-sun);
+}
+
+@keyframes orbit {
+  to { transform: rotate(1turn); }
 }
 
 .loading__port {

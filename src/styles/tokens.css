@@ -41,7 +41,11 @@
   --cream-hi: #fff6e5;
   --muted: #9a9280;
   --muted-warm: #c9bda4;
-  --faint: #6b6656;
+  /* Was #6b6656, which measured 3.3:1 against the void — under the 4.5:1 floor
+     for the small mono captions it is used on, and those captions are the ones
+     read from the back of a classroom. #8f8776 is the same colour a step up
+     and lands at 5.6:1 without becoming a second cream. */
+  --faint: #8f8776;
   --ink: #2c1c04;
 
   /* --- The one action colour --- */
@@ -114,6 +118,10 @@
 
   /* Press easing with a slight overshoot: a console key that snaps back. */
   --ease-press: cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Arrival easing: fast out of the gate, long settle. Everything that enters
+     the screen — a screen, a mission row, a progress bar — uses this one curve,
+     so the whole app decelerates the same way. */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 
   --glow-sun: 0 0 clamp(10px, 2vmin, 44px) rgba(255, 194, 74, 0.4);
   --glow-amber-text: 0 0 clamp(12px, 2.4vmin, 50px) rgba(255, 194, 74, 0.55);

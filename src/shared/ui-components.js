@@ -3,6 +3,7 @@
 // to all nine.
 
 import { sfx } from '../shell/audio.js';
+import { onTap } from '../shell/pointer.js';
 
 // ── Porthole ────────────────────────────────────────────────────────────
 // The recurring ring of instrument glass. The mission colour enters the UI
@@ -40,7 +41,11 @@ export function createHud(container, {
   const backBtn = document.createElement('button');
   backBtn.className = 'key key--bar key--back';
   backBtn.setAttribute('aria-label', 'Terug naar missiekeuze');
-  backBtn.addEventListener('pointerup', () => {
+  // onTap, not a bare pointerup: the back key sits in the top-left corner of
+  // every game, which is exactly where a hand crossing the board on its way to
+  // somewhere else lifts off. Leaving a mission by accident is the one
+  // misfire in this app that loses a child their place.
+  const offBack = onTap(backBtn, () => {
     sfx.back();
     onExit();
   });
@@ -156,6 +161,7 @@ export function createHud(container, {
     },
     destroy() {
       clearTimeout(bannerTimer);
+      offBack();
     },
   };
 }
@@ -179,6 +185,7 @@ export function showMissionComplete(container, {
   el.className = 'done';
   el.innerHTML = `
     <div class="done__medal">
+      <div class="done__wave"></div>
       <div class="port__halo"></div>
       <div class="done__spark done__spark--a">✨</div>
       <div class="done__spark done__spark--b">✨</div>
@@ -201,21 +208,33 @@ export function showMissionComplete(container, {
   container.appendChild(el);
   requestAnimationFrame(() => el.classList.add('is-visible'));
 
+  // The stars pop in on a CSS delay; each one gets a chime on the same clock, so
+  // the reward is heard being counted out rather than arriving as one noise. The
+  // game has already played the fanfare — these land on top of it, and `star`
+  // sits high enough in the scale not to muddy it.
+  const chimes = [];
+  for (let i = 0; i < stars; i++) {
+    chimes.push(setTimeout(() => sfx.star(), 200 + i * 130));
+  }
+
   const acts = { next: onNext, retry: onRetry, home: onHome };
-  const onPress = (e) => {
-    const btn = e.target.closest('[data-act]');
-    if (!btn) return;
-    sfx.select();
-    close();
-    acts[btn.dataset.act]?.();
-  };
-  el.addEventListener('pointerup', onPress);
+  // Bound per button rather than delegated from the panel: this screen covers
+  // the whole board, and a delegated pointerup would fire for a finger that
+  // came down on the backdrop and lifted over "Volgend level".
+  const offs = [...el.querySelectorAll('[data-act]')].map((btn) =>
+    onTap(btn, () => {
+      sfx.select();
+      close();
+      acts[btn.dataset.act]?.();
+    })
+  );
 
   let closed = false;
   function close() {
     if (closed) return;
     closed = true;
-    el.removeEventListener('pointerup', onPress);
+    chimes.forEach(clearTimeout);
+    offs.forEach((off) => off());
     el.remove();
   }
 
