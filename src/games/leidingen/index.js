@@ -125,7 +125,23 @@ function buildPuzzle(cfg) {
     }
   }
 
-  return { grid, endpoints, cols, rows, totalCols };
+  const puzzle = { grid, endpoints, cols, rows, totalCols };
+
+  // A random scramble can deal a board that is already connected — a straight
+  // pipe has two equivalent rotations, so on a short path the odds are far
+  // from negligible — and the round would announce itself complete before the
+  // child touched anything. Re-scramble until at least one network is open.
+  for (let guard = 0; guard < 40; guard++) {
+    if (!endpoints.every((e) => traceFlow(puzzle, e).solved)) break;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 1; c <= cols; c++) {
+        const tile = grid[r][c];
+        if (!tile.locked) tile.rotation = (tile.rotation + randInt(1, 3)) % 4;
+      }
+    }
+  }
+
+  return puzzle;
 }
 
 function connsOf(tile) {
@@ -134,12 +150,17 @@ function connsOf(tile) {
 
 // Walks the oxygen from one source and reports which cells it fills and
 // whether it reached that network's drain.
+//
+// `entry` is the side of the current tile the gas arrives through, so the tile
+// must have a connection on exactly that side. Leaving a tile through `out`
+// means entering the next one through OPP(out): flowing east lands on the next
+// tile's west face.
 function traceFlow(puzzle, endpoint) {
   const { grid, cols, totalCols } = puzzle;
   const wet = new Set();
   let row = endpoint.sourceRow;
   let col = 1;
-  let from = DIR.W;
+  let entry = DIR.W;
   const seen = new Set();
 
   while (col >= 1 && col <= cols && row >= 0 && row < puzzle.rows) {
@@ -148,18 +169,17 @@ function traceFlow(puzzle, endpoint) {
     seen.add(key);
 
     const conns = connsOf(grid[row][col]);
-    const incoming = OPP(from);
-    if (!conns.includes(incoming)) return { solved: false, wet };
+    if (!conns.includes(entry)) return { solved: false, wet };
 
     wet.add(key);
-    const out = conns.find((d) => d !== incoming);
+    const out = conns.find((d) => d !== entry);
     const [dr, dc] = VEC[out];
     row += dr;
     col += dc;
-    from = OPP(out);
+    entry = OPP(out);
 
     if (col === totalCols - 1) {
-      return { solved: row === endpoint.drainRow && from === DIR.W, wet };
+      return { solved: row === endpoint.drainRow && entry === DIR.W, wet };
     }
   }
   return { solved: false, wet };
@@ -188,21 +208,33 @@ export function init(container, opts) {
 }
 
 function startRound() {
+  // The previous round's tiles are about to be thrown away; drop their
+  // listeners too so nothing accumulates as the levels roll by.
+  listeners.forEach((off) => off());
+  listeners = [];
+
   const cfg = LEVELS[Math.min(level, LEVELS.length) - 1];
   hud.setLevel(level);
 
   const puzzle = buildPuzzle(cfg);
   const { rows, totalCols } = puzzle;
 
-  // Fit tiles to whatever room is left after the HUD and hint strip.
-  const availW = window.innerWidth * 0.88;
-  const availH = window.innerHeight * 0.62;
-  const tile = Math.floor(Math.min(availW / totalCols, availH / rows));
-
   const grid = document.createElement('div');
   grid.className = 'pipe-grid';
-  grid.style.gridTemplateColumns = `repeat(${totalCols}, ${tile}px)`;
-  grid.style.gridTemplateRows = `repeat(${rows}, ${tile}px)`;
+
+  // Fit tiles to whatever room is left after the HUD and hint strip, and
+  // refit on resize — a laptop driving the board can change size when the
+  // window goes fullscreen.
+  const fit = () => {
+    const availW = window.innerWidth * 0.88;
+    const availH = window.innerHeight * 0.62;
+    const tile = Math.floor(Math.min(availW / totalCols, availH / rows));
+    grid.style.gridTemplateColumns = `repeat(${totalCols}, ${tile}px)`;
+    grid.style.gridTemplateRows = `repeat(${rows}, ${tile}px)`;
+  };
+  fit();
+  window.addEventListener('resize', fit);
+  listeners.push(() => window.removeEventListener('resize', fit));
 
   const hint = document.createElement('div');
   hint.className = 'hint-strip';
