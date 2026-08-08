@@ -741,3 +741,25 @@ button:focus-visible {
 }
 
 .done__actions .btn { min-height: clamp(58px, 9vmin, 200px); }
+
+/* The choices land last, after the stars have finished counting out and the
+   hand that was still tapping the board has come to rest. Held back in CSS as
+   well as in JS: `pointer-events: none` is what actually makes a mistimed tap
+   fall through to the panel, and the fade means a child is never aiming at a
+   button that would not have answered anyway. */
+.done--locked .done__actions {
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(var(--sp-2));
+}
+
+.done__actions {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.3s ease, transform 0.3s var(--ease-press);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .done--locked .done__actions { transform: none; }
+  .done__actions { transition: opacity 0.3s ease; }
+}
