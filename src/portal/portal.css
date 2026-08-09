@@ -680,3 +680,27 @@
   text-transform: uppercase;
   color: var(--teal);
 }
+
+/* The two ways out when a mission refuses to start. "Probeer opnieuw" is the
+   amber one because it is the one that actually fixes it — it reloads the
+   board, which is the only thing that clears a module the browser has written
+   off. */
+.loading__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* The technical reason, for the grown-up standing at a board that has no
+   developer console. Small, dim and in the mono face: a child never has to read
+   it, and whoever is fixing it should not have to guess. */
+.loading__why {
+  max-width: 60vw;
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  line-height: 1.5;
+  color: var(--faint);
+  word-break: break-word;
+}

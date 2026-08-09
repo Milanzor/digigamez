@@ -934,6 +934,34 @@ screenshot te zien waren:
    (`grid-auto-rows: 1fr`), en de harness controleert sindsdien of knoppen buiten
    het scherm vallen.
 
+En de belangrijkste van allemaal, gemeld vanaf het bord zelf: **drie willekeurige
+missies die "wil niet starten" zeggen terwijl de rest het prima doet.**
+
+10. **Een mislukte dynamische import is voorgoed mislukt.** De browser onthoudt
+    een `import()` die niet aankwam in zijn module map, met fout en al, voor de
+    hele levensduur van de pagina. Dezelfde module nog eens importeren gaat
+    daarna niet meer langs het netwerk — je krijgt precies dezelfde fout terug.
+    Eén hapering op een schoolnetwerk maakt een missie dus niet even stuk maar
+    *permanent* stuk, en omdat het rooster een module prefetcht zodra er een
+    vinger op een rij landt, kan een hand die over het archief veegt er in één
+    slecht moment meerdere tegelijk omleggen — zonder er ook maar één van te
+    openen. Een kiosk draait de hele dag op één paginalading, dus "kapot" bleef
+    kapot, en het beeld dat het oplevert (drie niet-verwante spellen doen het
+    niet, alle andere wel) wijst precies de verkeerde kant op.
+
+    Het is nagespeeld door in de harness één keer het chunk-verzoek van
+    Ruimtegeheugen te laten mislukken tijdens een prefetch: daarna zei dat spel
+    bij elke poging "wil niet starten", met een kerngezond netwerk, tot de
+    pagina herladen werd. Vandaar de oplossing: **herladen ís de nieuwe poging.**
+    Het laadscherm doet dat één keer vanzelf (de route is al `#/spel/<slug>`,
+    dus je komt met een lege module map op dezelfde missie terug), en lukt het
+    dan nog niet, dan staat er een amberen **"Probeer opnieuw"** naast de
+    terugknop plus de technische reden in kleine mono — want aan een digibord
+    staat geen developer console. De vlag zit in `sessionStorage` per missie,
+    dus een spel dat écht stuk is herlaadt precies één keer en niet oneindig.
+    En het rooster prefetcht er nog maar één tegelijk, en niet als de browser
+    zegt dat hij offline is.
+
 En één uit de ronde van de vier Zeepbellen-spellen, die alleen op een screenshot
 te zien was en meteen de reden is dat er screenshots gemaakt worden:
 

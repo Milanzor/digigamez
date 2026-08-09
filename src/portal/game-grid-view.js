@@ -99,11 +99,25 @@ export function renderGameGridView(container) {
   // most missions open with no loading screen at all. A press that turns out to
   // be a drag has cost one prefetch of a module the child was reaching for
   // anyway.
+  //
+  // One at a time, and never while the browser says it is offline. A prefetch
+  // that fails is not free: the browser remembers a failed dynamic import for
+  // the whole life of the page, so that mission then refuses to start until the
+  // board is reloaded. A hand sweeping across the archive used to fire a dozen
+  // of these at once, which on a hiccuping school network is how three
+  // unrelated missions end up broken in the same second. The loader can heal
+  // it by reloading; this keeps it from happening by the dozen.
+  let inFlight = false;
   const prefetch = (slug) => {
-    getGame(slug)?.load().catch(() => {
-      // Reporting is the loader's job — that is the screen that can offer a way
-      // back out.
-    });
+    const game = getGame(slug);
+    if (!game || inFlight || navigator.onLine === false) return;
+    inFlight = true;
+    game.load()
+      .catch(() => {
+        // Reporting is the loader's job — that is the screen that can offer a
+        // way back out.
+      })
+      .finally(() => { inFlight = false; });
   };
   const onRowDown = (e) => {
     const row = e.target.closest('.mission');
