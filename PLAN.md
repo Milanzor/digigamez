@@ -158,6 +158,18 @@ eronder in plaats van een paneel. In het spel staan de uitleesvelden
 rechts als **mono-label + waarde in de displayletter** (`LEVEL 3`),
 gescheiden door 1px haarlijnen — zoals een echt paneel zijn meters labelt.
 
+En de meldingen (`hud.banner`) hangen **direct onder die balk**, niet meer in het
+midden van het scherm. Het midden is waar het spel is: de puck, de toren, de bel
+waar een kind naar reikt — precies daar verscheen het enige paneel dat gegarandeerd
+opkomt op het moment dat er iets interessants gebeurt. Onder de balk staat het op
+dezelfde plek als de missienaam en de leveluitlezing, dus in de strook waar een
+kind toch al kijkt voor wat de console zegt, en het bord blijft zichtbaar terwijl
+het gezegd wordt. De melding zakt daarbij uit de balk naar beneden in plaats van
+uit het niets op te schalen. Eén kanttekening: bij Toren Bouwen en Ruimte Invasie
+staat er wél iets in die strook (de kraan met zijn zwaaiende blok, de bovenste rij
+aliens), dus daar dekt een melding van een seconde het even af. Dat is de prijs
+van één vaste plek voor alle spellen, en die is bewust betaald.
+
 ### Een nieuwe missie toevoegen
 Kies één speelkleur en zet die in `game-registry.js`, samen met `maxPlayers`
 (een getal, dat het rooster als `2P`/`4P` toont). De acht speelkleuren komen bij

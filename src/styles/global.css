@@ -541,12 +541,24 @@ button:focus-visible {
   white-space: nowrap;
 }
 
-/* Mission banner — success / hint messages */
+/* Mission banner — success / hint messages.
+
+   Hangs just under the HUD bar rather than in the middle of the screen. Dead
+   centre is where the game is: a puck, a tower, the bubble a child is reaching
+   for, all of it sits behind the one panel that is guaranteed to appear at the
+   exact moment something interesting happened. Under the bar it is in the same
+   place as the mission name and the level readout — the strip a child already
+   looks at for what the console is saying — and the board stays visible while
+   it says it. It drops in from the bar instead of scaling up from nothing, so
+   the movement reads as the console speaking rather than as something landing
+   on the game. */
 .banner {
   position: absolute;
   left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%) scale(0.82);
+  /* Clears the bar: the tallest thing in it is a round key of --touch, plus
+     the bar's own vertical padding. */
+  top: calc(var(--touch) + var(--sp-3) * 2 + var(--sp-2));
+  transform: translate(-50%, calc(-1 * var(--sp-3))) scale(0.94);
   z-index: 40;
   text-align: center;
   font-weight: 800;
@@ -567,7 +579,7 @@ button:focus-visible {
 
 .banner.is-visible {
   opacity: 1;
-  transform: translate(-50%, -50%) scale(1);
+  transform: translate(-50%, 0) scale(1);
 }
 
 .banner__sub {
