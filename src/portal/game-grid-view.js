@@ -7,7 +7,7 @@ import { getLamps, MAX_LAMPS } from '../shell/progress.js';
 import { progressBar, porthole } from '../shared/ui-components.js';
 
 // Rows arrive one after another, but the archive is never allowed to take longer
-// than the cap to finish assembling — twenty-four rows at 22 ms sit comfortably
+// than the cap to finish assembling — twenty-eight rows at 22 ms sit comfortably
 // under it, and the cap is what stops a longer archive from turning the entrance
 // into a wait.
 const ROW_STAGGER_MS = 22;

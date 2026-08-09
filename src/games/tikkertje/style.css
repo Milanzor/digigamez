@@ -1,0 +1,75 @@
+.tik-stage {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: var(--void-deep);
+}
+
+.tik-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* Two pictograms and no sentence: a finger on a critter with a tick, and the
+   yawning one that anybody can reach. The second half is the whole fairness
+   rule of this game, so it is drawn rather than explained. */
+.tik-legend {
+  position: absolute;
+  left: 50%;
+  bottom: var(--sp-3);
+  transform: translateX(-50%);
+  z-index: 10;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-1) var(--sp-4);
+  border-radius: var(--r-pill);
+  background: rgba(5, 7, 15, 0.7);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule-mid);
+}
+
+.tik-legend__item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.tik-legend__critter {
+  font-size: clamp(24px, 3.8vmin, 82px);
+  line-height: 1;
+  filter: drop-shadow(0 0 clamp(6px, 1.2vmin, 26px) rgba(185, 140, 255, 0.65));
+}
+
+/* The tired one is dimmed on the board too — the legend has to show the same
+   creature in the same state, or it is pointing at something else. */
+.tik-legend .is-tired .tik-legend__critter {
+  opacity: 0.55;
+  filter: none;
+}
+
+.tik-legend__hand {
+  font-size: clamp(20px, 3.2vmin, 70px);
+  line-height: 1;
+}
+
+.tik-legend__zzz {
+  font-size: clamp(18px, 2.8vmin, 60px);
+  line-height: 1;
+}
+
+.tik-legend__mark {
+  font-family: var(--font-display);
+  font-weight: 800;
+  line-height: 1;
+  font-size: clamp(20px, 3.2vmin, 70px);
+  color: var(--green);
+  text-shadow: 0 clamp(1px, 0.2vmin, 4px) clamp(3px, 0.6vmin, 12px) rgba(0, 0, 0, 0.8);
+}
+
+.tik-legend__sep {
+  width: var(--hair);
+  align-self: stretch;
+  background: var(--rule-mid);
+}

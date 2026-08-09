@@ -105,7 +105,7 @@ Schermen werden met `replaceChildren()` verwisseld, dus elke navigatie was
 een harde knip — op een wandgroot paneel leest dat als geflikker in plaats
 van als een verplaatsing. De router zet nu `.screen-enter` op wat hij net
 gemonteerd heeft: één korte stijging met een fade, altijd dezelfde curve
-(`--ease-out`). Het missierooster laat zijn vierentwintig rijen daarbovenop
+(`--ease-out`). Het missierooster laat zijn achtentwintig rijen daarbovenop
 achter elkaar binnenkomen (22 ms per rij, afgekapt op een halve seconde) en
 elke voortgangsbalk veegt vanaf links open zodra zijn rij landt.
 
@@ -121,7 +121,7 @@ Een animatie die vooruit blijft vullen (`forwards`, en dus ook `both`) staat
 voor de eigenschappen die hij aanraakt **boven transitions en boven gewone
 declaraties** — voor de rest van het leven van dat element. `.screen-enter`
 begon als `both`, en daarmee sloeg de fade-out van het startscherm over in
-een harde sprong en zou `.mission:active` op alle vierentwintig rijen nooit
+een harde sprong en zou `.mission:active` op alle achtentwintig rijen nooit
 meer ingedrukt zijn. De regel voor dit project: **vul alleen vooruit waar de
 ruststand van een element verschilt van zijn eigen CSS, en nooit op iets dat
 dezelfde eigenschap ook transitioneert.** Een animatie met een vertraging
@@ -161,7 +161,7 @@ gescheiden door 1px haarlijnen — zoals een echt paneel zijn meters labelt.
 ### Een nieuwe missie toevoegen
 Kies één speelkleur en zet die in `game-registry.js`, samen met `maxPlayers`
 (een getal, dat het rooster als `2P`/`4P` toont). De acht speelkleuren komen bij
-vierentwintig missies drie keer rond; wat telt is dat dezelfde kleur nooit naast
+achtentwintig missies ruim drie keer rond; wat telt is dat dezelfde kleur nooit naast
 of onder een andere terechtkomt, en de lijst staat op leeftijd gesorteerd met dat
 in het achterhoofd. Eén emoji in een patrijspoort. Titel in Baloo 2 700, leeftijd
 en het spelersgetal in Space Mono. Het spelscherm krijgt automatisch dezelfde
@@ -253,7 +253,7 @@ want een kind staat dicht op een wandscherm.
   overdraw op 4K-achtige paneelresoluties te vermijden.
 - **Lazy loading per spel**: elk spel is een apart ES-module + eigen assets,
   dynamisch geïmporteerd (`import()`) zodra de speler het kiest — portal laadt
-  alleen UI-assets, niet alle vierentwintig spellen tegelijk.
+  alleen UI-assets, niet alle achtentwintig spellen tegelijk.
 - **Unified pointer events**: alle input via `pointerdown/move/up` (werkt voor
   touch én muis) i.p.v. aparte touch-/mouse-handlers, met input-throttling op
   `pointermove` waar niet nodig per frame.
@@ -386,19 +386,20 @@ kleuters (Sago Mini, Toca Boca, Lingokids, ElePant, jigsaw/matching-apps zoals
 tastbare elementen, direct visueel/auditief succesgevoel, geen faalstatus die
 als "verlies" aanvoelt, korte sessies. Zie bronnen onderaan dit document.
 
-Alle vierentwintig spellen zitten in hetzelfde ruimtethema en hebben een
+Alle achtentwintig spellen zitten in hetzelfde ruimtethema en hebben een
 **levelprogressie** die lokaal wordt opgeslagen (zie §6b) — op de vier open
 speelgoed-spellen na, die in plaats daarvan hun werk bewaren.
 
-De archiefgeschiedenis in drie lagen: de eerste negen waren de MVP; daarna
+De archiefgeschiedenis in vier lagen: de eerste negen waren de MVP; daarna
 kwamen de "eerste vijf" uit de kandidatenlijst (§6c), gebouwd ná de redesign en
-dus meteen in de nieuwe huisstijl geboren; en daarna is de rest van die
-kandidatenlijst afgebouwd — de tien onderaan. Daarmee is §6c leeg: elk spel dat
-daar ooit is opgeschreven staat nu in deze tabel, op de vijf na die er bewust
-niet komen.
+dus meteen in de nieuwe huisstijl geboren; daarna is de rest van die
+kandidatenlijst afgebouwd — de tien daaronder; en daarna kwamen er nog **vier
+bij die niet uit die lijst kwamen maar uit wat er op het bord het beste bleek te
+werken**: Zeepbellen. Zie "Vier spellen die uit Zeepbellen zijn voortgekomen"
+hieronder.
 
 De drie gaten die §6c benoemde zijn daarmee ook echt dicht. **2–4 jaar** heeft
-nu vijf spellen in plaats van één. **Gelijktijdig samenspelen** heeft er zes,
+nu vijf spellen in plaats van één. **Gelijktijdig samenspelen** heeft er tien,
 waaronder één met vier stoelen. En de ontbrekende genres — muziek, tellen,
 letters, logica, reactie — hebben allemaal minstens één spel; letters zelfs het
 enige spel in de bundel dat écht Nederlands moet zijn om te werken.
@@ -414,7 +415,11 @@ enige spel in de bundel dat écht Nederlands moet zijn om te werken.
 | **Brandstof Sorteren**    | Water-sort           | 5–7      | 1P      | Giet raketbrandstof tot elke tank één kleur is. Kleuren 3→7 en reservetanks 2→1 met het level. **Undo** altijd beschikbaar, want de puzzel kan doodlopen en dan moet een kind niet opnieuw hoeven beginnen. |
 | **Ruimte Invasie**        | Space Invaders       | 5–7      | 1P & 2P | **Moeilijkheidskeuze vooraf** (makkelijk / gewoon / moeilijk; op moeilijk schieten de aliens terug en hebben de schepen een schildbalk). Vijf alientypes met eigen silhouet en gedrag — inktvis, schotel, kever, splitser die in tweeën breekt, en zijn kleintjes — plus **drie afwisselende eindbosses** (Kwalmonster, Sterrenkrab, Het Grote Oog), een bonusschotel en power-ups (drievoudig schot, sneller vuren, schild). De zwerm keert altijd om ruim **boven de schepen**, zodat aliens nooit onschietbaar laag komen. |
 | **Asteroïdenveld**        | Breakout             | 6–7      | 1P & 2P | Asteroïden met 1–3 hits, vier **veldpatronen** (vol / schaakbord / piramide / kloof), power-ups (brede vanger, multi-bal, trage bal). 2P = paddles boven én onder, coöperatief. |
-| **Zeepbellen**            | Bellen prikken       | 2–4      | 1P & 2P | Bellen drijven omhoog uit de luchtsluis; prikken met tien vingers tegelijk, dus twee kinderen hoeven geen beurt af te wachten. Elke prik is de volgende noot van een pentatonische loopje. Diepte: kleiner en sneller, vanaf level 3 **splitsen** grote bellen in twee, en pas vanaf level 4 is er een opdracht ("prik alleen de blauwe") — een verkeerd aangetikte bel stuitert weg in plaats van iets te kosten. |
+| **Zeepbellen**            | Bellen prikken       | 2–4      | 1P & 2P | Bellen drijven omhoog uit de luchtsluis; prikken met tien vingers tegelijk, dus twee kinderen hoeven geen beurt af te wachten. Elke prik is de volgende noot van een pentatonische loopje. **Tempokeuze vooraf** (rustig / gewoon / wild) die de hele ladder schaalt, dus een tweejarige en haar oudere zus spelen hetzelfde spel op hun eigen snelheid — op rustig komt de kleuropdracht er nooit, op wild al vanaf level 2. **Vier soorten bel**: gewoon, een **reus** die in vijf uit elkaar spat, een **gouden sterbel** die het hele scherm in cascade laat afgaan, en één met een **passagier** die eruit vliegt en wegzwaait. Diepte verder: kleiner en sneller, vanaf level 3 **splitsen** grote bellen in twee, en vanaf level 4 is er een opdracht ("prik alleen de blauwe") — een verkeerd aangetikte bel stuitert weg in plaats van iets te kosten. |
+| **Hou Ze Hoog**           | Zwevende manen       | 2–5      | 1P & 2P | Zeepbellen met de werkwoordsvorm omgedraaid: een tik laat een maan niet verdwijnen maar **omhoog stuiteren**, en die maan bestaat daarna nog. Elke tik vult een stukje van de amberen ring eromheen; als de ring rond is spat de maan uiteen in sterren. De bodem is een **nevelkussen** en geen vloer: een maan die erin zakt wordt eruit geduwd en dobbert, dus er is niets te verdedigen en niets te verliezen. Manen botsen ook tegen elkaar, wat het enige natuurkundelesje in de bundel is dat een kind met zijn handen vindt. |
+| **Ruimtetikkertje**       | Vangen               | 2–6      | 1P & 2P | Beestjes vluchten voor je vinger; tik er een aan en hij is gevangen. Werkt beter met twee dan alleen, want wat voor de ene hand wegloopt loopt de andere in. Ze worden **moe**: na een paar tellen rennen zakt er een 💤 boven en kan iedereen erbij, dus een driejarige die stilstaat en wacht vangt er net zoveel als een zevenjarige die jaagt. De rups rent sowieso nauwelijks. Eén gedeelde teller, om dezelfde reden als bij Meteoor Meppen. |
+| **Sterrenvangst**         | Vangen met een mand  | 3–6      | 1P & 2P | Elk kind sleept zijn eigen mand onder de vallende sterren. Het eerste spel op het bord waar iets echt **van jou** is — een mand is een ding dat je vasthoudt, dus daar valt niet over te ruziën — terwijl de teller gedeeld blijft. Kleuren komen pas met twee spelers en pas vanaf level 3; een ster in de verkeerde mand stuitert van de rand en krijgt onderweg een tweede kans. Kometen tellen dubbel en vallen sneller. |
+| **Samen Sturen**          | Coöperatief sturen   | 4–7      | 1P & 2P | Eén schip, twee duwers: het linkerpaneel duwt naar links, het rechter naar rechts, dus **rechtdoor vliegen is samen loslaten**. Het enige spel in de bundel dat *ingehouden* wordt in plaats van getikt — een druk kan niet gerammeld worden, dus tiksnelheid is er niets waard en overleg alles. Een poort die je raakt spat uiteen en kost niets; alleen een schone doorgang vult het ruim. Alleen speel je beide panelen zelf, wat een ander en lastiger motorisch probleem is; de ladder is daarop afgesteld. |
 | **Sterrenecho**           | Simon says           | 3–7      | 1P & 2P | Vier tot zes panelen spelen een melodie voor, jij speelt hem na. `chime(n)` indexeert een pentatonische ladder, dus **elke reeks is per constructie muzikaal**. Diepte: lengte 4→8, 4→6 panelen, tempo, en op het laatste level **alleen geluid** als aanwijzing. Fout is geen verlies: het station herhaalt het bericht. 2P coöperatief: je echoot de reeks en zet er zelf één toon bij voor de ander. |
 | **Maanhockey**            | Airhockey            | 3–7      | 1P & 2P | Twee kinderen naast elkaar aan het bord, elk een vanger in de eigen helft; alleen tegen een robot die net iets te laat is. Eerste bij vijf. Diepte: pucksnelheid, vanaf level 3 **twee manen**, level 4 bumpers, level 5 een magneetveld in de middencirkel. Plus een coöperatieve stand "houd de maan in de lucht" met één gedeelde teller, waarin niemand kán verliezen. |
 | **Rover Programmeren**    | Sequencing / logica  | 5–7      | 1P & 2P | Zet ⬆ ⤺ ⤻ in de wachtrij, druk op ▶ en de rover rijdt naar de kristallen. Botsen is stuiteren en doorgaan, en een run die het niet haalde zet het veld terug maar **laat het programma staan** — je past je plan aan in plaats van het opnieuw te bouwen. Diepte: raster 4×4→6×6, obstakels, meer kristallen, en een **×2-token** vanaf level 4. Velden zijn solvable-by-construction (bereikbaarheidscheck vóór ze verschijnen). 2P: om de beurt één opdracht aan één gedeeld programma. |
@@ -430,8 +435,50 @@ enige spel in de bundel dat écht Nederlands moet zijn om te werken.
 | **Letterplaneten**        | Beginletters         | 5–7      | 1P      | Er komt een krat met 🚀 aan: tik de planeet met de **r**. Diepte: eerste letter → laatste letter → met lettertegels het hele woord spellen. **Kleine letters in een leesletter** (zie hieronder). De plaatjes hebben allemaal één onmiskenbare Nederlandse naam — 🐱 (poes of kat?) staat er bewust *niet* in, want een kind dat "kat" denkt heeft geen fout gemaakt. |
 | **Sterrenrij**            | Vier op een rij      | 5–7      | 1P & 2P | Laat planeten in een kolom vallen; de zwaartekracht stapelt ze. Het enige spel waarin twee kinderen tégen elkaar **nadenken**. Het bord schaalt helemaal terug naar drie-op-een-rij op 3×3 — geen uitgeklede versie, maar hetzelfde spel met een horizon die in een kinderhoofd past. Alleen speel je de stationscomputer: die pakt een winst, blokkeert een verlies, en gaat vanaf level 4 ook niet meer meteen zitten weggeven.
 
+### Vier spellen die uit Zeepbellen zijn voortgekomen
+
+De kandidatenlijst was leeg en het bord vroeg om meer spellen voor twee
+kinderen tegelijk. De keuze kwam deze keer niet uit een gat in een tabel maar
+uit wat er in een lokaal het beste bleek te werken: **Zeepbellen**. Dat spel doet
+één ding dat de rest niet doet — het neemt tien vingers tegelijk aan zonder
+zones, beurten of regels, en dus staan er twee kinderen aan het bord die niet op
+elkaar hoeven te wachten. De vier nieuwe spellen zijn elk één variatie op dat
+principe, en ze zijn expres alle vier een ánder werkwoord:
+
+- **prikken** → Zeepbellen (bestond al)
+- **duwen** → Hou Ze Hoog. Hetzelfde gebaar, maar wat je aanraakt blijft
+  bestaan en beweegt. Voor het kind dat "vinger doet iets weg" al snapt en aan
+  "vinger doet iets bewegen" toe is.
+- **achtervolgen** → Ruimtetikkertje. Het doel beweegt, en het beweegt weg van
+  je. Dat is het eerste spel in de bundel waar twee handen aantoonbaar meer zijn
+  dan één hand die twee keer zo hard werkt.
+- **opvangen** → Sterrenvangst. Van tikken naar slepen, en van een gedeeld vlak
+  naar een eigen voorwerp — het enige van de vier waar elk kind iets vasthoudt.
+- **inhouden** → Samen Sturen. De tegenpool: geen tikken, maar twee panelen die
+  ingedrukt gehóuden worden en samen één schip zijn. Tiksnelheid, het ding
+  waarmee een zevenjarige normaal over een driejarige heen walst, is hier
+  letterlijk waardeloos.
+
+Wat ze delen met het origineel: geen timer, geen beurt, geen zone, en geen enkele
+manier om te verliezen. Wat ze eraan toevoegen aan de gedeelde laag: **niets**.
+Alle vier passen op `createHud`, `showMissionComplete`, `setupCanvas`, `drawGlow`,
+`createBurst` en `progress.js` zoals die er al lagen — inclusief het
+moeilijkheidsscherm, dat gewoon het patroon van Ruimte Invasie kopieert.
+
+Zeepbellen zelf is bij deze ronde ook aangepakt, en op twee punten die elk hun
+eigen les zijn. **Het tempo is een keuze geworden en geen level.** De ladder
+draaide alle knoppen tegelijk, dus een kind dat op level 2 gelukkig was moest
+level 6's snelheid accepteren om level 6's bellen te zien; de keuze vooraf
+(rustig / gewoon / wild) schaalt de hele ladder in plaats van hem te vervangen,
+zodat een kind zijn plek in het spel houdt als het tempo voor hem wordt
+bijgesteld. En **een scherm vol identieke bellen is een scherm waar je naar
+ophoudt te kijken**: er zijn nu vier soorten, en geen ervan kan een vergissing
+zijn om aan te raken. Dat laatste is geen detail maar de regel — een tweejarige
+kan "dit moet je vermijden" niet onderscheiden van "dit spel deed me pijn", dus
+elke verrassing in dit spel is een leuke.
+
 ### Ontwerpkeuze: geen verliesstatus
-Geen van de vierentwintig spellen kent "game over". Aliens die de onderkant
+Geen van de achtentwintig spellen kent "game over". Aliens die de onderkant
 halen trekken zich terug naar boven; een geraakt schip wordt na een paar tellen
 gerepareerd; een verloren bal komt gewoon terug in het midden; een verkeerd
 geplaatst puzzelstuk zweeft terug; een verkeerde toon in Sterrenecho laat het
@@ -507,7 +554,7 @@ die inmiddels beslist zijn.
 **Progressie** (`src/shell/progress.js`): elk spel schrijft het hoogst
 bereikte level naar `localStorage`. Het portaal leest dat terug als een
 amberen voortgangsbalk op de missierij, zodat een kind ziet hoe ver het in
-elk spel is — de hub voelt daardoor als één geheel in plaats van vierentwintig
+elk spel is — de hub voelt daardoor als één geheel in plaats van achtentwintig
 losse spellen die elke sessie op nul beginnen. Dezelfde vijf-levelladder voedt de
 drie sterren op het beloningsscherm (`starsForLevel`); die sterren zijn
 bewust géén prestatiecijfer. Op één na meet geen van deze spellen *hoe goed* een
@@ -574,16 +621,24 @@ Nieuwe spellen hoeven daar niets voor te registreren.
   programma of één gedeelde toren, dus er is niets te winnen van elkaar.
   Sterrenrij is de enige waar je echt tegen elkaar speelt.
 - **Gelijktijdig split-zone** (Ruimte Invasie, Blokken Brekker, Maanhockey,
-  Magneetstrijd, Raketrace): scherm fysiek verdeeld in een linker- en
-  rechterhelft (of in banen), elke speler heeft een eigen touch-zone en eigen
+  Magneetstrijd, Raketrace, Samen Sturen): scherm fysiek verdeeld in een linker-
+  en rechterhelft (of in banen), elke speler heeft een eigen touch-zone en eigen
   kleur, zodat twee kinderen tegelijk op hetzelfde 75"-scherm kunnen spelen
   zonder elkaars input te kapen. Raketrace zet er desgevraagd vier naast elkaar.
-- **Coöperatief gedeeld** (Tekenen, Zeepbellen, Sterrenorkest, Maak je Maatje,
-  Meteoor Meppen, Alien Verstoppertje, Ladingcontrole): beide spelers werken vrij
-  op hetzelfde vlak, geen zone-scheiding nodig — het bord neemt gewoon tien
-  vingers tegelijk aan. Bij Meteoor Meppen is dat ook de reden dat er één
-  gedeelde teller is in plaats van twee: met tien vingers op hetzelfde glas is er
-  geen eerlijke manier om te bepalen wiens vinger er eerst was, en zo'n regel
+  Samen Sturen is de omkering van het idee: twee zones, maar één voorwerp, dus
+  de zones werken alleen samen.
+- **Gelijktijdig, eigen voorwerp** (Sterrenvangst): geen zone — beide manden
+  mogen overal komen — maar elk kind houdt iets vast. Een vinger pakt de
+  dichtstbijzijnde mand die nog vrij is en houdt hem tot hij loslaat, en dat is
+  precies wat voorkomt dat de grootste er twee pakt. Het beste van de twee
+  werelden voor 3–6: iets van jezelf, zonder een streep over het bord.
+- **Coöperatief gedeeld** (Tekenen, Zeepbellen, Hou Ze Hoog, Ruimtetikkertje,
+  Sterrenorkest, Maak je Maatje, Meteoor Meppen, Alien Verstoppertje,
+  Ladingcontrole): beide spelers werken vrij op hetzelfde vlak, geen
+  zone-scheiding nodig — het bord neemt gewoon tien vingers tegelijk aan. Bij
+  Meteoor Meppen en Ruimtetikkertje is dat ook de reden dat er één gedeelde
+  teller is in plaats van twee: met tien vingers op hetzelfde glas is er geen
+  eerlijke manier om te bepalen wiens vinger er eerst was, en zo'n regel
   verzinnen betekent erover ruziën.
 
 **De eerlijkheidsregel die de nieuwe 2P-spellen delen.** Magneetstrijd en
@@ -595,6 +650,16 @@ geen effect. Daarmee is het spel reactie (Magneetstrijd) of ritme (Raketrace) in
 plaats van tiksnelheid, en dat verschil is over vier jaar leeftijd heen veel
 kleiner. Magneetstrijd kan er bovendien een voorsprong bovenop leggen.
 
+De vier nieuwste doen hetzelfde met andere middelen, en telkens zit de
+eerlijkheid ín de mechaniek in plaats van in een regel erboven. **Samen Sturen**
+laat zich niet rammen: een paneel wordt ingehouden, en tien keer per seconde
+drukken is precies zo hard duwen als één keer. **Ruimtetikkertje** laat zijn
+beestjes moe worden, dus een kind dat stilstaat en wacht vangt er evenveel als
+een kind dat jaagt — en de rups rent sowieso niet. **Sterrenvangst** geeft ieder
+een eigen mand die niet afgepakt kan worden zolang er een vinger op ligt. En
+**Hou Ze Hoog** heeft geen wedstrijd om te winnen: de ring van een maan vult zich
+door wie hem ook aantikt.
+
 ## 6c. Kandidaat-spellen (afgebouwd)
 
 Deze lijst was de voorraad voor ná de visuele redesign: er werd niets uit
@@ -603,7 +668,12 @@ nieuwe huisstijl geboren wordt in plaats van erna omgebouwd te moeten worden.
 **Die voorraad is nu leeg.** Eerst de "eerste vijf", daarna de overige tien —
 alle vijftien staan in de tabel van §6. Wat hieronder overblijft is het
 archief van de argumentatie: welk gat elk spel vulde, wat er bewust *niet*
-komt, en de twee open keuzes, die inmiddels beslist zijn.
+komt, en de twee open keuzes, die inmiddels beslist zijn. De vier spellen die
+ná deze lijst gebouwd zijn (Hou Ze Hoog, Ruimtetikkertje, Sterrenvangst, Samen
+Sturen) staan hier bewust niét in: die kwamen niet uit een voorraad maar uit
+één spel dat op het bord bleek te werken. Zie "Vier spellen die uit Zeepbellen
+zijn voortgekomen" in §6 — dat is sindsdien de betere manier om te kiezen wat
+er bij komt dan een lijst vooraf.
 
 De keuzes kwamen niet uit een wensenlijst maar uit drie gaten in de negen
 spellen van de MVP:
@@ -659,6 +729,7 @@ wat het beste bewijs is dat die laag klopt:
 - **`src/shell/maatje.js`** — het gedeelde maatje, formaat plus tekening.
 - **Zes rijen in het missierooster** — de patrijspoort in het rooster ging van
   10vmin naar 8vmin, want vierentwintig missies in vier kolommen zijn zes rijen
+  (en achtentwintig er zeven)
   en die liepen op de oude rijhoogte van een 16:9-bord af. Vijf kolommen zou
   maar vijf rijen kosten, maar dan is een kolom op 1080p zo'n 350px en breekt
   "Rover Programmeren" over twee regels — dat kost de gewonnen rijhoogte weer en
@@ -699,7 +770,7 @@ wel voor wie leest — maar hij is nergens de enige.
   `maxPlayers`, een getal, en het rooster zet dat als badge (`2P` / `4P`) op de
   missierij. De crewkeuze in §5 vraagt echter nog steeds alleen 1 of 2, en dat
   is een bewuste keuze: die vraag gaat over om-de-beurt spelen, en als de portal
-  "4 astronauten" zou aanbieden dan opent drieëntwintig van de vierentwintig
+  "4 astronauten" zou aanbieden dan opent zevenentwintig van de achtentwintig
   missies alsnog als 2P — dat is een keuze die niet doet wat hij belooft.
   Hoeveel raketten er op de baan staan is een eigenschap van de race, dus
   Raketrace vraagt het zelf op zijn startscherm, net zoals Ruimte Invasie zijn
@@ -760,7 +831,7 @@ simuleren, en per spel controleren op:
   buiten zijn eigen doos loopt geeft géén paginaoverflow, dus die controle mist
   het; dit is de check die het overlopende stenenveld van Alien Verstoppertje
   ving;
-- het missierooster: vierentwintig rijen die op één scherm passen zonder
+- het missierooster: achtentwintig rijen die op één scherm passen zonder
   scrollen, en geen titel die over twee regels breekt;
 - **een afgelopen animatie die nog vooruit staat te vullen** — de check die uit
   de fill-mode-les van §2b is gegroeid, en die de volgende keer meteen aanwijst
@@ -785,6 +856,19 @@ te bewijzen.
 (3840×2160) zijn ze 112 respectievelijk 142px en dus ruim in orde; ze groter
 maken op 1080p zou de twee dichte werkbalken over het speelveld duwen. Bewust
 zo gelaten, niet vergeten.
+
+De vier Zeepbellen-spellen zijn langs diezelfde harness gegaan, op 1P én 2P en
+op beide resoluties: nul console- of pagefouten, geen overflow, geen knop buiten
+beeld, geen animatie die vooruit staat te vullen, en het rooster past met
+achtentwintig rijen nog steeds op één scherm zonder dat een titel over twee
+regels breekt. Alle vijf (de vier nieuwe plus het herziene Zeepbellen) zijn ook
+echt **uitgespeeld** tot het beloningsscherm — de meter van 0 naar 100% — want
+een spel dat niet crasht is nog geen spel dat scoort. De framerate ligt op een
+4K-viewport in headless *software*-rendering op 33–39 fps, exact hetzelfde als
+wat de bestaande spellen daar halen (Meteoor Meppen 33, Maanhockey 38, Toren
+Bouwen 39): dat is de rasteriser zonder GPU, geen regressie. Die vergelijking is
+er sindsdien standaard bij, want een absoluut fps-getal uit een headless browser
+zegt in zijn eentje niets.
 
 Naast de generieke sweep worden de nieuwe spellen ook echt *gespeeld* in de
 harness — een reeks echoën in Sterrenecho, een programma laten lopen tot de
@@ -838,6 +922,27 @@ screenshot te zien waren:
    (`grid-auto-rows: 1fr`), en de harness controleert sindsdien of knoppen buiten
    het scherm vallen.
 
+En één uit de ronde van de vier Zeepbellen-spellen, die alleen op een screenshot
+te zien was en meteen de reden is dat er screenshots gemaakt worden:
+
+9. **Onzichtbare gaspanelen** — Samen Sturen tekende zijn twee bedieningspanelen
+   in een `drawPad()` die nooit werd aangeroepen. Het spel deed het verder
+   perfect: de panelen luisterden, het schip vloog, de poorten telden, de harness
+   vond nul fouten en zestig frames per seconde. Alleen stond er niets op het
+   scherm dat vertelde waar je moest drukken, en dat is in een spel waarvan de
+   *hele* uitleg in die twee pijlen zit precies het verschil tussen een spel en
+   een sterrenveld. Geen enkele geautomatiseerde controle vangt dit — een canvas
+   met een schip en poorten erop is niet uniform van kleur, dus alles was groen.
+   Een mens die naar het plaatje kijkt vangt het in een seconde.
+
+Bij dezelfde ronde kwamen er nog drie dingen uit het kijken die geen fout waren
+maar wel verkeerd: manen die in Hou Ze Hoog als een dood rijtje op de vloer
+lagen (het kussen is nu drijvend, dus ze dobberen), beestjes in Ruimtetikkertje
+die op elkaar gingen staan omdat ze allemaal voor dezelfde vinger dezelfde kant
+op vluchten (ze duwen elkaar nu weg), en een komeetstaart in Sterrenvangst die
+als een buis aan de ster hing in plaats van als snelheid (nu een taps toelopende
+driehoek).
+
 ## 8. Deployment via GitHub Actions → GitHub Pages
 
 1. Repo `milanzor/digigamez` op GitHub (via `gh repo create`).
@@ -857,8 +962,8 @@ screenshot te zien waren:
 **Gebouwd**:
 - Volledige projectstructuur + build-tooling (Vite).
 - Portal met 1P/2P-keuze, instellingenscherm en een missierooster van
-  vierentwintig rijen op vier kolommen.
-- Alle vierentwintig spellen als speelbare modules met polish (geluid, animatie,
+  achtentwintig rijen op vier kolommen.
+- Alle achtentwintig spellen als speelbare modules met polish (geluid, animatie,
   1P/2P/4P waar van toepassing): de negen van de MVP, de eerste vijf uit de
   kandidatenlijst, en de tien waarmee die lijst is afgebouwd.
 - Het gedeelde maatje (`src/shell/maatje.js`), dat het wezen uit Maak je Maatje

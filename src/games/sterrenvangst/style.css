@@ -1,0 +1,100 @@
+.vang-stage {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: var(--void-deep);
+}
+
+.vang-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* The rule as a picture, in the strip below the baskets: a star, an arrow, the
+   basket it belongs in. Same panel as Zeepbellen's legend and for the same
+   reason — it has to stay on screen for the whole level, because the child it
+   is for cannot re-read a message that has faded. */
+.vang-legend {
+  position: absolute;
+  left: 50%;
+  bottom: var(--sp-2);
+  transform: translateX(-50%);
+  z-index: 10;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-1) var(--sp-4);
+  border-radius: var(--r-pill);
+  background: rgba(5, 7, 15, 0.7);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule-mid);
+}
+
+.vang-legend__item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.vang-legend__star {
+  font-family: var(--font-display);
+  line-height: 1;
+  font-size: clamp(20px, 3.2vmin, 70px);
+  color: var(--c);
+  text-shadow: 0 0 clamp(6px, 1.2vmin, 26px) var(--c);
+}
+
+.vang-legend__arrow {
+  font-family: var(--font-display);
+  font-weight: 800;
+  line-height: 1;
+  font-size: clamp(13px, 2.1vmin, 46px);
+  color: var(--amber);
+}
+
+/* The basket, drawn the same way the canvas draws it: an open rim, tapering
+   sides, a rounded bottom. A coloured square would not be the same object. */
+.vang-legend__basket {
+  position: relative;
+  width: clamp(30px, 4.8vmin, 105px);
+  height: clamp(20px, 3.2vmin, 70px);
+  border: solid var(--c);
+  border-width: 0 clamp(2px, 0.3vmin, 6px) clamp(2px, 0.3vmin, 6px);
+  border-radius: 0 0 44% 44%;
+  background: color-mix(in srgb, var(--c) 16%, transparent);
+}
+
+/* The rim overhangs the sides exactly as the painted one does. */
+.vang-legend__basket::before {
+  content: '';
+  position: absolute;
+  left: calc(-1 * clamp(2px, 0.3vmin, 6px));
+  right: calc(-1 * clamp(2px, 0.3vmin, 6px));
+  top: 0;
+  height: clamp(3px, 0.45vmin, 9px);
+  border-radius: var(--r-pill);
+  background: var(--c);
+}
+
+/* The gold star goes in either basket, so its pictogram is one basket painted
+   in both crews' colours — a rule about two baskets drawn as two baskets. */
+.vang-legend__basket.is-both {
+  border-left-color: var(--c1);
+  border-right-color: var(--c2);
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--c1) 16%, transparent) 50%,
+    color-mix(in srgb, var(--c2) 16%, transparent) 50%);
+}
+
+.vang-legend__basket.is-both::before {
+  background: linear-gradient(90deg, var(--c1) 50%, var(--c2) 50%);
+}
+
+.vang-legend__sep {
+  width: var(--hair);
+  align-self: stretch;
+  background: var(--rule-mid);
+}
+
+/* No colour task: one star and one basket, nothing to compare it against. */
+.vang-legend--simple { padding: var(--sp-1) var(--sp-3); }

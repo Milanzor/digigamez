@@ -36,6 +36,15 @@ export const GAMES = [
     load: () => import('./zeepbellen/index.js'),
   },
   {
+    slug: 'hou-ze-hoog',
+    title: 'Hou Ze Hoog',
+    icon: '🎈',
+    ageLabel: '2–5 jr',
+    maxPlayers: 2,
+    color: '#ff8fc7',
+    load: () => import('./hou-ze-hoog/index.js'),
+  },
+  {
     slug: 'verstoppertje',
     title: 'Alien Verstoppertje',
     icon: '🙈',
@@ -43,6 +52,15 @@ export const GAMES = [
     maxPlayers: 2,
     color: '#ff6b6b',
     load: () => import('./verstoppertje/index.js'),
+  },
+  {
+    slug: 'tikkertje',
+    title: 'Ruimtetikkertje',
+    icon: '🐙',
+    ageLabel: '2–6 jr',
+    maxPlayers: 2,
+    color: '#b98cff',
+    load: () => import('./tikkertje/index.js'),
   },
   {
     slug: 'magneetstrijd',
@@ -88,6 +106,15 @@ export const GAMES = [
     maxPlayers: 2,
     color: '#ff6b6b',
     load: () => import('./geheugenspel/index.js'),
+  },
+  {
+    slug: 'sterrenvangst',
+    title: 'Sterrenvangst',
+    icon: '🧺',
+    ageLabel: '3–6 jr',
+    maxPlayers: 2,
+    color: '#5fe3c4',
+    load: () => import('./sterrenvangst/index.js'),
   },
   {
     slug: 'ladingcontrole',
@@ -160,6 +187,15 @@ export const GAMES = [
     maxPlayers: 1,
     color: '#ff8fc7',
     load: () => import('./gekke-machine/index.js'),
+  },
+  {
+    slug: 'samen-sturen',
+    title: 'Samen Sturen',
+    icon: '🛸',
+    ageLabel: '4–7 jr',
+    maxPlayers: 2,
+    color: '#8fd6ff',
+    load: () => import('./samen-sturen/index.js'),
   },
   {
     slug: 'leidingen',

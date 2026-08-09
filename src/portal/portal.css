@@ -321,10 +321,13 @@
    the name, the age and the progress on one reading line, so the eye scans
    down a column instead of decoding a tile.
 
-   Twenty-four of them go in four columns of six. The archive has to be one
+   Twenty-eight of them go in four columns of seven. The archive has to be one
    screen — a grid that scrolls is a grid where a child never finds the last
-   mission — and six rows only fit because the row got shorter: the porthole is
-   8vmin here rather than 10.
+   mission — and seven rows only fit because the row got shorter: the porthole
+   is 8vmin here rather than 10. A row is then about 99px on a 1080p board and
+   the seven of them plus the top bar come to roughly 980 of the 1080 available,
+   which is measured rather than assumed; the vmin scale rule makes the same
+   sum hold on a 4K panel.
 
    Four columns rather than five, even though five would need only five rows.
    At five columns a 1080p board gives each one about 350px, and "Rover
@@ -408,7 +411,7 @@
 }
 
 /* 8vmin, not 10: six rows of a 10vmin porthole ran off the bottom of a 16:9
-   board once the archive reached twenty-four. */
+   board once the archive reached twenty-four, and there are seven rows now. */
 .mission__icon {
   width: clamp(46px, 8vmin, 180px);
   height: clamp(46px, 8vmin, 180px);
