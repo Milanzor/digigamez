@@ -58,21 +58,33 @@ const GRID_H = Math.ceil(LOGICAL_HEIGHT / CELL) + 1;
 const SLOW_SCALE = 0.3;
 
 const BELT_SPEED = 660;
-const WIP_ARM = 190;
-// The seesaw is heavy compared to a marble: a plank light enough to be flipped
-// by one falling ball is a plank that never sits still long enough to aim.
-const WIP_INERTIA = 130000;
 const SPINNER_SPEED = 2.1;
 const KEGEL_KNOCK = 360;
 const TRAIL_LEN = 26;
 
+// Wip and flipper are the same swinging plank in two tunings — a long, heavy
+// seesaw that a marble tips, and a short, light paddle that snaps back on its
+// own once you tap it — so one table covers both instead of a duplicated
+// spring branch in `step` and a duplicated arm in `collectSegs`/`drawPart`.
+const SEESAW_MATS = {
+  // The seesaw is heavy compared to a marble: a plank light enough to be
+  // flipped by one falling ball is a plank that never sits still long enough
+  // to aim.
+  wip: { arm: 190, spring: 6, damping: 1.4, inertia: 130000, kick: 0 },
+  // A flipper is a player action, not a marble-driven plank: short and light
+  // so it snaps back fast, and its tap gives it a kick instead of only ever
+  // reacting to what hits it.
+  flipper: { arm: 110, spring: 15, damping: 2.4, inertia: 40000, kick: 9 },
+};
+
 // Plank, ijsplank and kauwgomplank are the same part in three materials — one
 // spec table instead of three near-identical branches in `collectSegs` and
-// `drawPart`, the same trick `drops` already plays for the two taps below.
+// `drawPart`, the same trick `drops` already plays for the taps below.
 const PLANK_MATS = {
   plank: { color: '#c9a06a', e: 0.42, w: 10, grip: 1 },
   iceplank: { color: '#8fd6ff', e: 0.5, w: 10, grip: 0.08 },
   stickyplank: { color: '#ff8fc7', e: 0.22, w: 10, grip: 3.2 },
+  rubberplank: { color: '#ff6b6b', e: 0.78, w: 10, grip: 1 },
 };
 
 const PARTS = {
@@ -83,24 +95,57 @@ const PARTS = {
   ice: { icon: '🧊', name: 'IJsklontje — glijdt bijna overal doorheen', body: { r: 24, e: 0.25, drag: 0.9992, grip: 0.15, m: 0.6 } },
   kogel: { icon: '🪨', name: 'Zware kogel — duwt alles opzij', body: { r: 30, e: 0.12, drag: 0.999, m: 4 } },
   wolk: { icon: '☁️', name: 'Wolkje — heel licht en zweeft weg', body: { r: 32, e: 0.55, drag: 0.975, g: -0.2, m: 0.25 } },
+  diamant: { icon: '💎', name: 'Diamant — stuitert bijna eeuwig door', body: { r: 20, e: 0.95, drag: 0.9993, m: 0.5 } },
+  strandbal: { icon: '🏐', name: 'Strandbal — groot, licht en stuiterig', body: { r: 46, e: 0.86, drag: 0.994, m: 0.4 } },
+  // Magnetisch en niet-magnetisch zijn dezelfde knikker met één vlag erbij (zie
+  // `b.magnetic`/`b.noMagnet` in de krachten-lus), zodat een magneet pas een
+  // keuze wordt: knikkers zonder vlag reageren zoals altijd, deze twee juist
+  // sterk meer of helemaal niet.
+  ijzerknikker: { icon: '🔩', name: 'IJzerknikker — een magneet grijpt hem extra hard', body: { r: 26, e: 0.28, drag: 0.999, m: 1.6, magnetic: true } },
+  houtknikker: { icon: '🪵', name: 'Houtknikker — een magneet doet hier niets mee', body: { r: 26, e: 0.5, drag: 0.999, noMagnet: true } },
   plank: { icon: '📏', name: 'Plank', seg: true },
   iceplank: { icon: '❄️', name: 'IJsplank — knikkers glijden er zo overheen', seg: true },
   stickyplank: { icon: '🍬', name: 'Kauwgomplank — knikkers plakken er bijna aan vast', seg: true },
+  rubberplank: { icon: '🏓', name: 'Rubberplank — extra stuiterend', seg: true },
   tramp: { icon: '🛟', name: 'Trampoline', seg: true },
   belt: { icon: '🛞', name: 'Transportband — tik erop om te draaien', seg: true },
   wip: { icon: '⚖️', name: 'Wip' },
+  // Same seesaw physics as wip (see SEESAW_MATS), but tapping it gives it a
+  // kick instead of only reacting to what lands on it — the one part in the
+  // bundel a child aims instead of just building.
+  flipper: { icon: '💪', name: 'Flipper — tik hem om te slaan' },
   spinner: { icon: '🌀', name: 'Molen' },
   kegel: { icon: '🎳', name: 'Kegel' },
   bel: { icon: '🔔', name: 'Klokkenspel' },
   stoter: { icon: '🛎️', name: 'Stoter — stuitert knikkers keihard weg' },
+  // Same bump as the stoter (`s.bump`, `bumpHit`), just softer and without the
+  // fling, so it reads as "press for points" instead of "bounce off hard".
+  drukknop: { icon: '🔴', name: 'Drukknop — geeft een punt bij elke tik' },
   klep: { icon: '🚪', name: 'Klep — gaat om de beurt open en dicht', seg: true },
+  // A one-shot bonus, like the bomb's `p.spent` but with no push at all —
+  // just points, sparkles and a sound, so it reads as a treat and not a trap.
+  cadeau: { icon: '🎁', name: 'Cadeau — geeft drie punten in één keer' },
+  // The bomb's neighbour that never removes a marble: pass through the ring
+  // for a point instead of falling into something, as many times as it likes.
+  hoepel: { icon: '⭕', name: 'Hoepel — een punt voor elke knikker die erdoorheen gaat' },
   fan: { icon: '💨', name: 'Ventilator — tik erop om te draaien', dir: true },
+  // The fan's mirror image: same cone, same aiming gesture, negative power —
+  // see the shared `fan`/`zuigfan` branch in the krachten-lus.
+  zuigfan: { icon: '🌬️', name: 'Zuigfan — zuigt knikkers naar zich toe', dir: true },
   kanon: { icon: '💥', name: 'Kanon — tik erop om te draaien', dir: true },
   magnet: { icon: '🧲', name: 'Magneet — tik erop om te wisselen tussen trekken en duwen' },
   hole: { icon: '🕳️', name: 'Zwart gat' },
   stroop: { icon: '🍯', name: 'Stroop' },
   bomb: { icon: '💣', name: 'Bom' },
   wervel: { icon: '🌪️', name: 'Wervelwind — tik erop om de draairichting te wisselen' },
+  // Draait de zwaartekracht om voor alles wat er binnenin zweeft — dezelfde
+  // ene vermenigvuldiging als een heel landschap, alleen dan in een kring in
+  // plaats van over de hele werkbank.
+  zwaartekrachtbel: { icon: '🫧', name: 'Zwaartekrachtbel — draait de zwaartekracht binnenin om' },
+  // Geen nieuwe natuurkunde: elders al `b.grip` gebruiken de wolk zet die kort
+  // heel laag voor iedereen die er doorheen vliegt, net als een ijsplank maar
+  // dan los in de lucht.
+  ijswolk: { icon: '🌨️', name: 'IJswolk — knikkers glijden er zo doorheen' },
   // The taps that keep a machine fed. `drops` is what makes them one thing
   // rather than separate branches: the spawn interval, the push it leaves
   // with, the colour of the housing and — for the geiser — whether it spouts
@@ -111,27 +156,36 @@ const PARTS = {
   fountain: { icon: '⛲', name: 'Knikkerkraan', drops: { body: 'marble', every: 0.85, vy: 140, tint: '#8fd6ff' } },
   hopper: { icon: '🚰', name: 'Stuiterkraan', drops: { body: 'bouncy', every: 1.05, vy: 110, tint: '#ff8a3d' } },
   geiser: { icon: '🌋', name: 'Geiser — spuit knikkers omhoog', drops: { body: 'marble', every: 1.1, vy: 950, up: true, tint: '#ff8fc7' } },
+  kogelkraan: { icon: '🗿', name: 'Kogelkraan — laat zware kogels vallen', drops: { body: 'kogel', every: 1.6, vy: 60, tint: '#6b6b76' } },
+  wolkkraan: { icon: '🌥️', name: 'Wolkenkraan — laat wolkjes los', drops: { body: 'wolk', every: 1.3, vy: 40, tint: '#e8ecf8' } },
+  ballonkraan: { icon: '🎪', name: 'Ballonnenkraan — laat ballonnen los', drops: { body: 'balloon', every: 1.4, vy: 60, tint: '#ff8fc7' } },
   beam: { icon: '🛸', name: 'Beamer — zet er twee neer' },
   basket: { icon: '🪣', name: 'Emmer' },
+  // Regenwolk is de enige toevoer die over een breedte spant in plaats van op
+  // één punt te staan (zie `p.type === 'regenwolk'` in `step`): elke druppel
+  // komt van een willekeurige plek op die breedte, dus het is nooit dezelfde
+  // knikker op dezelfde plek.
+  regenwolk: { icon: '🌧️', name: 'Regenwolk — laat knikkers los over een hele breedte', seg: true },
 };
 
-// Tabs instead of one long wrapping row: thirty buildable parts in one row
-// would wrap four or five deep and eat the bench. Each tab holds seven or
-// fewer parts, so switching a tab never costs more than the one row it shows.
+// Trays instead of one long wrapping row: forty-six buildable parts in one
+// row would wrap deep and eat the bench. Each tray pops open on its own
+// (see `buildToolbar`), so there is no ceiling on how many parts a category
+// holds — the tray itself wraps instead of the toolbar.
 const CATEGORIES = [
-  { id: 'ballen', icon: '🔵', label: 'Ballen', parts: ['marble', 'bouncy', 'balloon', 'rocket', 'ice', 'kogel', 'wolk'] },
-  { id: 'banen', icon: '📏', label: 'Banen', parts: ['plank', 'iceplank', 'stickyplank', 'tramp', 'belt', 'wip', 'spinner'] },
-  { id: 'doelen', icon: '🎯', label: 'Doelen', parts: ['kegel', 'bel', 'stoter', 'klep', 'basket'] },
-  { id: 'krachten', icon: '🧲', label: 'Krachten', parts: ['fan', 'kanon', 'magnet', 'hole', 'stroop', 'bomb', 'wervel'] },
-  { id: 'toevoer', icon: '⛲', label: 'Toevoer', parts: ['fountain', 'hopper', 'geiser', 'beam'] },
+  { id: 'ballen', icon: '🔵', label: 'Ballen', parts: ['marble', 'bouncy', 'balloon', 'rocket', 'ice', 'kogel', 'wolk', 'diamant', 'strandbal', 'ijzerknikker', 'houtknikker'] },
+  { id: 'banen', icon: '📏', label: 'Banen', parts: ['plank', 'iceplank', 'stickyplank', 'rubberplank', 'tramp', 'belt', 'wip', 'flipper', 'spinner'] },
+  { id: 'doelen', icon: '🎯', label: 'Doelen', parts: ['kegel', 'bel', 'stoter', 'drukknop', 'klep', 'cadeau', 'hoepel', 'basket'] },
+  { id: 'krachten', icon: '🧲', label: 'Krachten', parts: ['fan', 'zuigfan', 'kanon', 'magnet', 'hole', 'stroop', 'bomb', 'wervel', 'zwaartekrachtbel', 'ijswolk'] },
+  { id: 'toevoer', icon: '⛲', label: 'Toevoer', parts: ['fountain', 'hopper', 'geiser', 'kogelkraan', 'wolkkraan', 'ballonkraan', 'beam', 'regenwolk'] },
 ];
 
-// Six worlds, one number each: everything else in the simulation reads
-// gravity through this one multiplier, so a new landscape is just a new row
-// here plus a bit of paint in `landscapeTerrain()`/`drawBench()`. Negative
-// gravity needed no special case either — every ball still asks the same
-// `BASE_GRAVITY * landscape.gravity * b.g`, and the floor/ceiling bounce is
-// already symmetric, so "everything falls up" fell out of a minus sign.
+// Seven worlds, one or two numbers each: everything else in the simulation
+// reads gravity through this one multiplier, so a new landscape is just a
+// new row here plus a bit of paint in `landscapeTerrain()`/`drawBench()`.
+// Negative gravity needed no special case either — every ball still asks the
+// same `BASE_GRAVITY * landscape.gravity * b.g`, and the floor/ceiling bounce
+// is already symmetric, so "everything falls up" fell out of a minus sign.
 const LANDSCAPES = [
   { id: 'station', name: 'Ruimtestation', icon: '🛰️', gravity: 1, sub: 'Normale zwaartekracht' },
   { id: 'moon', name: 'De Maan', icon: '🌕', gravity: 0.17, sub: 'Bijna geen zwaartekracht!' },
@@ -139,6 +193,10 @@ const LANDSCAPES = [
   { id: 'giant', name: 'Gasreus', icon: '🟠', gravity: 2.4, sub: 'Zware zwaartekracht!' },
   { id: 'zero', name: 'Nulzwaartekracht', icon: '✨', gravity: 0.05, sub: 'Bijna zweven' },
   { id: 'upside', name: 'Op z\'n Kop', icon: '🙃', gravity: -1, sub: 'Alles valt omhoog!' },
+  // The first landscape with a sideways pull as well as a downward one —
+  // `gravityX` defaults to 0 for every other world (see `step`), so this is
+  // one more number added to the same one line the rest already read.
+  { id: 'tilt', name: 'Kantelplaneet', icon: '🪐', gravity: 0.8, gravityX: 0.55, sub: 'Alles waait ook opzij!' },
 ];
 
 const SAVE_KEY = 'gekke-machine';
@@ -322,7 +380,7 @@ function undoBuild() {
 
 // --- preset machines ------------------------------------------------------
 
-// Five machines that already do something, so the dice is a way in for a child
+// Machines that already do something, so the dice is a way in for a child
 // who does not yet know what a magnet or a beamer is for. Each one is built out
 // of the same parts a child places by hand, so they double as worked examples.
 //
@@ -427,6 +485,41 @@ const PRESETS = [
       ['marble', { x: 240, y: 220 }],
     ],
   },
+  {
+    // Iron and wood marbles start together on the same ramp; only the iron
+    // ones feel the magnet floating above it, so the two streams visibly
+    // part ways long before either reaches the basket.
+    name: 'Magneetdans 🧲',
+    parts: [
+      ['magnet', { x: 260, y: 170 }],
+      ['plank', { x: 60, y: 250, x2: 500, y2: 410 }],
+      ['plank', { x: 580, y: 450, x2: 1020, y2: 610 }],
+      ['basket', { x: 1160, y: FLOOR_Y - 64 }],
+      ['kegel', { x: 1500, y: FLOOR_Y - 56 }],
+      ['kegel', { x: 1640, y: FLOOR_Y - 56 }],
+      ['ijzerknikker', { x: 150, y: 210 }],
+      ['houtknikker', { x: 260, y: 190 }],
+      ['ijzerknikker', { x: 370, y: 210 }],
+      ['houtknikker', { x: 440, y: 195 }],
+    ],
+  },
+  {
+    // Two flippers, tapped by hand instead of built around: the drukknoppen
+    // above give something worth aiming for, and the fountain means there is
+    // always another marble on the way down if the last one rolls out.
+    name: 'Flipperkast 💪',
+    parts: [
+      ['fountain', { x: 960, y: 175 }],
+      ['drukknop', { x: 760, y: 340 }],
+      ['drukknop', { x: 960, y: 260 }],
+      ['drukknop', { x: 1160, y: 340 }],
+      ['plank', { x: 600, y: 470, x2: 900, y2: 620 }],
+      ['plank', { x: 1020, y: 620, x2: 1320, y2: 470 }],
+      ['flipper', { x: 780, y: 700 }],
+      ['flipper', { x: 1140, y: 700 }],
+      ['basket', { x: 960, y: FLOOR_Y - 64 }],
+    ],
+  },
 ];
 
 function loadPreset(index) {
@@ -471,7 +564,8 @@ function collectSegs(p, out) {
   switch (p.type) {
     case 'plank':
     case 'iceplank':
-    case 'stickyplank': {
+    case 'stickyplank':
+    case 'rubberplank': {
       const mat = PLANK_MATS[p.type];
       out.push({ x1: p.x, y1: p.y, x2: p.x2, y2: p.y2, e: mat.e, w: mat.w, grip: mat.grip });
       break;
@@ -485,6 +579,11 @@ function collectSegs(p, out) {
       // Same zero-length-segment trick as the bell: a circular hit-shape with
       // no new geometry code, just a very bouncy `e`.
       out.push({ x1: p.x, y1: p.y, x2: p.x, y2: p.y, e: 1.7, w: 40, bump: p });
+      break;
+    case 'drukknop':
+      // The stoter's own trick, just softer and without the fling: pressing
+      // for points reuses `bumpHit` outright, no second handler needed.
+      out.push({ x1: p.x, y1: p.y, x2: p.x, y2: p.y, e: 0.18, w: 36, bump: p });
       break;
     case 'tramp':
       out.push({ x1: p.x, y1: p.y, x2: p.x2, y2: p.y2, e: 1.35, w: 14 });
@@ -503,14 +602,16 @@ function collectSegs(p, out) {
       });
       break;
     }
-    case 'wip': {
+    case 'wip':
+    case 'flipper': {
+      const mat = SEESAW_MATS[p.type];
       const a = p.angle || 0;
       const cos = Math.cos(a);
       const sin = Math.sin(a);
       out.push({
-        x1: p.x - cos * WIP_ARM, y1: p.y - sin * WIP_ARM,
-        x2: p.x + cos * WIP_ARM, y2: p.y + sin * WIP_ARM,
-        e: 0.34, w: 13, rot: p, torque: true,
+        x1: p.x - cos * mat.arm, y1: p.y - sin * mat.arm,
+        x2: p.x + cos * mat.arm, y2: p.y + sin * mat.arm,
+        e: 0.34, w: 13, rot: p, torque: true, inertia: mat.inertia,
       });
       break;
     }
@@ -541,9 +642,10 @@ function collectSegs(p, out) {
 // are the only ones the force loop has to walk, and pulling them out of the
 // part list once per substep is what keeps that loop off the O(parts × bodies)
 // path a bench of nine hundred parts would otherwise put it on.
-const FIELD_TYPES = new Set(['fan', 'belt', 'magnet', 'hole', 'stroop', 'wervel']);
-// The parts a marble can arrive *at*: swallowed, teleported, caught, blown up.
-const TRIGGER_TYPES = new Set(['bomb', 'beam', 'hole', 'basket']);
+const FIELD_TYPES = new Set(['fan', 'zuigfan', 'belt', 'magnet', 'hole', 'stroop', 'wervel', 'zwaartekrachtbel', 'ijswolk']);
+// The parts a marble can arrive *at*: swallowed, teleported, caught, blown up,
+// scored against, or handed a bonus.
+const TRIGGER_TYPES = new Set(['bomb', 'beam', 'hole', 'basket', 'cadeau', 'hoepel']);
 
 function rebuildSegs() {
   G.segs.length = 0;
@@ -615,7 +717,10 @@ function partHit(part, x, y) {
   if (part.x2 !== undefined) {
     return distToSegment(x, y, part.x, part.y, part.x2, part.y2) < 44;
   }
-  if (part.type === 'wip') return distToSegment(x, y, part.x - WIP_ARM, part.y, part.x + WIP_ARM, part.y) < 50;
+  if (SEESAW_MATS[part.type]) {
+    const arm = SEESAW_MATS[part.type].arm;
+    return distToSegment(x, y, part.x - arm, part.y, part.x + arm, part.y) < 50;
+  }
   return Math.hypot(x - part.x, y - part.y) < 78;
 }
 
@@ -671,8 +776,11 @@ function spawnBody(type, x, y) {
   if (G.bodies.length >= MAX_BODIES) return null;
   const spec = PARTS[type].body;
   const b = {
+    // Spread first so every field a body spec carries — including ones only
+    // a couple of balls use, like `m`, `grip`, `magnetic` or `noMagnet` —
+    // reaches the live body with no separate copy line to remember to add.
+    ...spec,
     type, x, y, vx: 0, vy: 0,
-    r: spec.r, e: spec.e, drag: spec.drag,
     g: spec.g === undefined ? 1 : spec.g,
     thrust: spec.thrust || 0,
     heading: -Math.PI / 2,
@@ -739,15 +847,34 @@ function step(dt) {
     } else if (p.type === 'spinner') {
       p.omega = SPINNER_SPEED;
       p.angle = (p.angle || 0) + dt * SPINNER_SPEED;
-    } else if (p.type === 'wip') {
-      // A seesaw is a plank on a spring: it wants to be level, marbles tip it,
-      // and it stops dead at the two rests where a real one hits the ground.
-      // A soft spring on purpose: stiff enough to come back to level on its
-      // own, soft enough that one marble tips it far enough to roll off.
-      p.omega = (p.omega || 0) + (-(p.angle || 0) * 6 - (p.omega || 0) * 1.4) * dt;
+    } else if (p.type === 'wip' || p.type === 'flipper') {
+      // A seesaw (or a flipper) is a plank on a spring: it wants to be level,
+      // marbles tip it, and it stops dead at the two rests where a real one
+      // hits the ground. The wip's spring is soft on purpose — stiff enough to
+      // come back to level on its own, soft enough that one marble tips it far
+      // enough to roll off; the flipper's is much stiffer so it snaps back
+      // right after a tap kicks it (see `turnPart`).
+      const mat = SEESAW_MATS[p.type];
+      p.omega = (p.omega || 0) + (-(p.angle || 0) * mat.spring - (p.omega || 0) * mat.damping) * dt;
       p.angle = (p.angle || 0) + p.omega * dt;
       if (p.angle > 0.6) { p.angle = 0.6; p.omega = Math.min(0, p.omega) * 0.3; }
       if (p.angle < -0.6) { p.angle = -0.6; p.omega = Math.max(0, p.omega) * 0.3; }
+    } else if (p.type === 'regenwolk') {
+      // The one feeder that spans a width instead of standing at a point: each
+      // drop is born at a random spot along it, so it never rains from the
+      // exact same place twice.
+      p.nextDrop = (p.nextDrop || 0) - dt;
+      if (p.nextDrop <= 0) {
+        p.nextDrop = 0.4;
+        const t = Math.random();
+        const x = p.x + (p.x2 - p.x) * t;
+        const y = p.y + (p.y2 - p.y) * t;
+        const blocked = G.bodies.some((b) => Math.hypot(b.x - x, b.y - (y + 40)) < b.r + 26);
+        if (!blocked) {
+          const b = spawnBody('marble', x, y + 40);
+          if (b) b.vy = 60;
+        }
+      }
     }
   }
 
@@ -755,8 +882,13 @@ function step(dt) {
 
   for (const b of G.bodies) {
     if (b.tp > 0) b.tp -= dt;
-    let ax = 0;
-    let ay = BASE_GRAVITY * LANDSCAPES[G.landscape].gravity * b.g;
+    const land = LANDSCAPES[G.landscape];
+    let ax = BASE_GRAVITY * (land.gravityX || 0) * b.g;
+    let ay = BASE_GRAVITY * land.gravity * b.g;
+    // A separate transient field, not `b.grip` itself: an ice cube's own grip
+    // is part of its spec and has to survive every substep, while an ijswolk
+    // only makes a ball slippery for as long as it is still inside one.
+    b.iceGrip = undefined;
 
     // Only the parts that pull, blow or slow: everything else touches a marble
     // through its collision segments, not through this loop.
@@ -764,8 +896,10 @@ function step(dt) {
       const dx = p.x - b.x;
       const dy = p.y - b.y;
 
-      if (p.type === 'fan') {
-        // Cone of wind: full strength on the axis, nothing outside ~30°.
+      if (p.type === 'fan' || p.type === 'zuigfan') {
+        // Cone of wind: full strength on the axis, nothing outside ~30°. The
+        // zuigfan is the same cone with the power flipped, so it pulls a
+        // marble in instead of blowing it away.
         const fx = Math.cos(p.a);
         const fy = Math.sin(p.a);
         const along = -dx * fx - dy * fy;
@@ -773,7 +907,8 @@ function step(dt) {
           const off = Math.abs(-dx * -fy - dy * fx);
           const spread = 60 + along * 0.42;
           if (off < spread) {
-            const power = 3400 * (1 - along / 640) * (1 - off / spread);
+            const sign = p.type === 'zuigfan' ? -1 : 1;
+            const power = 3400 * (1 - along / 640) * (1 - off / spread) * sign;
             ax += fx * power;
             ay += fy * power;
           }
@@ -797,11 +932,27 @@ function step(dt) {
       }
 
       const d2 = dx * dx + dy * dy;
-      if (p.type === 'magnet' && d2 < 420 * 420) {
+      if (p.type === 'magnet' && d2 < 420 * 420 && !b.noMagnet) {
         const d = Math.sqrt(d2) || 1;
-        const power = 2600 * (1 - d / 420) * (p.repel ? -1 : 1);
+        // Iron marbles are grabbed much harder, wooden ones (`b.noMagnet`,
+        // caught above) not at all — everything without either flag reacts
+        // the way every ball always has.
+        const grab = b.magnetic ? 2.2 : 1;
+        const power = 2600 * (1 - d / 420) * (p.repel ? -1 : 1) * grab;
         ax += (dx / d) * power;
         ay += (dy / d) * power;
+      } else if (p.type === 'zwaartekrachtbel' && d2 < 260 * 260) {
+        // Cancel the world's own pull and put back the same amount the other
+        // way — one bubble of upside-down gravity, the same trick "Op z'n
+        // Kop" plays over the whole bench.
+        const fall = 1 - Math.sqrt(d2) / 260;
+        ax -= 2 * BASE_GRAVITY * (land.gravityX || 0) * b.g * fall;
+        ay -= 2 * BASE_GRAVITY * land.gravity * b.g * fall;
+      } else if (p.type === 'ijswolk' && d2 < 220 * 220) {
+        // A patch of ice floating in mid-air instead of bolted to a plank —
+        // `b.iceGrip` is combined with the ball's own `b.grip` in `hitSegment`,
+        // so this never overwrites a genuinely icy ball's own number.
+        b.iceGrip = 0.12;
       } else if (p.type === 'hole' && d2 < 560 * 560) {
         const d = Math.sqrt(d2) || 1;
         const power = 5200 * (1 - d / 560);
@@ -989,8 +1140,11 @@ function hitSegment(b, s) {
   const vt = rvx * tx + rvy * ty;
   // Surface and ball each carry an optional grip multiplier (both default 1):
   // an icy ball on a normal plank, a normal ball on an icy plank, and an icy
-  // ball on a sticky plank all fall out of this one product.
-  const gripCap = jn * 0.12 * (s.grip ?? 1) * (b.grip ?? 1);
+  // ball on a sticky plank all fall out of this one product. `b.iceGrip` is a
+  // second, transient one an ijswolk sets from a distance — whichever of the
+  // two is slipperier wins, so it never makes an already-icy ball grippier.
+  const ballGrip = Math.min(b.grip ?? 1, b.iceGrip ?? 1);
+  const gripCap = jn * 0.12 * (s.grip ?? 1) * ballGrip;
   const grip = Math.min(Math.abs(vt), gripCap) * Math.sign(vt);
   rvx -= grip * tx;
   rvy -= grip * ty;
@@ -1001,7 +1155,7 @@ function hitSegment(b, s) {
   // Equal and opposite: the marble's impulse spins a free-swinging part back.
   if (s.torque) {
     s.rot.omega = clamp(
-      (s.rot.omega || 0) + (ry * jn * nx - rx * jn * ny) / WIP_INERTIA,
+      (s.rot.omega || 0) + (ry * jn * nx - rx * jn * ny) / s.inertia,
       -4.5, 4.5
     );
   }
@@ -1118,6 +1272,32 @@ function triggers() {
         sfx.dock();
         break;
       }
+
+      // The bomb's neighbour that never removes a marble and never pushes
+      // anything: one bonus, then it sits there spent, same as the bomb.
+      if (p.type === 'cadeau' && !p.spent && d < b.r + 46) {
+        p.spent = true;
+        p.flash = 1;
+        G.score += 3;
+        G.hud.setScore(0, G.score);
+        G.particles.push(...createBurst(p.x, p.y, ['#7ee787', '#ffe066', '#ff8fc7', '#8fd6ff'], { count: 26, speed: 420 }));
+        sfx.powerup();
+      }
+
+      // A ring instead of a bucket: passing through scores and the marble
+      // keeps going, as many times as it comes back through. The cooldown is
+      // what stops one slow pass from scoring twenty times in a row.
+      if (p.type === 'hoepel' && Math.abs(b.x - p.x) < 50 && Math.abs(b.y - p.y) < 22) {
+        const now = performance.now();
+        if (now - (p.scoredAt || 0) > 500) {
+          p.scoredAt = now;
+          p.flash = 1;
+          G.score += 1;
+          G.hud.setScore(0, G.score);
+          G.particles.push(...createBurst(p.x, p.y, ['#8fd6ff', '#ffe066'], { count: 16, speed: 320 }));
+          sfx.dock();
+        }
+      }
     }
   }
 }
@@ -1135,10 +1315,11 @@ function render(dt) {
   const { ctx } = G;
   const land = LANDSCAPES[G.landscape];
   drawSpaceBackdrop(ctx, G.stars, G.t, { scrollSpeed: 0 });
-  // Station and the upside-down world are the two with nothing on the ground
-  // worth painting: station because it never had terrain, upside-down because
-  // a floor sprite would be a lie about which way things fall here.
-  if (land.id !== 'station' && land.id !== 'upside') ctx.drawImage(landscapeTerrain(land.id), 0, FLOOR_Y - 200);
+  // Station, upside-down and the tilted planet have nothing on the ground
+  // worth painting: station because it never had terrain, the other two
+  // because a fixed floor sprite would be a lie about which way things fall
+  // here.
+  if (!['station', 'upside', 'tilt'].includes(land.id)) ctx.drawImage(landscapeTerrain(land.id), 0, FLOOR_Y - 200);
   drawBench(ctx, land);
 
   for (const stroke of G.ink) drawInk(ctx, stroke.points, stroke.live);
@@ -1194,6 +1375,7 @@ const LANDSCAPE_TINT = {
   giant: { outline: 'rgba(255,205,110,0.32)', floorTop: '#c98a3a', floorBot: '#4a3010' },
   zero: { outline: 'rgba(185,140,255,0.32)', floorTop: '#4a3d78', floorBot: '#161227' },
   upside: { outline: 'rgba(255,143,199,0.32)', floorTop: '#5a2f52', floorBot: '#1c0f24' },
+  tilt: { outline: 'rgba(126,231,135,0.3)', floorTop: '#3f6b46', floorBot: '#12241a' },
 };
 
 const TERRAIN_H = 260;
@@ -1382,6 +1564,7 @@ function drawPart(ctx, p) {
     case 'plank':
     case 'iceplank':
     case 'stickyplank':
+    case 'rubberplank':
     case 'tramp': {
       const teal = p.type === 'tramp';
       const mat = PLANK_MATS[p.type];
@@ -1447,6 +1630,32 @@ function drawPart(ctx, p) {
       }, 40);
       break;
     }
+    case 'drukknop': {
+      const ring = p.ring || 0;
+      if (ring > 0) {
+        ctx.strokeStyle = `rgba(255,107,107,${ring * 0.8})`;
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 36 + (1 - ring) * 30, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      shadedBall(ctx, 'drukknop', p.x, p.y, 34 - ring * 2, (g) => {
+        const grad = g.createRadialGradient(-10, -12, 4, 0, 0, 34);
+        grad.addColorStop(0, '#ff9a9a');
+        grad.addColorStop(0.6, '#ff6b6b');
+        grad.addColorStop(1, '#8f1f1f');
+        g.fillStyle = grad;
+        g.beginPath();
+        g.arc(0, 0, 34, 0, Math.PI * 2);
+        g.fill();
+        g.strokeStyle = 'rgba(255,255,255,0.4)';
+        g.lineWidth = 3;
+        g.beginPath();
+        g.arc(0, 0, 22, 0, Math.PI * 2);
+        g.stroke();
+      }, 34);
+      break;
+    }
     case 'belt': {
       const dx = p.x2 - p.x;
       const dy = p.y2 - p.y;
@@ -1476,16 +1685,19 @@ function drawPart(ctx, p) {
       ctx.restore();
       break;
     }
-    case 'wip': {
+    case 'wip':
+    case 'flipper': {
+      const mat = SEESAW_MATS[p.type];
+      const arm = mat.arm;
       const a = p.angle || 0;
       ctx.save();
       ctx.translate(p.x, p.y);
       ctx.rotate(a);
-      ctx.fillStyle = '#ffc24a';
-      roundRect(ctx, -WIP_ARM - 12, -14, (WIP_ARM + 12) * 2, 28, 14);
+      ctx.fillStyle = p.type === 'flipper' ? '#ff6b6b' : '#ffc24a';
+      roundRect(ctx, -arm - 12, -14, (arm + 12) * 2, 28, 14);
       ctx.fill();
       ctx.fillStyle = 'rgba(255,255,255,0.32)';
-      roundRect(ctx, -WIP_ARM, -8, WIP_ARM * 2, 8, 4);
+      roundRect(ctx, -arm, -8, arm * 2, 8, 4);
       ctx.fill();
       ctx.restore();
       // Pivot wedge under the plank.
@@ -1498,18 +1710,24 @@ function drawPart(ctx, p) {
       ctx.fill();
       break;
     }
-    case 'fan': {
+    case 'fan':
+    case 'zuigfan': {
+      // The zuigfan is the fan's mirror image: violet instead of blue, blades
+      // spinning the other way, so a glance already says "pulls in" before a
+      // marble ever proves it.
+      const sucking = p.type === 'zuigfan';
+      const tint = sucking ? '#b98cff' : '#8fd6ff';
       ctx.save();
       ctx.translate(p.x, p.y);
       ctx.fillStyle = '#2c2a52';
       ctx.beginPath();
       ctx.arc(0, 0, 52, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = '#8fd6ff';
+      ctx.strokeStyle = tint;
       ctx.lineWidth = 6;
       ctx.stroke();
-      ctx.rotate(G.running ? G.t * 12 : 0);
-      ctx.fillStyle = '#8fd6ff';
+      ctx.rotate(G.running ? G.t * 12 * (sucking ? -1 : 1) : 0);
+      ctx.fillStyle = tint;
       for (let i = 0; i < 4; i++) {
         ctx.rotate(Math.PI / 2);
         ctx.beginPath();
@@ -1517,7 +1735,7 @@ function drawPart(ctx, p) {
         ctx.fill();
       }
       ctx.restore();
-      drawAimArrow(ctx, p, 78, 'rgba(124,196,255,0.85)');
+      drawAimArrow(ctx, p, 78, sucking ? 'rgba(185,140,255,0.85)' : 'rgba(124,196,255,0.85)');
       break;
     }
     case 'kanon': {
@@ -1637,6 +1855,24 @@ function drawPart(ctx, p) {
       emoji(ctx, '🍯', p.x, p.y, 84);
       break;
     }
+    case 'ijswolk': {
+      const wob = Math.sin(G.t * 1.6) * 6;
+      const g = ctx.createRadialGradient(p.x, p.y, 8, p.x, p.y, 220);
+      g.addColorStop(0, 'rgba(200,235,255,0.42)');
+      g.addColorStop(0.55, 'rgba(150,200,235,0.18)');
+      g.addColorStop(1, 'rgba(150,200,235,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 220, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      for (const [dx, dy, r] of [[0, 0, 46], [-40, 10 + wob, 32], [40, 8 - wob, 34], [0, -26, 30]]) {
+        ctx.beginPath();
+        ctx.arc(p.x + dx, p.y + dy, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      break;
+    }
     case 'hole': {
       const g = ctx.createRadialGradient(p.x, p.y, 6, p.x, p.y, 92);
       g.addColorStop(0, '#000006');
@@ -1671,6 +1907,26 @@ function drawPart(ctx, p) {
         ctx.stroke();
       }
       emoji(ctx, '🌪️', p.x, p.y, 62);
+      break;
+    }
+    case 'zwaartekrachtbel': {
+      // Green-cyan instead of the black hole's purple-black: this one gives
+      // gravity back upside down instead of taking a marble away entirely.
+      const wob = Math.sin(G.t * 1.8) * 5;
+      const g = ctx.createRadialGradient(p.x, p.y, 6, p.x, p.y, 130);
+      g.addColorStop(0, 'rgba(126,231,135,0.32)');
+      g.addColorStop(0.6, 'rgba(95,227,196,0.2)');
+      g.addColorStop(1, 'rgba(95,227,196,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 130, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(126,231,135,0.75)';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.ellipse(p.x, p.y, 46 + wob, 46 - wob, G.t * 0.6, 0, Math.PI * 2);
+      ctx.stroke();
+      emoji(ctx, '🫧', p.x, p.y, 58);
       break;
     }
     case 'beam': {
@@ -1712,9 +1968,23 @@ function drawPart(ctx, p) {
       ctx.restore();
       break;
     }
+    case 'hoepel': {
+      const flash = p.flash || 0;
+      ctx.save();
+      ctx.strokeStyle = `rgba(143,214,255,${0.6 + flash * 0.4})`;
+      ctx.lineWidth = 10 + flash * 6;
+      ctx.beginPath();
+      ctx.ellipse(p.x, p.y, 50, 20, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+      break;
+    }
     case 'fountain':
     case 'hopper':
-    case 'geiser': {
+    case 'geiser':
+    case 'kogelkraan':
+    case 'wolkkraan':
+    case 'ballonkraan': {
       const spec = PARTS[p.type];
       const side = spec.drops.up ? -1 : 1;
       ctx.fillStyle = spec.drops.tint;
@@ -1731,6 +2001,30 @@ function drawPart(ctx, p) {
       emoji(ctx, spec.icon, p.x, p.y - side * 6, 54);
       break;
     }
+    case 'regenwolk': {
+      // A row of puffs along the span it drops from, so the width a child
+      // drew is the width it actually rains from.
+      const steps = Math.max(2, Math.round(Math.hypot(p.x2 - p.x, p.y2 - p.y) / 70));
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const x = p.x + (p.x2 - p.x) * t;
+        const y = p.y + (p.y2 - p.y) * t;
+        ctx.fillStyle = 'rgba(143,214,255,0.9)';
+        ctx.beginPath();
+        ctx.arc(x, y, 34, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.fillStyle = 'rgba(232,236,248,0.95)';
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const x = p.x + (p.x2 - p.x) * t;
+        const y = p.y + (p.y2 - p.y) * t;
+        ctx.beginPath();
+        ctx.arc(x, y - 10, 26, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      break;
+    }
     case 'bomb': {
       if (p.spent) {
         ctx.fillStyle = 'rgba(255,95,77,0.25)';
@@ -1741,6 +2035,17 @@ function drawPart(ctx, p) {
       } else {
         emoji(ctx, '💣', p.x, p.y, 84);
       }
+      break;
+    }
+    case 'cadeau': {
+      const flash = p.flash || 0;
+      if (flash > 0) {
+        ctx.fillStyle = `rgba(126,231,135,${flash * 0.35})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 70, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      emoji(ctx, p.spent ? '📭' : '🎁', p.x, p.y, 78);
       break;
     }
     case 'magnet':
@@ -1861,6 +2166,96 @@ function drawBody(ctx, b) {
         g.beginPath();
         g.arc(-r * 0.15, r * 0.28, r * 0.5, 0, Math.PI * 2);
         g.fill();
+      });
+      break;
+    case 'diamant':
+      shadedBall(ctx, 'diamant', b.x, b.y, b.r, (g, r) => {
+        g.fillStyle = '#0d0c22';
+        g.beginPath();
+        g.moveTo(0, -r);
+        g.lineTo(r, 0);
+        g.lineTo(0, r);
+        g.lineTo(-r, 0);
+        g.closePath();
+        g.fill();
+        const grad = g.createLinearGradient(-r, -r, r, r);
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(0.5, '#8fd6ff');
+        grad.addColorStop(1, '#5b8cff');
+        g.fillStyle = grad;
+        g.beginPath();
+        g.moveTo(0, -r * 0.9);
+        g.lineTo(r * 0.9, 0);
+        g.lineTo(0, r * 0.9);
+        g.lineTo(-r * 0.9, 0);
+        g.closePath();
+        g.fill();
+        g.strokeStyle = 'rgba(255,255,255,0.85)';
+        g.lineWidth = 2;
+        g.beginPath();
+        g.moveTo(0, -r * 0.9);
+        g.lineTo(0, r * 0.9);
+        g.moveTo(-r * 0.9, 0);
+        g.lineTo(r * 0.9, 0);
+        g.stroke();
+      });
+      break;
+    case 'strandbal':
+      shadedBall(ctx, 'strandbal', b.x, b.y, b.r, (g, r) => {
+        g.fillStyle = '#f3ece0';
+        g.beginPath();
+        g.arc(0, 0, r, 0, Math.PI * 2);
+        g.fill();
+        const colors = ['#ff6b6b', '#8fd6ff', '#ffe066', '#7ee787'];
+        for (let i = 0; i < 4; i++) {
+          g.fillStyle = colors[i];
+          g.beginPath();
+          g.moveTo(0, 0);
+          g.arc(0, 0, r, (Math.PI / 2) * i, (Math.PI / 2) * (i + 0.5));
+          g.closePath();
+          g.fill();
+        }
+        g.strokeStyle = 'rgba(0,0,0,0.15)';
+        g.lineWidth = 2;
+        g.beginPath();
+        g.arc(0, 0, r, 0, Math.PI * 2);
+        g.stroke();
+      });
+      break;
+    case 'ijzerknikker':
+      shadedBall(ctx, 'ijzerknikker', b.x, b.y, b.r, (g, r) => {
+        const grad = g.createRadialGradient(-r * 0.3, -r * 0.35, r * 0.1, 0, 0, r);
+        grad.addColorStop(0, '#dfe3ea');
+        grad.addColorStop(0.55, '#8a8f9c');
+        grad.addColorStop(1, '#3a3d46');
+        g.fillStyle = grad;
+        g.beginPath();
+        g.arc(0, 0, r, 0, Math.PI * 2);
+        g.fill();
+        g.strokeStyle = 'rgba(255,255,255,0.4)';
+        g.lineWidth = 2;
+        g.beginPath();
+        g.arc(0, 0, r * 0.6, 0, Math.PI * 2);
+        g.stroke();
+      });
+      break;
+    case 'houtknikker':
+      shadedBall(ctx, 'houtknikker', b.x, b.y, b.r, (g, r) => {
+        const grad = g.createRadialGradient(-r * 0.3, -r * 0.35, r * 0.1, 0, 0, r);
+        grad.addColorStop(0, '#c9915a');
+        grad.addColorStop(0.6, '#8f5a2e');
+        grad.addColorStop(1, '#4a2e14');
+        g.fillStyle = grad;
+        g.beginPath();
+        g.arc(0, 0, r, 0, Math.PI * 2);
+        g.fill();
+        g.strokeStyle = 'rgba(60,32,10,0.45)';
+        g.lineWidth = 2;
+        for (const yy of [-r * 0.4, 0, r * 0.4]) {
+          g.beginPath();
+          g.ellipse(0, yy, r * 0.75, r * 0.14, 0, 0, Math.PI * 2);
+          g.stroke();
+        }
       });
       break;
     default:
@@ -2046,6 +2441,11 @@ function turnPart(p) {
     sfx.select();
   } else if (p.type === 'wervel') {
     p.spin = (p.spin || 1) * -1;
+    sfx.select();
+  } else if (p.type === 'flipper') {
+    // Unlike the wip, a flipper does not wait for a marble to land on it —
+    // a tap gives it its own kick, and the spring in `step` snaps it back.
+    p.omega = SEESAW_MATS.flipper.kick;
     sfx.select();
   } else if (p.x2 !== undefined) {
     // Rotate a plank or trampoline a notch around its own middle.

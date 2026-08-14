@@ -114,12 +114,21 @@
   z-index: 21;
   opacity: 0;
   visibility: hidden;
+  /* Not part of the transition list, so it flips the instant `.is-open` is
+     removed — a closing tray stops accepting taps immediately instead of
+     still sitting there, interactable, for the length of its own fade-out
+     (`visibility` only actually turns `hidden` at the end of that fade,
+     per the CSS transition spec for non-interpolable properties, which
+     meant a tray you just switched away from could still catch a fast tap
+     meant for the one opening on top of it). */
+  pointer-events: none;
   transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
 }
 
 .mach-pop.is-open {
   opacity: 1;
   visibility: visible;
+  pointer-events: auto;
   transform: translateX(-50%) translateY(0);
 }
 

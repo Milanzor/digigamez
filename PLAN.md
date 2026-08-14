@@ -446,7 +446,7 @@ enige spel in de bundel dat écht Nederlands moet zijn om te werken.
 | **Ruimtegeheugen**        | Memory / matching    | 3–6      | 1P & 2P | Kaarten met planeten en aliens. Bord groeit 4→12 paren; vanaf level 2 is er één gouden **komeetpaar** dat dubbel telt. 2P om de beurt met scores. |
 | **Sterrenpuzzel**         | Jigsaw               | 3–7      | 1P & 2P | Ruimtescènes (inline SVG, dus scherp op 4K) in stukjes. 4→20 stukjes; **👁️-knop** ghost het voorbeeld over het bord als hint in plaats van een moeilijkheidsmuur. |
 | **Ruimtetekenen**         | Creatief             | 2–7      | 1P & 2P | Vrij tekenen op een bord van **drie schermen breed** dat je met ✋ verschuift en met knijpen/wiel zoomt. Elf kwasten (stift, neon, krijt, regenboog, sterrenstof, spuitbus, waterverf, lint dat dun wordt als je snel beweegt, stippellijn, stempelspoor, gum), zes vormen met vulknop, **32 stempels**, spiegel-, viervoudige én **caleidoscoop-symmetrie (zes kanten)**, **zeventien achtergronden** achter één keuzelade (ruimte, nachtlucht, raster, onder water, zonsondergang, op de maan, Mars, stad bij nacht, bos, weiland, sneeuw, vulkaan, regenboog, schoolbord, ruitjes, papier, schrijflijntjes) — elk een eigen schilderfunctie over de hele wereld, dus met een échte horizon, zon of skyline; de sierlijke onderdelen (kraters, ramen, boomstammen, vlokken) worden één keer als `Path2D` opgebouwd en daarna elk frame hergebruikt, zodat pannen twee path-fills kost in plaats van duizenden arcs, **zes kleurplaten** (raket, poes, bloem, vis, vlinder, huis) als vaste onderlaag die niet mee-gumt, undo/redo en opslaan als PNG. Streken zijn vectoren, dus scherp op elke zoom, en de tekening staat er na een rondje portal nog. Multi-touch: twee kinderen tekenen gelijktijdig. |
-| **Gekke Machine**         | Fysica-zandbak       | 4–7      | 1P      | Bouw een knikkerbaan van **dertig onderdelen** verdeeld over vijf laatjes (Ballen, Banen, Doelen, Krachten, Toevoer) — knikker, stuiterbal, ballon, raket, ijsklontje, zware kogel en wolkje; plank, ijsplank, kauwgomplank, trampoline, transportband, wip en molen; kegel, klokkenspel, stoter, klep en emmer; ventilator, kanon, magneet, zwart gat, stroop, bom en wervelwind; knikkerkraan, stuiterkraan, geiser en beamer-paar — **teken banen** die meedoen als vaste botsingslijnen, en druk op ▶ om alles los te laten. 🌍 wisselt tussen zes ruimtelandschappen die elk hun eigen zwaartekracht meebrengen (ruimtestation, de Maan, Mars, een gasreus, nulzwaartekracht, en een wereld op z'n kop waar alles omhoog valt), 🎲 laadt vijf voorbeeldmachines, 🐢 zet alles in slow motion, 💫 laat de sporen van de knikkers zien, ↩️ neemt de laatste bouwstap terug en met ✋ tik je een ventilator, band, bel, magneet of wervelwind een standje verder. ⏹ zet elk onderdeel terug waar het gebouwd is, en de werkbank staat er na een rondje portal nog — experimenteren kost dus niks. |
+| **Gekke Machine**         | Fysica-zandbak       | 4–7      | 1P      | Bouw een knikkerbaan van **zesenveertig onderdelen** verdeeld over vijf laatjes die als een zwevend tafeltje boven de balk opengaan (Ballen, Banen, Doelen, Krachten, Toevoer) — knikker, stuiterbal, ballon, raket, ijsklontje, zware kogel, wolkje, diamant, strandbal, ijzerknikker en houtknikker; plank, ijsplank, kauwgomplank, rubberplank, trampoline, transportband, wip, flipper en molen; kegel, klokkenspel, stoter, drukknop, klep, cadeau, hoepel en emmer; ventilator, zuigfan, kanon, magneet, zwart gat, stroop, bom, wervelwind, zwaartekrachtbel en ijswolk; knikkerkraan, stuiterkraan, geiser, kogelkraan, wolkenkraan, ballonnenkraan en beamer-paar — **teken banen** die meedoen als vaste botsingslijnen, en druk op ▶ om alles los te laten. 🌍 wisselt tussen zeven ruimtelandschappen die elk hun eigen zwaartekracht meebrengen (ruimtestation, de Maan, Mars, een gasreus, nulzwaartekracht, een wereld op z'n kop waar alles omhoog valt, en een kantelplaneet die ook zijwaarts trekt), 🎲 laadt zeven voorbeeldmachines, 🐢 zet alles in slow motion, 💫 laat de sporen van de knikkers zien, ↩️ neemt de laatste bouwstap terug en met ✋ tik je een ventilator, band, bel, magneet, wervelwind of flipper een standje verder. Een laatje-knop draagt zelf het onderdeel dat je er het laatst uit koos, dus er hoeft nergens gelezen te worden om te zien wat je gaat neerzetten. ⏹ zet elk onderdeel terug waar het gebouwd is, en de werkbank staat er na een rondje portal nog — experimenteren kost dus niks. |
 | **Zuurstofleidingen**     | Pipe-connect         | 4–7      | 1P      | Draai buizen zodat zuurstof de tank haalt. Puzzels zijn **solvable-by-construction** (pad eerst uitgelopen, dan geschud). Raster groeit 3×3→6×6; vanaf level 3 zitten er dichtgesoldeerde tegels in, vanaf level 4 zijn er **twee onafhankelijke netwerken**. Als het klopt **stroomt de zuurstof zichtbaar door**: tegel voor tegel vanaf de kraan naar de tank, met een oplopend klokkenspel-toontje bij elke bocht — het moment dat het kind gebouwd heeft, dus dat wordt getoond in plaats van alleen gemeld. |
 | **Brandstof Sorteren**    | Water-sort           | 5–7      | 1P      | Giet raketbrandstof tot elke tank één kleur is. Kleuren 3→7 en reservetanks 2→1 met het level. **Undo** altijd beschikbaar, want de puzzel kan doodlopen en dan moet een kind niet opnieuw hoeven beginnen. |
 | **Ruimte Invasie**        | Space Invaders       | 5–7      | 1P & 2P | **Moeilijkheidskeuze vooraf** (makkelijk / gewoon / moeilijk; op moeilijk schieten de aliens terug en hebben de schepen een schildbalk). Vijf alientypes met eigen silhouet en gedrag — inktvis, schotel, kever, splitser die in tweeën breekt, en zijn kleintjes — plus **drie afwisselende eindbosses** (Kwalmonster, Sterrenkrab, Het Grote Oog), een bonusschotel en power-ups (drievoudig schot, sneller vuren, schild). De zwerm keert altijd om ruim **boven de schepen**, zodat aliens nooit onschietbaar laag komen. |
@@ -697,6 +697,60 @@ even hard terug als een bal die op de vloer landt) deden de rest. Een ballon
 die met zijn eigen negatieve `g` al tegen de zwaartekracht in dreef, drijft
 hier vanzelf de andere kant op — weer geen speciaal geval, om dezelfde reden
 als bij de Maan en Mars.
+
+### Zestien onderdelen, een zevende wereld en twee voorbeeldmachines (Gekke Machine, nog verder uitgebreid)
+
+Met de laatjes achter een tik in plaats van een tabblad kon een categorie
+groeien zonder dat de balk ooit voller werd — de lade wrapt, niet de balk.
+Dat maakte dertig onderdelen naar zesenveertig een kwestie van rijen
+toevoegen, bijna nooit van nieuwe natuurkunde: een rubberplank is een
+regel in `PLANK_MATS`, drie nieuwe kranen (kogels, wolkjes, ballonnen) zijn
+drie regels in de `drops`-tabel, en een drukknop is een stoter met een
+zachtere `e` die dezelfde `bumpHit` hergebruikt.
+
+**Wip en flipper zijn nu één ding in twee tunings.** Een flipper is
+mechanisch dezelfde veer-op-een-plank als de wip — kort en stijf in plaats
+van lang en zacht, en met een `kick` die een tik erop meegeeft in plaats
+van alleen op een knikker te wachten. `SEESAW_MATS` doet voor de wip en de
+flipper wat `PLANK_MATS` al voor de drie plankmaterialen deed: één tabel,
+geen tweede kopie van de veerformule in `step` of van de arm in
+`collectSegs`/`drawPart`.
+
+**Een magneet is nu pas een echte keuze.** Voorheen trok een magneet elke
+bal even hard, dus er viel niets te kiezen. Een ijzerknikker (`magnetic`)
+voelt een magneet nu 2,2× zo hard, een houtknikker (`noMagnet`) voelt er
+niets van — twee vlaggen op een balspec, gelezen in dezelfde regel die de
+magneetkracht al uitrekende. De **Magneetdans**-voorbeeldmachine zet beide
+op dezelfde helling en laat zien hoe ze uit elkaar vallen zodra de magneet
+in bereik komt.
+
+**Zwaartekrachtbel is een landschap in het klein.** "Op z'n Kop" bewees al
+dat zwaartekracht omdraaien maar een minteken is; de bel doet hetzelfde
+lokaal, door binnen zijn straal de bestaande zwaartekracht van dat
+landschap te neutraliseren en er evenveel de andere kant op bij te tellen.
+IJswolk speelt dezelfde truc met grip in plaats van zwaartekracht: een
+tweede, tijdelijk veld (`b.iceGrip`) naast de vaste `b.grip` van een bal,
+zodat een ijsklontje zijn eigen gladheid niet kwijtraakt zodra het toevallig
+door een wolk vliegt.
+
+**Een zevende wereld met een zijwaartse duw.** Zwaartekracht was al één
+vermenigvuldiging naar beneden; Kantelplaneet voegt er een tweede naar opzij
+aan toe (`gravityX`), oftewel exact dezelfde generalisatie nog een dimensie
+verder. Alle andere landschappen laten dat getal gewoon op nul staan.
+
+**Twee bugs die dit uitgraven blootlegde, allebei ouder dan vandaag.**
+`spawnBody` kopieerde alleen een vaste lijst velden (`r`, `e`, `drag`, `g`,
+`thrust`) van een balspec naar de knikker zelf — de `m` van een kogel en de
+`grip` van een ijsklontje stonden al in de tabel, maar werden nooit gelezen:
+elke bal woog en gleed dus altijd als een gewone knikker, ongeacht wat de
+tabel beloofde. Nu spreidt `spawnBody` de hele specificatie in de bal,
+zodat een toekomstig veld op een balspec automatisch meedoet zonder een
+kopieerregel erbij. De tweede zat in de laatjes zelf: een laatje dat net
+dichtging bleef, dankzij hoe CSS `visibility`-transities timen, nog de volle
+150ms aanklikbaar boven het laatje dat er net voor in de plaats kwam — een
+razendsnelle dubbeltik kon zo een onderdeel uit het verkeerde laatje kiezen.
+`pointer-events: none` op een gesloten laatje (niet in de transitielijst,
+dus meteen van kracht) sluit dat gat.
 
 ### De raket die niet groen wordt (Ladingcontrole, herbouwd)
 
