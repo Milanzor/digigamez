@@ -87,6 +87,15 @@
   border-color: #a8281a;
 }
 
+/* Category tabs pick which drawer of parts row A shows below. Square rather
+   than round, so a child never mistakes a drawer for a placeable part. */
+.mach-tool--cat {
+  border-radius: var(--r-lg);
+  width: clamp(42px, 5.6vmin, 120px);
+  height: clamp(42px, 5.6vmin, 120px);
+  font-size: clamp(18px, 2.6vmin, 54px);
+}
+
 .mach-hint {
   position: absolute;
   left: 50%;

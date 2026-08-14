@@ -34,7 +34,10 @@ const CEIL_Y = 128;
 const WALL_L = 26;
 const WALL_R = LOGICAL_WIDTH - 26;
 
-const GRAVITY = 1900;
+// Earth-normal gravity for the default landscape; every other landscape is a
+// multiple of this one number (see LANDSCAPES below), so nothing else in the
+// simulation ever needs to know which world is currently under the bench.
+const BASE_GRAVITY = 1900;
 // A workbench you can genuinely fill. The old ceiling of 90 parts was set by
 // the simulation being all-pairs — every marble asked every part and every
 // collision segment about itself, three times a frame — so ten times the parts
@@ -63,40 +66,75 @@ const SPINNER_SPEED = 2.1;
 const KEGEL_KNOCK = 360;
 const TRAIL_LEN = 26;
 
+// Plank, ijsplank and kauwgomplank are the same part in three materials — one
+// spec table instead of three near-identical branches in `collectSegs` and
+// `drawPart`, the same trick `drops` already plays for the two taps below.
+const PLANK_MATS = {
+  plank: { color: '#c9a06a', e: 0.42, w: 10, grip: 1 },
+  iceplank: { color: '#8fd6ff', e: 0.5, w: 10, grip: 0.08 },
+  stickyplank: { color: '#ff8fc7', e: 0.22, w: 10, grip: 3.2 },
+};
+
 const PARTS = {
   marble: { icon: '🔵', name: 'Knikker', body: { r: 26, e: 0.42, drag: 0.999 } },
   bouncy: { icon: '🏀', name: 'Stuiterbal', body: { r: 30, e: 0.88, drag: 0.999 } },
-  balloon: { icon: '🎈', name: 'Ballon', body: { r: 34, e: 0.6, drag: 0.986, g: -0.42 } },
+  balloon: { icon: '🎈', name: 'Ballon', body: { r: 34, e: 0.6, drag: 0.986, g: -0.42, m: 0.35 } },
   rocket: { icon: '🚀', name: 'Raket', body: { r: 24, e: 0.5, drag: 0.996, thrust: 2400 } },
+  ice: { icon: '🧊', name: 'IJsklontje — glijdt bijna overal doorheen', body: { r: 24, e: 0.25, drag: 0.9992, grip: 0.15, m: 0.6 } },
+  kogel: { icon: '🪨', name: 'Zware kogel — duwt alles opzij', body: { r: 30, e: 0.12, drag: 0.999, m: 4 } },
+  wolk: { icon: '☁️', name: 'Wolkje — heel licht en zweeft weg', body: { r: 32, e: 0.55, drag: 0.975, g: -0.2, m: 0.25 } },
   plank: { icon: '📏', name: 'Plank', seg: true },
+  iceplank: { icon: '❄️', name: 'IJsplank — knikkers glijden er zo overheen', seg: true },
+  stickyplank: { icon: '🍬', name: 'Kauwgomplank — knikkers plakken er bijna aan vast', seg: true },
   tramp: { icon: '🛟', name: 'Trampoline', seg: true },
   belt: { icon: '🛞', name: 'Transportband — tik erop om te draaien', seg: true },
   wip: { icon: '⚖️', name: 'Wip' },
   spinner: { icon: '🌀', name: 'Molen' },
   kegel: { icon: '🎳', name: 'Kegel' },
   bel: { icon: '🔔', name: 'Klokkenspel' },
+  stoter: { icon: '🛎️', name: 'Stoter — stuitert knikkers keihard weg' },
+  klep: { icon: '🚪', name: 'Klep — gaat om de beurt open en dicht', seg: true },
   fan: { icon: '💨', name: 'Ventilator — tik erop om te draaien', dir: true },
   kanon: { icon: '💥', name: 'Kanon — tik erop om te draaien', dir: true },
-  magnet: { icon: '🧲', name: 'Magneet' },
+  magnet: { icon: '🧲', name: 'Magneet — tik erop om te wisselen tussen trekken en duwen' },
   hole: { icon: '🕳️', name: 'Zwart gat' },
   stroop: { icon: '🍯', name: 'Stroop' },
   bomb: { icon: '💣', name: 'Bom' },
-  // The two taps that keep a machine fed. `drops` is what makes them one thing
-  // rather than two: the spawn interval, the push it leaves with, and the colour
-  // of the housing all come from here, so the second tap needed no new branch in
-  // the simulation and no new case in the painter. The mouth is drawn from the
-  // ball's own radius, which is why the marble's has always been 22.
+  wervel: { icon: '🌪️', name: 'Wervelwind — tik erop om de draairichting te wisselen' },
+  // The taps that keep a machine fed. `drops` is what makes them one thing
+  // rather than separate branches: the spawn interval, the push it leaves
+  // with, the colour of the housing and — for the geiser — whether it spouts
+  // up instead of dropping down all come from here, so each new tap needed no
+  // new branch in the simulation and no new case in the painter. The mouth is
+  // drawn from the ball's own radius, which is why the marble's has always
+  // been 22.
   fountain: { icon: '⛲', name: 'Knikkerkraan', drops: { body: 'marble', every: 0.85, vy: 140, tint: '#8fd6ff' } },
   hopper: { icon: '🚰', name: 'Stuiterkraan', drops: { body: 'bouncy', every: 1.05, vy: 110, tint: '#ff8a3d' } },
+  geiser: { icon: '🌋', name: 'Geiser — spuit knikkers omhoog', drops: { body: 'marble', every: 1.1, vy: 950, up: true, tint: '#ff8fc7' } },
   beam: { icon: '🛸', name: 'Beamer — zet er twee neer' },
   basket: { icon: '🪣', name: 'Emmer' },
 };
 
-const PART_ORDER = [
-  'marble', 'bouncy', 'balloon', 'rocket',
-  'plank', 'tramp', 'belt', 'wip', 'spinner', 'kegel', 'bel',
-  'fan', 'kanon', 'magnet', 'hole', 'stroop', 'bomb',
-  'fountain', 'hopper', 'beam', 'basket',
+// Tabs instead of one long wrapping row: thirty buildable parts in one row
+// would wrap four or five deep and eat the bench. Each tab holds seven or
+// fewer parts, so switching a tab never costs more than the one row it shows.
+const CATEGORIES = [
+  { id: 'ballen', icon: '🔵', label: 'Ballen', parts: ['marble', 'bouncy', 'balloon', 'rocket', 'ice', 'kogel', 'wolk'] },
+  { id: 'banen', icon: '📏', label: 'Banen', parts: ['plank', 'iceplank', 'stickyplank', 'tramp', 'belt', 'wip', 'spinner'] },
+  { id: 'doelen', icon: '🎯', label: 'Doelen', parts: ['kegel', 'bel', 'stoter', 'klep', 'basket'] },
+  { id: 'krachten', icon: '🧲', label: 'Krachten', parts: ['fan', 'kanon', 'magnet', 'hole', 'stroop', 'bomb', 'wervel'] },
+  { id: 'toevoer', icon: '⛲', label: 'Toevoer', parts: ['fountain', 'hopper', 'geiser', 'beam'] },
+];
+
+// Five worlds, one number each: everything else in the simulation reads
+// gravity through `landscapeGravity()`, so a new landscape is just a new row
+// here plus a bit of paint in `landscapeTerrain()`/`drawBench()`.
+const LANDSCAPES = [
+  { id: 'station', name: 'Ruimtestation', icon: '🛰️', gravity: 1, sub: 'Normale zwaartekracht' },
+  { id: 'moon', name: 'De Maan', icon: '🌕', gravity: 0.17, sub: 'Bijna geen zwaartekracht!' },
+  { id: 'mars', name: 'Mars', icon: '🔴', gravity: 0.38, sub: 'Lichte zwaartekracht' },
+  { id: 'giant', name: 'Gasreus', icon: '🟠', gravity: 2.4, sub: 'Zware zwaartekracht!' },
+  { id: 'zero', name: 'Nulzwaartekracht', icon: '✨', gravity: 0.05, sub: 'Bijna zweven' },
 ];
 
 const SAVE_KEY = 'gekke-machine';
@@ -148,10 +186,12 @@ export function init(container, opts) {
     slow: false,
     trails: false,
     tool: 'marble',
+    category: 0,
     drags: new Map(),
     score: 0,
     seq: 1,
     preset: -1,
+    landscape: 0,
     t: 0,
     beltPhase: 0,
     last: 0,
@@ -217,22 +257,31 @@ function serialize() {
     if (p.x2 !== undefined) { d.x2 = Math.round(p.x2); d.y2 = Math.round(p.y2); }
     if (p.a !== undefined) d.a = +p.a.toFixed(3);
     if (p.note !== undefined) d.n = p.note;
+    if (p.repel) d.rp = 1;
+    if (p.spin !== undefined) d.sp = p.spin;
     if (p.pair !== undefined) d.p = G.parts.findIndex((o) => o.id === p.pair);
     return d;
   });
-  return { parts, ink: G.ink.map((s) => s.points.map((q) => [Math.round(q.x), Math.round(q.y)])) };
+  return {
+    parts,
+    ink: G.ink.map((s) => s.points.map((q) => [Math.round(q.x), Math.round(q.y)])),
+    landscape: G.landscape,
+  };
 }
 
 function deserialize(data) {
   G.parts = [];
   G.ink = [];
   if (!data || !Array.isArray(data.parts)) return;
+  G.landscape = Number.isInteger(data.landscape) ? clamp(data.landscape, 0, LANDSCAPES.length - 1) : 0;
   const made = data.parts.map((d) => {
     if (!PARTS[d.t] || !Number.isFinite(d.x) || !Number.isFinite(d.y)) return null;
     const props = { x: d.x, y: d.y };
     if (Number.isFinite(d.x2)) { props.x2 = d.x2; props.y2 = d.y2; }
     if (Number.isFinite(d.a)) props.a = d.a;
     if (Number.isFinite(d.n)) props.note = d.n;
+    if (d.rp) props.repel = true;
+    if (Number.isFinite(d.sp)) props.spin = d.sp;
     return addPart(d.t, props);
   });
   data.parts.forEach((d, i) => {
@@ -399,6 +448,17 @@ function nextPreset() {
   sfx.powerup();
 }
 
+// A landscape change never touches the parts on the bench — only how hard
+// they fall — so it does not need to stop a running machine the way loading
+// a whole new preset does.
+function nextLandscape() {
+  pushUndo();
+  G.landscape = (G.landscape + 1) % LANDSCAPES.length;
+  const land = LANDSCAPES[G.landscape];
+  G.hud.banner(`${land.icon} ${land.name}`, { sub: land.sub, ms: 2200 });
+  sfx.powerup();
+}
+
 // --- geometry ------------------------------------------------------------
 
 // Every static part exposes its collision as line segments, so a body only
@@ -407,7 +467,21 @@ function nextPreset() {
 function collectSegs(p, out) {
   switch (p.type) {
     case 'plank':
-      out.push({ x1: p.x, y1: p.y, x2: p.x2, y2: p.y2, e: 0.42, w: 10 });
+    case 'iceplank':
+    case 'stickyplank': {
+      const mat = PLANK_MATS[p.type];
+      out.push({ x1: p.x, y1: p.y, x2: p.x2, y2: p.y2, e: mat.e, w: mat.w, grip: mat.grip });
+      break;
+    }
+    case 'klep':
+      // Only solid while closed — open, it drops out of the collision world
+      // entirely rather than sitting there as a segment nobody can hit.
+      if (!p.open) out.push({ x1: p.x, y1: p.y, x2: p.x2, y2: p.y2, e: 0.3, w: 12 });
+      break;
+    case 'stoter':
+      // Same zero-length-segment trick as the bell: a circular hit-shape with
+      // no new geometry code, just a very bouncy `e`.
+      out.push({ x1: p.x, y1: p.y, x2: p.x, y2: p.y, e: 1.7, w: 40, bump: p });
       break;
     case 'tramp':
       out.push({ x1: p.x, y1: p.y, x2: p.x2, y2: p.y2, e: 1.35, w: 14 });
@@ -464,7 +538,7 @@ function collectSegs(p, out) {
 // are the only ones the force loop has to walk, and pulling them out of the
 // part list once per substep is what keeps that loop off the O(parts × bodies)
 // path a bench of nine hundred parts would otherwise put it on.
-const FIELD_TYPES = new Set(['fan', 'belt', 'magnet', 'hole', 'stroop']);
+const FIELD_TYPES = new Set(['fan', 'belt', 'magnet', 'hole', 'stroop', 'wervel']);
 // The parts a marble can arrive *at*: swallowed, teleported, caught, blown up.
 const TRIGGER_TYPES = new Set(['bomb', 'beam', 'hole', 'basket']);
 
@@ -586,6 +660,8 @@ function resetPart(p) {
   p.omega = 0;
   p.ring = 0;
   p.flash = 0;
+  p.gateT = 0;
+  p.open = false;
 }
 
 function spawnBody(type, x, y) {
@@ -617,9 +693,12 @@ function step(dt) {
       p.nextDrop = (p.nextDrop || 0) - dt;
       if (p.nextDrop <= 0) {
         // Clear of the mouth by the ball's own radius, or a wide ball is born
-        // half inside the housing and shoves itself out sideways.
+        // half inside the housing and shoves itself out sideways. The geiser's
+        // mouth faces up instead of down, so its clearance is measured the
+        // same way but on the other side of the housing.
         const r = PARTS[drops.body].body.r;
-        const dropY = p.y + 40 + r + 6;
+        const side = drops.up ? -1 : 1;
+        const dropY = p.y + side * (40 + r + 6);
         // And never onto a ball that has not gone yet. A tap standing just above
         // a ramp catches what it dropped, and without this the next one is born
         // inside it: the pair shove each other back up into the mouth and the tap
@@ -631,9 +710,17 @@ function step(dt) {
         } else {
           p.nextDrop = drops.every;
           const b = spawnBody(drops.body, p.x, dropY);
-          if (b) b.vy = drops.vy;
+          if (b) b.vy = drops.vy * side;
         }
       }
+    } else if (p.type === 'klep') {
+      // A gate that opens and closes on its own clock: closed longer than
+      // open, so a child can watch one cycle and predict the next rather than
+      // needing to react to a coin-flip.
+      p.gateT = (p.gateT || 0) + dt;
+      const period = 3;
+      if (p.gateT > period) p.gateT -= period;
+      p.open = p.gateT > period * 0.6;
     } else if (p.type === 'kanon') {
       p.nextDrop = (p.nextDrop || 0) - dt;
       if (p.nextDrop <= 0) {
@@ -666,7 +753,7 @@ function step(dt) {
   for (const b of G.bodies) {
     if (b.tp > 0) b.tp -= dt;
     let ax = 0;
-    let ay = GRAVITY * b.g;
+    let ay = BASE_GRAVITY * LANDSCAPES[G.landscape].gravity * b.g;
 
     // Only the parts that pull, blow or slow: everything else touches a marble
     // through its collision segments, not through this loop.
@@ -709,7 +796,7 @@ function step(dt) {
       const d2 = dx * dx + dy * dy;
       if (p.type === 'magnet' && d2 < 420 * 420) {
         const d = Math.sqrt(d2) || 1;
-        const power = 2600 * (1 - d / 420);
+        const power = 2600 * (1 - d / 420) * (p.repel ? -1 : 1);
         ax += (dx / d) * power;
         ay += (dy / d) * power;
       } else if (p.type === 'hole' && d2 < 560 * 560) {
@@ -723,6 +810,16 @@ function step(dt) {
         const fall = 1 - Math.sqrt(d2) / 300;
         ax -= b.vx * 7 * fall;
         ay -= b.vy * 7 * fall;
+      } else if (p.type === 'wervel' && d2 < 260 * 260 && d2 > 1) {
+        // A pull straight in like the black hole would just be a gentler hole;
+        // pushing perpendicular to the radius instead sends a marble into a
+        // spiral, with a small inward pull so it drifts to the centre rather
+        // than escaping in a straight tangent line.
+        const d = Math.sqrt(d2);
+        const spin = p.spin || 1;
+        const power = 1800 * (1 - d / 260);
+        ax += (-dy / d) * power * spin + (dx / d) * power * 0.15;
+        ay += (dx / d) * power * spin + (dy / d) * power * 0.15;
       }
     }
 
@@ -810,15 +907,21 @@ function collide() {
           const d = Math.sqrt(d2);
           const nx = dx / d;
           const ny = dy / d;
-          const overlap = (min - d) / 2;
-          a.x -= nx * overlap; a.y -= ny * overlap;
-          b.x += nx * overlap; b.y += ny * overlap;
+          // Inverse-mass weighted, so a heavy kogel barely moves for a marble's
+          // sake while the marble gets shoved hard — for two m=1 bodies this
+          // reduces to exactly the old 50/50 split.
+          const invA = 1 / (a.m || 1);
+          const invB = 1 / (b.m || 1);
+          const invSum = invA + invB;
+          const push = min - d;
+          a.x -= nx * push * (invA / invSum); a.y -= ny * push * (invA / invSum);
+          b.x += nx * push * (invB / invSum); b.y += ny * push * (invB / invSum);
           const rel = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
           if (rel > 0) continue;
           const e = Math.min(a.e, b.e);
-          const j2 = -(1 + e) * rel * 0.5;
-          a.vx -= j2 * nx; a.vy -= j2 * ny;
-          b.vx += j2 * nx; b.vy += j2 * ny;
+          const j2 = -(1 + e) * rel / invSum;
+          a.vx -= j2 * invA * nx; a.vy -= j2 * invA * ny;
+          b.vx += j2 * invB * nx; b.vy += j2 * invB * ny;
           if (-rel > 700) thud(-rel);
         }
       }
@@ -881,7 +984,11 @@ function hitSegment(b, s) {
   const tx = -ny;
   const ty = nx;
   const vt = rvx * tx + rvy * ty;
-  const grip = Math.min(Math.abs(vt), jn * 0.12) * Math.sign(vt);
+  // Surface and ball each carry an optional grip multiplier (both default 1):
+  // an icy ball on a normal plank, a normal ball on an icy plank, and an icy
+  // ball on a sticky plank all fall out of this one product.
+  const gripCap = jn * 0.12 * (s.grip ?? 1) * (b.grip ?? 1);
+  const grip = Math.min(Math.abs(vt), gripCap) * Math.sign(vt);
   rvx -= grip * tx;
   rvy -= grip * ty;
 
@@ -896,6 +1003,7 @@ function hitSegment(b, s) {
     );
   }
   if (s.chime && -vn > 90) ringBell(s.chime);
+  if (s.bump && -vn > 40) bumpHit(s.bump);
   if (s.pin && -vn > KEGEL_KNOCK) {
     knockPin(s.pin);
     // A pin weighs nothing next to a marble, so the bounce that was just
@@ -921,6 +1029,21 @@ function ringBell(p) {
   p.chimeAt = now;
   p.ring = 1;
   sfx.chime(p.note || 0);
+}
+
+function bumpHit(p) {
+  // Unlike a bell, a bumper is meant to be pounded on repeatedly — the
+  // cooldown just stops one long scrape along its rim from scoring twenty
+  // times in a single substep.
+  const now = performance.now();
+  if (now - (p.bumpAt || 0) < 140) return;
+  p.bumpAt = now;
+  p.ring = 1;
+  G.score += 1;
+  G.hud.setScore(0, G.score);
+  G.particles.push(...createBurst(p.x, p.y, ['#ffc24a', '#ff6b6b', '#ffe066'], { count: 16, speed: 360 }));
+  sfx.impact();
+  sfx.dock();
 }
 
 function knockPin(p) {
@@ -990,7 +1113,6 @@ function triggers() {
         G.hud.setScore(0, G.score);
         G.particles.push(...createBurst(p.x, p.y - 40, ['#7ee787', '#ffe066', '#5fe3c4'], { count: 22, speed: 380 }));
         sfx.dock();
-        if (G.score % 5 === 0) G.hud.banner('Lekker bezig! 🎉', { ms: 1400 });
         break;
       }
     }
@@ -1008,8 +1130,10 @@ function recordTrails() {
 
 function render(dt) {
   const { ctx } = G;
+  const land = LANDSCAPES[G.landscape];
   drawSpaceBackdrop(ctx, G.stars, G.t, { scrollSpeed: 0 });
-  drawBench(ctx);
+  if (land.id !== 'station') ctx.drawImage(landscapeTerrain(land.id), 0, FLOOR_Y - 200);
+  drawBench(ctx, land);
 
   for (const stroke of G.ink) drawInk(ctx, stroke.points, stroke.live);
   // Beamer links go under every part, so a saucer is never drawn over.
@@ -1035,19 +1159,106 @@ function render(dt) {
   }
 }
 
-function drawBench(ctx) {
-  ctx.strokeStyle = 'rgba(124,196,255,0.22)';
+function drawBench(ctx, land) {
+  const tint = LANDSCAPE_TINT[land.id];
+  ctx.strokeStyle = tint.outline;
   ctx.lineWidth = 4;
   ctx.setLineDash([18, 14]);
   ctx.strokeRect(WALL_L, CEIL_Y, WALL_R - WALL_L, FLOOR_Y - CEIL_Y);
   ctx.setLineDash([]);
 
   const g = ctx.createLinearGradient(0, FLOOR_Y, 0, FLOOR_Y + 60);
-  g.addColorStop(0, '#3a3560');
-  g.addColorStop(1, '#12112b');
+  g.addColorStop(0, tint.floorTop);
+  g.addColorStop(1, tint.floorBot);
   ctx.fillStyle = g;
   roundRect(ctx, WALL_L - 10, FLOOR_Y, WALL_R - WALL_L + 20, 42, 12);
   ctx.fill();
+}
+
+// --- landscapes -------------------------------------------------------------
+//
+// Same prerender-once idiom `spaceBackdrop()` in canvas-utils.js uses for the
+// shared starfield: paint each landscape's terrain strip into an offscreen
+// canvas the first time it's shown, then just blit it every frame after. Kept
+// local to this game because the art belongs only here.
+const LANDSCAPE_TINT = {
+  station: { outline: 'rgba(124,196,255,0.22)', floorTop: '#3a3560', floorBot: '#12112b' },
+  moon: { outline: 'rgba(190,195,215,0.3)', floorTop: '#8892a6', floorBot: '#2a2c38' },
+  mars: { outline: 'rgba(255,150,100,0.3)', floorTop: '#a8522e', floorBot: '#3a1c12' },
+  giant: { outline: 'rgba(255,205,110,0.32)', floorTop: '#c98a3a', floorBot: '#4a3010' },
+  zero: { outline: 'rgba(185,140,255,0.32)', floorTop: '#4a3d78', floorBot: '#161227' },
+};
+
+const TERRAIN_H = 260;
+const terrainSprites = new Map();
+
+function landscapeTerrain(id) {
+  let sprite = terrainSprites.get(id);
+  if (sprite) return sprite;
+  sprite = document.createElement('canvas');
+  sprite.width = LOGICAL_WIDTH;
+  sprite.height = TERRAIN_H;
+  const g = sprite.getContext('2d');
+
+  if (id === 'moon') {
+    const grad = g.createLinearGradient(0, 0, 0, TERRAIN_H);
+    grad.addColorStop(0, 'rgba(150,155,175,0)');
+    grad.addColorStop(1, 'rgba(150,155,175,0.26)');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, LOGICAL_WIDTH, TERRAIN_H);
+    g.fillStyle = 'rgba(90,95,118,0.4)';
+    for (const [cx, cy, cr] of [[220, 214, 46], [640, 240, 30], [980, 190, 58], [1360, 232, 34], [1700, 200, 50]]) {
+      g.beginPath();
+      g.ellipse(cx, cy, cr, cr * 0.42, 0, 0, Math.PI * 2);
+      g.fill();
+    }
+  } else if (id === 'mars') {
+    const grad = g.createLinearGradient(0, 0, 0, TERRAIN_H);
+    grad.addColorStop(0, 'rgba(190,95,55,0)');
+    grad.addColorStop(1, 'rgba(190,95,55,0.32)');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, LOGICAL_WIDTH, TERRAIN_H);
+    g.fillStyle = 'rgba(150,65,32,0.4)';
+    for (let x = -40; x < LOGICAL_WIDTH + 200; x += 220) {
+      g.beginPath();
+      g.moveTo(x, TERRAIN_H);
+      g.quadraticCurveTo(x + 110, TERRAIN_H - 90, x + 220, TERRAIN_H);
+      g.closePath();
+      g.fill();
+    }
+  } else if (id === 'giant') {
+    const grad = g.createLinearGradient(0, 0, 0, TERRAIN_H);
+    grad.addColorStop(0, 'rgba(255,195,95,0)');
+    grad.addColorStop(1, 'rgba(255,195,95,0.28)');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, LOGICAL_WIDTH, TERRAIN_H);
+    g.strokeStyle = 'rgba(255,228,165,0.28)';
+    g.lineWidth = 18;
+    for (let i = 0; i < 5; i++) {
+      g.beginPath();
+      const yy = 60 + i * 44;
+      g.moveTo(0, yy);
+      for (let x = 0; x <= LOGICAL_WIDTH; x += 120) g.lineTo(x, yy + Math.sin(x * 0.01 + i) * 20);
+      g.stroke();
+    }
+  } else if (id === 'zero') {
+    g.strokeStyle = 'rgba(185,140,255,0.2)';
+    g.lineWidth = 2;
+    for (let x = 0; x <= LOGICAL_WIDTH; x += 90) {
+      g.beginPath();
+      g.moveTo(x, 0);
+      g.lineTo(x, TERRAIN_H);
+      g.stroke();
+    }
+    for (let y = 0; y <= TERRAIN_H; y += 90) {
+      g.beginPath();
+      g.moveTo(0, y);
+      g.lineTo(LOGICAL_WIDTH, y);
+      g.stroke();
+    }
+  }
+  terrainSprites.set(id, sprite);
+  return sprite;
 }
 
 function drawInk(ctx, pts, live) {
@@ -1162,11 +1373,14 @@ function drawBeamLink(ctx, p) {
 function drawPart(ctx, p) {
   switch (p.type) {
     case 'plank':
+    case 'iceplank':
+    case 'stickyplank':
     case 'tramp': {
       const teal = p.type === 'tramp';
+      const mat = PLANK_MATS[p.type];
       ctx.save();
       ctx.lineCap = 'round';
-      ctx.strokeStyle = teal ? '#5fe3c4' : '#c9a06a';
+      ctx.strokeStyle = teal ? '#5fe3c4' : mat.color;
       ctx.lineWidth = teal ? 26 : 20;
       ctx.beginPath();
       ctx.moveTo(p.x, p.y);
@@ -1179,6 +1393,51 @@ function drawPart(ctx, p) {
       ctx.lineTo(p.x2, p.y2);
       ctx.stroke();
       ctx.restore();
+      break;
+    }
+    case 'klep': {
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.globalAlpha = p.open ? 0.22 : 1;
+      ctx.strokeStyle = '#ffc24a';
+      ctx.lineWidth = 22;
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      ctx.lineTo(p.x2, p.y2);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      ctx.lineTo(p.x2, p.y2);
+      ctx.stroke();
+      ctx.restore();
+      break;
+    }
+    case 'stoter': {
+      const ring = p.ring || 0;
+      if (ring > 0) {
+        ctx.strokeStyle = `rgba(255,178,36,${ring * 0.8})`;
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 40 + (1 - ring) * 40, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      shadedBall(ctx, 'stoter', p.x, p.y, 40 + ring * 3, (g) => {
+        const grad = g.createRadialGradient(-12, -14, 4, 0, 0, 40);
+        grad.addColorStop(0, '#ffb8b8');
+        grad.addColorStop(0.6, '#ff6b6b');
+        grad.addColorStop(1, '#8f1f1f');
+        g.fillStyle = grad;
+        g.beginPath();
+        g.arc(0, 0, 40, 0, Math.PI * 2);
+        g.fill();
+        g.strokeStyle = 'rgba(255,255,255,0.5)';
+        g.lineWidth = 4;
+        g.beginPath();
+        g.arc(0, 0, 24, 0, Math.PI * 2);
+        g.stroke();
+      }, 40);
       break;
     }
     case 'belt': {
@@ -1387,6 +1646,26 @@ function drawPart(ctx, p) {
       ctx.stroke();
       break;
     }
+    case 'wervel': {
+      const spin = p.spin || 1;
+      const g = ctx.createRadialGradient(p.x, p.y, 4, p.x, p.y, 80);
+      g.addColorStop(0, 'rgba(20,10,40,0.85)');
+      g.addColorStop(0.6, 'rgba(90,60,160,0.4)');
+      g.addColorStop(1, 'rgba(90,60,160,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 80, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(185,140,255,0.75)';
+      ctx.lineWidth = 5;
+      for (let i = 0; i < 2; i++) {
+        ctx.beginPath();
+        ctx.ellipse(p.x, p.y, 36 + i * 20, 14 + i * 8, G.t * 2.2 * spin + i, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      emoji(ctx, '🌪️', p.x, p.y, 62);
+      break;
+    }
     case 'beam': {
       const flash = p.flash || 0;
       ctx.save();
@@ -1427,18 +1706,22 @@ function drawPart(ctx, p) {
       break;
     }
     case 'fountain':
-    case 'hopper': {
+    case 'hopper':
+    case 'geiser': {
       const spec = PARTS[p.type];
+      const side = spec.drops.up ? -1 : 1;
       ctx.fillStyle = spec.drops.tint;
       roundRect(ctx, p.x - 54, p.y - 40, 108, 74, 16);
       ctx.fill();
       // The mouth is as wide as what comes out of it, so a child can see which
-      // tap gives the big orange ball before they press ▶.
+      // tap gives the big orange ball before they press ▶. The geiser's mouth
+      // sits on top of the housing instead of underneath, matching where its
+      // balls actually come out.
       ctx.fillStyle = '#0d0c22';
       ctx.beginPath();
-      ctx.arc(p.x, p.y + 40, PARTS[spec.drops.body].body.r - 4, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y + side * 40, PARTS[spec.drops.body].body.r - 4, 0, Math.PI * 2);
       ctx.fill();
-      emoji(ctx, spec.icon, p.x, p.y - 6, 54);
+      emoji(ctx, spec.icon, p.x, p.y - side * 6, 54);
       break;
     }
     case 'bomb': {
@@ -1454,6 +1737,14 @@ function drawPart(ctx, p) {
       break;
     }
     case 'magnet':
+      // The ring says which way it pulls before a child presses ▶: blue draws
+      // in, red pushes away — the same colour language the whole app already
+      // uses for "safe/attract" versus "danger/repel".
+      ctx.strokeStyle = p.repel ? 'rgba(255,107,107,0.8)' : 'rgba(124,196,255,0.8)';
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 50, 0, Math.PI * 2);
+      ctx.stroke();
       emoji(ctx, '🧲', p.x, p.y, 84);
       break;
     default: {
@@ -1515,6 +1806,56 @@ function drawBody(ctx, b) {
       ctx.stroke();
       break;
     }
+    case 'ice':
+      shadedBall(ctx, 'ice', b.x, b.y, b.r, (g, r) => {
+        const grad = g.createRadialGradient(-r * 0.3, -r * 0.35, r * 0.1, 0, 0, r);
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(0.55, '#cdf0ff');
+        grad.addColorStop(1, '#7fc4e8');
+        g.fillStyle = grad;
+        g.beginPath();
+        g.arc(0, 0, r, 0, Math.PI * 2);
+        g.fill();
+        g.strokeStyle = 'rgba(255,255,255,0.8)';
+        g.lineWidth = 2;
+        g.beginPath();
+        g.moveTo(-r * 0.4, -r * 0.5);
+        g.lineTo(r * 0.1, r * 0.1);
+        g.stroke();
+      });
+      break;
+    case 'kogel':
+      shadedBall(ctx, 'kogel', b.x, b.y, b.r, (g, r) => {
+        const grad = g.createRadialGradient(-r * 0.3, -r * 0.35, r * 0.1, 0, 0, r);
+        grad.addColorStop(0, '#8f8f92');
+        grad.addColorStop(0.6, '#55555c');
+        grad.addColorStop(1, '#201f24');
+        g.fillStyle = grad;
+        g.beginPath();
+        g.arc(0, 0, r, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = 'rgba(0,0,0,0.35)';
+        for (const [dx, dy, rr] of [[r * 0.3, r * 0.2, r * 0.14], [-r * 0.2, r * 0.4, r * 0.1]]) {
+          g.beginPath();
+          g.arc(dx, dy, rr, 0, Math.PI * 2);
+          g.fill();
+        }
+      });
+      break;
+    case 'wolk':
+      shadedBall(ctx, 'wolk', b.x, b.y, b.r, (g, r) => {
+        g.fillStyle = '#ffffff';
+        for (const [dx, dy, rr] of [[0, 0, r * 0.72], [-r * 0.5, r * 0.12, r * 0.5], [r * 0.5, r * 0.1, r * 0.52], [0, -r * 0.32, r * 0.5]]) {
+          g.beginPath();
+          g.arc(dx, dy, rr, 0, Math.PI * 2);
+          g.fill();
+        }
+        g.fillStyle = 'rgba(150,170,210,0.35)';
+        g.beginPath();
+        g.arc(-r * 0.15, r * 0.28, r * 0.5, 0, Math.PI * 2);
+        g.fill();
+      });
+      break;
     default:
       // Hundreds of these can be in flight at once, so the marble is a sprite.
       shadedBall(ctx, 'marble', b.x, b.y, b.r, (g, r) => {
@@ -1693,6 +2034,12 @@ function turnPart(p) {
   } else if (p.type === 'bel') {
     p.note = ((p.note || 0) + 1) % 8;
     ringBell(p);
+  } else if (p.type === 'magnet') {
+    p.repel = !p.repel;
+    sfx.select();
+  } else if (p.type === 'wervel') {
+    p.spin = (p.spin || 1) * -1;
+    sfx.select();
   } else if (p.x2 !== undefined) {
     // Rotate a plank or trampoline a notch around its own middle.
     const cx = (p.x + p.x2) / 2;
@@ -1755,11 +2102,13 @@ function place(type, x, y, extra = {}) {
 function buildToolbar() {
   const bar = document.createElement('div');
   bar.className = 'mach-bar';
+  const rowCats = document.createElement('div');
+  rowCats.className = 'mach-bar__row';
   const rowA = document.createElement('div');
   rowA.className = 'mach-bar__row';
   const rowB = document.createElement('div');
   rowB.className = 'mach-bar__row';
-  bar.append(rowA, rowB);
+  bar.append(rowCats, rowA, rowB);
 
   // Only the buttons that pick a tool are tracked here. The 🐢 and 💫 switches
   // are not tools, and lumping them in meant that choosing a plank silently
@@ -1789,10 +2138,6 @@ function buildToolbar() {
     toolButtons.set(id, add(row, icon, label, () => select(id)));
   };
 
-  for (const id of PART_ORDER) {
-    addTool(rowA, id, PARTS[id].icon, PARTS[id].name);
-  }
-
   addTool(rowB, 'ink', '✏️', 'Tekenen — je lijn wordt een baan');
   addTool(rowB, 'hand', '✋', 'Verschuiven — tik op een onderdeel om het te draaien');
   addTool(rowB, 'wreck', '🧨', 'Slopen');
@@ -1801,6 +2146,7 @@ function buildToolbar() {
   rowB.appendChild(sep());
 
   add(rowB, '🎲', 'Verrassingsmachine', nextPreset);
+  add(rowB, '🌍', 'Ander landschap — verandert de zwaartekracht', nextLandscape);
   const slowBtn = add(rowB, '🐢', 'Slome film', () => {
     G.slow = !G.slow;
     slowBtn.classList.toggle('is-active', G.slow);
@@ -1826,12 +2172,32 @@ function buildToolbar() {
     sfx.explode();
   });
 
-  toolButtons.get(G.tool).classList.add('is-active');
+  // Category tabs swap what row A shows. Each category holds seven parts or
+  // fewer, so it always fits the row's own "wrap, never scroll" rule even
+  // with thirty buildable parts split across five drawers. Switching a tab
+  // clears only the part buttons from `toolButtons` — the row B tools above
+  // (✏️/✋/🧨) live outside any category and are never touched.
+  const partIds = new Set(CATEGORIES.flatMap((c) => c.parts));
+  const catButtons = new Map();
+  const renderCategory = (idx, { silent } = {}) => {
+    G.category = idx;
+    for (const id of partIds) toolButtons.delete(id);
+    rowA.replaceChildren();
+    for (const id of CATEGORIES[idx].parts) addTool(rowA, id, PARTS[id].icon, PARTS[id].name);
+    catButtons.forEach((b, key) => b.classList.toggle('is-active', key === idx));
+    if (toolButtons.has(G.tool)) toolButtons.get(G.tool).classList.add('is-active');
+    if (!silent) sfx.blip();
+  };
+  CATEGORIES.forEach((cat, idx) => {
+    catButtons.set(idx, add(rowCats, cat.icon, cat.label, () => renderCategory(idx), 'mach-tool--cat'));
+  });
+  renderCategory(G.category, { silent: true });
+
   G.stage.appendChild(bar);
 
   G.hint = document.createElement('div');
   G.hint.className = 'hint-strip mach-hint';
-  G.hint.textContent = 'Zet onderdelen neer, teken banen en druk op ▶ — of pak 🎲';
+  G.hint.textContent = 'Zet onderdelen neer, teken banen en druk op ▶ — of pak 🎲 of 🌍';
   G.stage.appendChild(G.hint);
 }
 
