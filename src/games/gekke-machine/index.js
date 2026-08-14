@@ -190,7 +190,6 @@ export function init(container, opts) {
     slow: false,
     trails: false,
     tool: 'marble',
-    category: 0,
     drags: new Map(),
     score: 0,
     seq: 1,
@@ -2111,27 +2110,39 @@ function buildToolbar() {
   const bar = document.createElement('div');
   bar.className = 'mach-bar';
   const rowCats = document.createElement('div');
-  rowCats.className = 'mach-bar__row mach-bar__cats';
-  const rowA = document.createElement('div');
-  rowA.className = 'mach-bar__row';
+  rowCats.className = 'mach-bar__row';
   const rowB = document.createElement('div');
   rowB.className = 'mach-bar__row';
-  // Row A's parts change with the category, so the two live inside one
-  // panel — a drawer — with the tabs that open it attached to its own top
-  // edge. Row B (play/build tools) is not part of any drawer and stays
-  // outside it, so it never gets mistaken for a fourth laatje.
-  const drawer = document.createElement('div');
-  drawer.className = 'mach-drawer';
-  drawer.append(rowCats, rowA);
-  bar.append(drawer, rowB);
+  bar.append(rowCats, rowB);
 
   // Only the buttons that pick a tool are tracked here. The 🐢 and 💫 switches
   // are not tools, and lumping them in meant that choosing a plank silently
   // un-lit them while they were still on.
   const toolButtons = new Map();
+  const catTriggers = new Map();
+  const pops = new Map();
+
+  const closePops = () => pops.forEach((p) => p.classList.remove('is-open'));
+
+  // A category button wears whatever part it last handed out, the same way
+  // the sticker button in Ruimtetekenen wears its current sticker — so a
+  // child reads "what will I place" straight off the button and never off a
+  // word. That also retires the earlier text-label fix: this game is for
+  // children who cannot read yet, so the button itself has to be the answer.
+  const applySelection = (id) => {
+    toolButtons.forEach((b, key) => b.classList.toggle('is-active', key === id));
+    CATEGORIES.forEach((cat, idx) => {
+      const trig = catTriggers.get(idx);
+      const inCat = cat.parts.includes(id);
+      trig.classList.toggle('is-active', inCat);
+      if (inCat) trig.textContent = PARTS[id].icon;
+    });
+  };
+
   const select = (id) => {
     G.tool = id;
-    toolButtons.forEach((b, key) => b.classList.toggle('is-active', key === id));
+    applySelection(id);
+    closePops();
     sfx.blip();
   };
 
@@ -2151,33 +2162,6 @@ function buildToolbar() {
 
   const addTool = (row, id, icon, label) => {
     toolButtons.set(id, add(row, icon, label, () => select(id)));
-  };
-
-  // Category tabs get a printed Dutch word next to the icon, not just an
-  // aria-label: the icon alone was ambiguous whenever it doubled as one of
-  // the parts inside its own drawer (🔵 the Ballen tab and 🔵 the marble,
-  // 📏 the Banen tab and 📏 the plank), and a child tapping it could not
-  // tell "opens a drawer" from "places this". A printed word next to a meter
-  // is already how a real instrument panel is labelled elsewhere in this
-  // app; a tab is chrome the same way a meter is, so it earns the same word.
-  const addCat = (row, cat, handler) => {
-    const b = document.createElement('button');
-    b.className = 'mach-tool mach-tool--cat';
-    const iconEl = document.createElement('span');
-    iconEl.className = 'mach-tool--cat__icon';
-    iconEl.textContent = cat.icon;
-    const labelEl = document.createElement('span');
-    labelEl.className = 'mach-tool--cat__label';
-    labelEl.textContent = cat.label;
-    b.append(iconEl, labelEl);
-    b.setAttribute('aria-label', cat.label);
-    b.addEventListener('pointerdown', (e) => e.stopPropagation());
-    b.addEventListener('pointerup', (e) => {
-      e.stopPropagation();
-      handler();
-    });
-    row.appendChild(b);
-    return b;
   };
 
   addTool(rowB, 'ink', '✏️', 'Tekenen — je lijn wordt een baan');
@@ -2214,26 +2198,29 @@ function buildToolbar() {
     sfx.explode();
   });
 
-  // Category tabs swap what row A shows. Each category holds seven parts or
-  // fewer, so it always fits the row's own "wrap, never scroll" rule even
-  // with thirty buildable parts split across five drawers. Switching a tab
-  // clears only the part buttons from `toolButtons` — the row B tools above
-  // (✏️/✋/🧨) live outside any category and are never touched.
-  const partIds = new Set(CATEGORIES.flatMap((c) => c.parts));
-  const catButtons = new Map();
-  const renderCategory = (idx, { silent } = {}) => {
-    G.category = idx;
-    for (const id of partIds) toolButtons.delete(id);
-    rowA.replaceChildren();
-    for (const id of CATEGORIES[idx].parts) addTool(rowA, id, PARTS[id].icon, PARTS[id].name);
-    catButtons.forEach((b, key) => b.classList.toggle('is-active', key === idx));
-    if (toolButtons.has(G.tool)) toolButtons.get(G.tool).classList.add('is-active');
-    if (!silent) sfx.blip();
-  };
+  // Each category is one plain round trigger — the same shape as every
+  // other button in the bar, nothing about its look singled out as "this is
+  // a drawer" — that pops a tray of its own parts above the bar when tapped,
+  // exactly where the sticker and background trays already open in
+  // Ruimtetekenen. Tapping a part inside picks it and closes the tray again;
+  // thirty parts across five trays is still five taps away from any of them,
+  // the same reach the old tabs gave.
   CATEGORIES.forEach((cat, idx) => {
-    catButtons.set(idx, addCat(rowCats, cat, () => renderCategory(idx)));
+    const pop = document.createElement('div');
+    pop.className = 'mach-pop';
+    for (const id of cat.parts) addTool(pop, id, PARTS[id].icon, PARTS[id].name);
+    bar.appendChild(pop);
+    pops.set(idx, pop);
+
+    const trig = add(rowCats, cat.icon, cat.label, () => {
+      const open = pop.classList.contains('is-open');
+      closePops();
+      if (!open) { pop.classList.add('is-open'); sfx.select(); }
+    });
+    catTriggers.set(idx, trig);
   });
-  renderCategory(G.category, { silent: true });
+
+  applySelection(G.tool);
 
   G.stage.appendChild(bar);
 

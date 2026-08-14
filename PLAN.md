@@ -659,26 +659,32 @@ rode in plaats van blauwe ring zegt welke), tikken op een wervelwind wisselt de
 draairichting. Eén gebaar dat een kind al kent, in plaats van twee nieuwe
 knoppen voor iets dat verder precies hetzelfde onderdeel is.
 
-### Laatjes die op laatjes lijken (Gekke Machine, opnieuw)
+### Laatjes zonder woorden (Gekke Machine, twee keer opnieuw)
 
 De vijf laatjes-tabbladen waren vierkant in plaats van rond zodat een kind ze
 nooit voor een neerzetbaar onderdeel zou aanzien, maar dat loste maar de helft
 van de verwarring op: een kind wist nog steeds niet *wat* er in een laatje zat
 voordat het erop tikte, en een paar tabbladen droegen toevallig hetzelfde
 icoon als een onderdeel er middenin — 🔵 was zowel het Ballen-tabblad als de
-knikker zelf, 📏 zowel Banen als de plank. Zonder woord erbij kon een kind het
-verschil tussen "dit opent een laatje" en "dit zet iets neer" niet zien, en op
-het echte bord bleek dat precies het probleem.
+knikker zelf, 📏 zowel Banen als de plank. Op het echte bord bleek dat precies
+het probleem. De eerste oplossing zette er een gedrukt Nederlands woord bij —
+en die miste het hele punt: dit spel is juist voor kinderen die nog niet
+kunnen lezen, dus een woord ernaast is voor hen geen oplossing maar een
+tweede symbool dat ook niets zegt.
 
-Het tabblad heeft er nu een gedrukt Nederlands woord naast staan, en de rij
-tabbladen en de onderdelenrij eronder zitten in één paneel — een **lade** —
-in plaats van drie rijen knoppen die toevallig onder elkaar staan. Het geopende
-tabblad krijgt dezelfde lichte ondergrond als de lade erachter, alsof het erin
-opgaat, precies zoals een tabblad van een hangmap doet voor de map die
-naar voren getrokken is. Dat kleurt bewust niet mee met de amberen gloed die
-elders al "dit is het onderdeel dat je gaat gebruiken" betekent — die gloed
-blijft daar exclusief voor, en de lade krijgt zijn eigen taal in plaats van
-hem te delen.
+Het antwoord stond al in Ruimtetekenen: de 32 stempels en 17 achtergronden
+zitten daar ook niet los in de balk maar achter één knop die zelf al toont wat
+hij bevat — de stempelknop draagt het stempel dat het laatst gekozen is — en
+tikken opent een laatje dat er los boven zweeft, direct terug te sluiten door
+er iets uit te kiezen. Diezelfde knop-die-zijn-eigen-inhoud-draagt vervangt nu
+de vijf laatjes-tabbladen: elke laatjesknop is een doodgewone ronde knop, qua
+vorm niet te onderscheiden van elk ander gereedschap in de balk, en draagt het
+onderdeel dat er het laatst uit gekozen is (bij het opstarten dus gewoon het
+laatje-icoon). Een tik opent een zwevend laatje met de rest van die categorie
+erin, precies boven de balk, exact zoals bij de stempels; een tik op een
+onderdeel daarin kiest het en sluit het laatje meteen weer. Er valt nergens
+meer iets te lezen, en de knop die opgloeit met het gekozen onderdeel *is* het
+antwoord op "wat ga ik neerzetten", ook als het laatje allang weer dicht is.
 
 ### Een zesde wereld voor niets (Gekke Machine, verder uitgebreid)
 

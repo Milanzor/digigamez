@@ -31,9 +31,9 @@
   z-index: 20;
 }
 
-/* Parts on the top row, what-to-do-with-them on the bottom row. Each row wraps
-   rather than scrolls: a toolbar that scrolls is a dead end for a four-year-old
-   who will never discover that it scrolls. */
+/* The five category triggers sit on the top row, the build/play tools on the
+   bottom row. Each row wraps rather than scrolls: a toolbar that scrolls is a
+   dead end for a four-year-old who will never discover that it scrolls. */
 .mach-bar__row {
   display: flex;
   flex-wrap: wrap;
@@ -87,67 +87,40 @@
   border-color: #a8281a;
 }
 
-/* The category tabs and the parts row they open are one instrument, not two
-   independent rows of buttons: a lightly-lit panel behind both says "this
-   strip belongs to this drawer" the way a real toolbox groups a label with
-   the tray it names. Row B (▶/🎲/🌍/…) sits outside this panel entirely. */
-.mach-drawer {
+/* Each category is a plain round button, indistinguishable by shape from any
+   other tool in the bar, that pops a tray of its own parts above the bar —
+   the same trick the sticker and background pickers already use in
+   Ruimtetekenen for a collection too big to show all at once. No child here
+   can read yet, so there is no label anywhere: the trigger's face becomes
+   whatever part it last handed out (see `applySelection` in index.js), which
+   is the only thing that has to say "this is what you'll place" — the same
+   cue the sticker button already gives for its current sticker. */
+.mach-pop {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + var(--sp-2));
+  transform: translateX(-50%) translateY(clamp(8px, 1.4vmin, 28px));
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   align-items: center;
-  gap: clamp(2px, 0.5vmin, 10px);
-  padding: clamp(6px, 1vmin, 20px);
-  border-radius: var(--r-lg);
-  background: var(--panel-hi);
-  box-shadow: inset 0 0 0 var(--hair) var(--rule-mid);
-}
-
-.mach-bar__cats {
-  gap: clamp(6px, 0.9vmin, 20px);
-}
-
-/* Category tabs pick which drawer of parts row A shows below. A real folder
-   tab, not a round button like the parts and tools it sits above: flat
-   bottom instead of a full circle, and a printed word next to the icon so a
-   child does not have to guess a drawer's contents from an emoji that can
-   double as one of the parts inside it (🔵 the tab, 🔵 the marble). */
-.mach-tool--cat {
-  display: flex;
-  flex-direction: row;
-  width: auto;
-  height: clamp(38px, 5.2vmin, 104px);
-  padding: 0 clamp(10px, 1.6vmin, 32px);
+  justify-content: center;
   gap: clamp(4px, 0.7vmin, 14px);
-  border-radius: var(--r-md) var(--r-md) var(--r-sm) var(--r-sm);
-  background: var(--panel);
+  max-width: 90vw;
+  padding: clamp(8px, 1.2vmin, 24px);
+  border-radius: var(--r-md);
+  background: rgba(8, 13, 42, 0.94);
+  border: clamp(2px, 0.3vmin, 7px) solid var(--panel-line);
+  box-shadow: var(--shadow-panel);
+  z-index: 21;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
 }
 
-.mach-tool--cat__icon {
-  font-size: clamp(17px, 2.4vmin, 50px);
-  line-height: 1;
-}
-
-.mach-tool--cat__label {
-  font-family: var(--font-display);
-  font-size: var(--fs-label);
-  font-weight: 700;
-  color: var(--muted-warm);
-  white-space: nowrap;
-}
-
-/* The open tab's background matches the drawer panel right below it, so it
-   reads as merged into the drawer instead of merely "lit up" — the same cue
-   a real hanging-folder tab gives for which folder is pulled forward. Amber
-   stays reserved for "this is the part or tool you are about to use", so the
-   open-tab cue deliberately does not reuse that glow. */
-.mach-tool--cat.is-active {
-  background: var(--panel-hi);
-  border-color: var(--rule-strong);
-  box-shadow: none;
-}
-
-.mach-tool--cat.is-active .mach-tool--cat__label {
-  color: var(--cream-hi);
+.mach-pop.is-open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
 }
 
 .mach-hint {
