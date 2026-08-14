@@ -126,15 +126,19 @@ const CATEGORIES = [
   { id: 'toevoer', icon: '⛲', label: 'Toevoer', parts: ['fountain', 'hopper', 'geiser', 'beam'] },
 ];
 
-// Five worlds, one number each: everything else in the simulation reads
-// gravity through `landscapeGravity()`, so a new landscape is just a new row
-// here plus a bit of paint in `landscapeTerrain()`/`drawBench()`.
+// Six worlds, one number each: everything else in the simulation reads
+// gravity through this one multiplier, so a new landscape is just a new row
+// here plus a bit of paint in `landscapeTerrain()`/`drawBench()`. Negative
+// gravity needed no special case either — every ball still asks the same
+// `BASE_GRAVITY * landscape.gravity * b.g`, and the floor/ceiling bounce is
+// already symmetric, so "everything falls up" fell out of a minus sign.
 const LANDSCAPES = [
   { id: 'station', name: 'Ruimtestation', icon: '🛰️', gravity: 1, sub: 'Normale zwaartekracht' },
   { id: 'moon', name: 'De Maan', icon: '🌕', gravity: 0.17, sub: 'Bijna geen zwaartekracht!' },
   { id: 'mars', name: 'Mars', icon: '🔴', gravity: 0.38, sub: 'Lichte zwaartekracht' },
   { id: 'giant', name: 'Gasreus', icon: '🟠', gravity: 2.4, sub: 'Zware zwaartekracht!' },
   { id: 'zero', name: 'Nulzwaartekracht', icon: '✨', gravity: 0.05, sub: 'Bijna zweven' },
+  { id: 'upside', name: 'Op z\'n Kop', icon: '🙃', gravity: -1, sub: 'Alles valt omhoog!' },
 ];
 
 const SAVE_KEY = 'gekke-machine';
@@ -1132,7 +1136,10 @@ function render(dt) {
   const { ctx } = G;
   const land = LANDSCAPES[G.landscape];
   drawSpaceBackdrop(ctx, G.stars, G.t, { scrollSpeed: 0 });
-  if (land.id !== 'station') ctx.drawImage(landscapeTerrain(land.id), 0, FLOOR_Y - 200);
+  // Station and the upside-down world are the two with nothing on the ground
+  // worth painting: station because it never had terrain, upside-down because
+  // a floor sprite would be a lie about which way things fall here.
+  if (land.id !== 'station' && land.id !== 'upside') ctx.drawImage(landscapeTerrain(land.id), 0, FLOOR_Y - 200);
   drawBench(ctx, land);
 
   for (const stroke of G.ink) drawInk(ctx, stroke.points, stroke.live);
@@ -1187,6 +1194,7 @@ const LANDSCAPE_TINT = {
   mars: { outline: 'rgba(255,150,100,0.3)', floorTop: '#a8522e', floorBot: '#3a1c12' },
   giant: { outline: 'rgba(255,205,110,0.32)', floorTop: '#c98a3a', floorBot: '#4a3010' },
   zero: { outline: 'rgba(185,140,255,0.32)', floorTop: '#4a3d78', floorBot: '#161227' },
+  upside: { outline: 'rgba(255,143,199,0.32)', floorTop: '#5a2f52', floorBot: '#1c0f24' },
 };
 
 const TERRAIN_H = 260;
@@ -2103,12 +2111,19 @@ function buildToolbar() {
   const bar = document.createElement('div');
   bar.className = 'mach-bar';
   const rowCats = document.createElement('div');
-  rowCats.className = 'mach-bar__row';
+  rowCats.className = 'mach-bar__row mach-bar__cats';
   const rowA = document.createElement('div');
   rowA.className = 'mach-bar__row';
   const rowB = document.createElement('div');
   rowB.className = 'mach-bar__row';
-  bar.append(rowCats, rowA, rowB);
+  // Row A's parts change with the category, so the two live inside one
+  // panel — a drawer — with the tabs that open it attached to its own top
+  // edge. Row B (play/build tools) is not part of any drawer and stays
+  // outside it, so it never gets mistaken for a fourth laatje.
+  const drawer = document.createElement('div');
+  drawer.className = 'mach-drawer';
+  drawer.append(rowCats, rowA);
+  bar.append(drawer, rowB);
 
   // Only the buttons that pick a tool are tracked here. The 🐢 and 💫 switches
   // are not tools, and lumping them in meant that choosing a plank silently
@@ -2136,6 +2151,33 @@ function buildToolbar() {
 
   const addTool = (row, id, icon, label) => {
     toolButtons.set(id, add(row, icon, label, () => select(id)));
+  };
+
+  // Category tabs get a printed Dutch word next to the icon, not just an
+  // aria-label: the icon alone was ambiguous whenever it doubled as one of
+  // the parts inside its own drawer (🔵 the Ballen tab and 🔵 the marble,
+  // 📏 the Banen tab and 📏 the plank), and a child tapping it could not
+  // tell "opens a drawer" from "places this". A printed word next to a meter
+  // is already how a real instrument panel is labelled elsewhere in this
+  // app; a tab is chrome the same way a meter is, so it earns the same word.
+  const addCat = (row, cat, handler) => {
+    const b = document.createElement('button');
+    b.className = 'mach-tool mach-tool--cat';
+    const iconEl = document.createElement('span');
+    iconEl.className = 'mach-tool--cat__icon';
+    iconEl.textContent = cat.icon;
+    const labelEl = document.createElement('span');
+    labelEl.className = 'mach-tool--cat__label';
+    labelEl.textContent = cat.label;
+    b.append(iconEl, labelEl);
+    b.setAttribute('aria-label', cat.label);
+    b.addEventListener('pointerdown', (e) => e.stopPropagation());
+    b.addEventListener('pointerup', (e) => {
+      e.stopPropagation();
+      handler();
+    });
+    row.appendChild(b);
+    return b;
   };
 
   addTool(rowB, 'ink', '✏️', 'Tekenen — je lijn wordt een baan');
@@ -2189,7 +2231,7 @@ function buildToolbar() {
     if (!silent) sfx.blip();
   };
   CATEGORIES.forEach((cat, idx) => {
-    catButtons.set(idx, add(rowCats, cat.icon, cat.label, () => renderCategory(idx), 'mach-tool--cat'));
+    catButtons.set(idx, addCat(rowCats, cat, () => renderCategory(idx)));
   });
   renderCategory(G.category, { silent: true });
 

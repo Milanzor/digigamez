@@ -87,13 +87,67 @@
   border-color: #a8281a;
 }
 
-/* Category tabs pick which drawer of parts row A shows below. Square rather
-   than round, so a child never mistakes a drawer for a placeable part. */
-.mach-tool--cat {
+/* The category tabs and the parts row they open are one instrument, not two
+   independent rows of buttons: a lightly-lit panel behind both says "this
+   strip belongs to this drawer" the way a real toolbox groups a label with
+   the tray it names. Row B (▶/🎲/🌍/…) sits outside this panel entirely. */
+.mach-drawer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(2px, 0.5vmin, 10px);
+  padding: clamp(6px, 1vmin, 20px);
   border-radius: var(--r-lg);
-  width: clamp(42px, 5.6vmin, 120px);
-  height: clamp(42px, 5.6vmin, 120px);
-  font-size: clamp(18px, 2.6vmin, 54px);
+  background: var(--panel-hi);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule-mid);
+}
+
+.mach-bar__cats {
+  gap: clamp(6px, 0.9vmin, 20px);
+}
+
+/* Category tabs pick which drawer of parts row A shows below. A real folder
+   tab, not a round button like the parts and tools it sits above: flat
+   bottom instead of a full circle, and a printed word next to the icon so a
+   child does not have to guess a drawer's contents from an emoji that can
+   double as one of the parts inside it (🔵 the tab, 🔵 the marble). */
+.mach-tool--cat {
+  display: flex;
+  flex-direction: row;
+  width: auto;
+  height: clamp(38px, 5.2vmin, 104px);
+  padding: 0 clamp(10px, 1.6vmin, 32px);
+  gap: clamp(4px, 0.7vmin, 14px);
+  border-radius: var(--r-md) var(--r-md) var(--r-sm) var(--r-sm);
+  background: var(--panel);
+}
+
+.mach-tool--cat__icon {
+  font-size: clamp(17px, 2.4vmin, 50px);
+  line-height: 1;
+}
+
+.mach-tool--cat__label {
+  font-family: var(--font-display);
+  font-size: var(--fs-label);
+  font-weight: 700;
+  color: var(--muted-warm);
+  white-space: nowrap;
+}
+
+/* The open tab's background matches the drawer panel right below it, so it
+   reads as merged into the drawer instead of merely "lit up" — the same cue
+   a real hanging-folder tab gives for which folder is pulled forward. Amber
+   stays reserved for "this is the part or tool you are about to use", so the
+   open-tab cue deliberately does not reuse that glow. */
+.mach-tool--cat.is-active {
+  background: var(--panel-hi);
+  border-color: var(--rule-strong);
+  box-shadow: none;
+}
+
+.mach-tool--cat.is-active .mach-tool--cat__label {
+  color: var(--cream-hi);
 }
 
 .mach-hint {
