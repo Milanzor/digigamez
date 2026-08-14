@@ -88,3 +88,84 @@
 /* No colour task: one bubble with a finger on it, and nothing to compare it
    against, so the panel closes up around it. */
 .bub-legend--simple { gap: 0; padding: var(--sp-1) var(--sp-2); }
+
+/* ── Pace picker ──────────────────────────────────────────────────────────
+   Asked once on arrival, over the live starfield, so the mission already feels
+   open while the grown-up at the board makes the choice. Same panel language as
+   Ruimte Invasie's difficulty gate — a child who has met one has met both. */
+.bub-diff {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  background: rgba(5, 7, 15, 0.86);
+}
+
+.bub-diff__panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-5);
+  border-radius: var(--r-lg);
+  background: rgba(13, 12, 34, 0.94);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule-mid), var(--shadow-panel);
+  max-width: 92vw;
+}
+
+.bub-diff__title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs-h1);
+  color: var(--cream);
+  text-align: center;
+}
+
+.bub-diff__row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-3);
+}
+
+.bub-diff__btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-1);
+  width: clamp(180px, 26vmin, 560px);
+  padding: var(--sp-3) var(--sp-3) var(--sp-4);
+  border-radius: var(--r-md);
+  background: var(--panel-hi);
+  box-shadow: inset 0 0 0 var(--hair) var(--rule);
+  color: var(--cream);
+  transition: transform 0.12s var(--ease-press), background 0.16s ease;
+}
+
+.bub-diff__btn:active {
+  transform: translateY(clamp(2px, 0.4vmin, 9px)) scale(0.985);
+  background: var(--panel-press);
+}
+
+/* The pace they picked last time, so a returning child recognises it. */
+.bub-diff__btn.is-last {
+  background: linear-gradient(180deg, rgba(255, 194, 74, 0.13), rgba(255, 255, 255, 0.02));
+  box-shadow: inset 0 0 0 var(--hair) rgba(255, 194, 74, 0.45);
+}
+
+.bub-diff__icon { font-size: var(--fs-icon); }
+
+.bub-diff__label {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs-h2);
+}
+
+.bub-diff__sub {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.3;
+}

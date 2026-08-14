@@ -182,7 +182,7 @@ export function showMissionComplete(container, {
   onHome,
 }) {
   const el = document.createElement('div');
-  el.className = 'done';
+  el.className = 'done done--locked';
   el.innerHTML = `
     <div class="done__medal">
       <div class="done__wave"></div>
@@ -217,6 +217,36 @@ export function showMissionComplete(container, {
     chimes.push(setTimeout(() => sfx.star(), 200 + i * 130));
   }
 
+  // The screen arrives on top of a child who is still tapping. `onTap` already
+  // refuses a finger that came down on the board and lifted on a button, but it
+  // cannot refuse the *next* tap: at four taps a second the panel is barely a
+  // frame old when a whole press lands on "Volgend level". So the actions start
+  // inert and arm only once the tapping has stopped — every tap that hits the
+  // panel while it is locked pushes the moment back, which turns mashing into
+  // the thing that keeps the buttons safe instead of the thing that beats them.
+  const SETTLE_MS = 800;
+  const MAX_LOCK_MS = 2600;
+  let armTimer = null;
+  // A child who never stops would never see the buttons, so the extension runs
+  // out: past this point the row comes up regardless.
+  const hardDeadline = performance.now() + MAX_LOCK_MS;
+
+  function arm() {
+    armTimer = null;
+    el.removeEventListener('pointerdown', restartSettle);
+    el.classList.remove('done--locked');
+  }
+  function restartSettle() {
+    const left = hardDeadline - performance.now();
+    if (left <= 0) return;
+    clearTimeout(armTimer);
+    armTimer = setTimeout(arm, Math.min(SETTLE_MS, left));
+  }
+  // While locked the buttons take no pointer events, so a stray tap falls
+  // through to the panel itself and lands here.
+  el.addEventListener('pointerdown', restartSettle);
+  restartSettle();
+
   const acts = { next: onNext, retry: onRetry, home: onHome };
   // Bound per button rather than delegated from the panel: this screen covers
   // the whole board, and a delegated pointerup would fire for a finger that
@@ -234,6 +264,8 @@ export function showMissionComplete(container, {
     if (closed) return;
     closed = true;
     chimes.forEach(clearTimeout);
+    clearTimeout(armTimer);
+    el.removeEventListener('pointerdown', restartSettle);
     offs.forEach((off) => off());
     el.remove();
   }

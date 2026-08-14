@@ -4,17 +4,20 @@
 //
 // Order is by age, youngest first, because that is the order a classroom
 // scans the archive in. The eight play colours repeat now that there are
-// thirty missions; what matters is that two rows with the same colour
+// thirty-four missions; what matters is that two rows with the same colour
 // never end up next to each other in the grid, so the list is ordered with
 // that in mind as well.
 //
-// At thirty missions the grid is five columns wide (see portal.css), and that
-// changed every adjacency in it — a neighbour used to be three rows away and is
-// now one. The placement was solved rather than eyeballed, under three rules: no
-// two orthogonal neighbours share a colour, amber stays the action colour by
-// appearing exactly once here, and as few existing missions as possible move.
-// The minimum turned out to be two — Ruimtegeheugen and Maanhockey — and no
-// arrangement of the six new missions inside their own age bands avoids it.
+// At thirty-four missions the grid is five columns wide (see portal.css), and
+// every change to its shape changes every adjacency in it — a neighbour that used
+// to be three rows away is now one across. So the placement is solved rather than
+// eyeballed, under three rules: no two orthogonal neighbours share a colour,
+// amber stays the action colour by appearing exactly once here, and as few
+// missions as possible move from the colour they already had. Widening to five
+// columns cost Ruimtegeheugen and Maanhockey their old colours, and merging in
+// the four two-player missions cost Hou Ze Hoog and Zuurstofleidingen theirs.
+// Two is the proven minimum each time, not a guess: the solver is asked for zero
+// first and works up.
 //
 // `maxPlayers` is a number rather than the old `supportsTwoPlayers` boolean.
 // Raketrace is the reason: it wants three or four children at a 75" board, and
@@ -44,6 +47,15 @@ export const GAMES = [
     load: () => import('./zeepbellen/index.js'),
   },
   {
+    slug: 'hou-ze-hoog',
+    title: 'Hou Ze Hoog',
+    icon: '🎈',
+    ageLabel: '2–5 jr',
+    maxPlayers: 2,
+    color: '#7ee787',
+    load: () => import('./hou-ze-hoog/index.js'),
+  },
+  {
     slug: 'verstoppertje',
     title: 'Alien Verstoppertje',
     icon: '🙈',
@@ -51,6 +63,15 @@ export const GAMES = [
     maxPlayers: 2,
     color: '#ff6b6b',
     load: () => import('./verstoppertje/index.js'),
+  },
+  {
+    slug: 'tikkertje',
+    title: 'Ruimtetikkertje',
+    icon: '🐙',
+    ageLabel: '2–6 jr',
+    maxPlayers: 2,
+    color: '#b98cff',
+    load: () => import('./tikkertje/index.js'),
   },
   {
     slug: 'magneetstrijd',
@@ -96,6 +117,15 @@ export const GAMES = [
     maxPlayers: 2,
     color: '#d08c4a',
     load: () => import('./geheugenspel/index.js'),
+  },
+  {
+    slug: 'sterrenvangst',
+    title: 'Sterrenvangst',
+    icon: '🧺',
+    ageLabel: '3–6 jr',
+    maxPlayers: 2,
+    color: '#5fe3c4',
+    load: () => import('./sterrenvangst/index.js'),
   },
   {
     slug: 'ladingcontrole',
@@ -197,12 +227,21 @@ export const GAMES = [
     load: () => import('./gekke-machine/index.js'),
   },
   {
+    slug: 'samen-sturen',
+    title: 'Samen Sturen',
+    icon: '🛸',
+    ageLabel: '4–7 jr',
+    maxPlayers: 2,
+    color: '#8fd6ff',
+    load: () => import('./samen-sturen/index.js'),
+  },
+  {
     slug: 'leidingen',
     title: 'Zuurstofleidingen',
     icon: '🔧',
     ageLabel: '4–7 jr',
     maxPlayers: 1,
-    color: '#8fd6ff',
+    color: '#d08c4a',
     load: () => import('./leidingen/index.js'),
   },
   {

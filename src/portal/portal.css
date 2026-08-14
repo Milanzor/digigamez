@@ -321,22 +321,27 @@
    the name, the age and the progress on one reading line, so the eye scans
    down a column instead of decoding a tile.
 
-   Thirty of them go in five columns of six. The archive has to be one screen —
-   a grid that scrolls is a grid where a child never finds the last mission — and
-   six rows only fit because the row got shorter: the porthole is 8vmin here
-   rather than 10.
+   Thirty-four of them go in five columns of seven. The archive has to be one
+   screen — a grid that scrolls is a grid where a child never finds the last
+   mission — and seven rows only fit because the row got shorter: the porthole
+   is 8vmin here rather than 10. A row is then about 99px on a 1080p board and
+   the seven of them plus the top bar come to roughly 980 of the 1080 available,
+   which is measured rather than assumed; the vmin scale rule makes the same
+   sum hold on a 4K panel. Seven rows is the ceiling, so the columns are what
+   had to give.
 
-   Five columns, having argued for four at twenty-four missions. The argument
-   then was that five columns give each one about 350px on a 1080p board and
-   "Rover Programmeren" wraps onto a second line. That is still true, and it is
-   now the lesser problem: thirty missions in four columns is eight rows, eight
-   rows means a row height of about 9.5vmin, and at that height the row stops
-   clearing the 88px touch floor on a 1080p panel. A wrapped title costs
+   Five columns, having argued for four at twenty-four missions and again at
+   twenty-eight. The argument then was that five columns give each one about
+   350px on a 1080p board and "Rover Programmeren" wraps onto a second line.
+   That is still true, and it is now the lesser problem: thirty-four missions in
+   four columns is nine rows, and the seven above are already using 980 of the
+   1080 pixels there are. Making nine of them fit means a row of about 8vmin,
+   which is below the 88px touch floor on a 1080p panel. A wrapped title costs
    legibility; a row a child cannot reliably hit costs the mission. So the
    columns went to five and the title went down one step to --fs-label, which
-   keeps every one of the thirty on a single line — including the three longest,
-   "Alien Verstoppertje", "Rover Programmeren" and "Brandstof Sorteren". On the
-   real 3840x2160 board that label is still 38px. */
+   keeps all thirty-four on a single line — including the three longest, "Alien
+   Verstoppertje", "Rover Programmeren" and "Brandstof Sorteren". On the real
+   3840x2160 board that label is still 38px. */
 
 .missions {
   width: 100%;
@@ -413,7 +418,7 @@
 }
 
 /* 8vmin, not 10: six rows of a 10vmin porthole ran off the bottom of a 16:9
-   board once the archive reached twenty-four. */
+   board once the archive reached twenty-four, and there are seven rows now. */
 .mission__icon {
   width: clamp(46px, 8vmin, 180px);
   height: clamp(46px, 8vmin, 180px);
@@ -690,4 +695,28 @@
   letter-spacing: 0.3em;
   text-transform: uppercase;
   color: var(--teal);
+}
+
+/* The two ways out when a mission refuses to start. "Probeer opnieuw" is the
+   amber one because it is the one that actually fixes it — it reloads the
+   board, which is the only thing that clears a module the browser has written
+   off. */
+.loading__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* The technical reason, for the grown-up standing at a board that has no
+   developer console. Small, dim and in the mono face: a child never has to read
+   it, and whoever is fixing it should not have to guess. */
+.loading__why {
+  max-width: 60vw;
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  line-height: 1.5;
+  color: var(--faint);
+  word-break: break-word;
 }
