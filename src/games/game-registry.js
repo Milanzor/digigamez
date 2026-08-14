@@ -4,9 +4,17 @@
 //
 // Order is by age, youngest first, because that is the order a classroom
 // scans the archive in. The eight play colours repeat now that there are
-// twenty-four missions; what matters is that two rows with the same colour
+// thirty missions; what matters is that two rows with the same colour
 // never end up next to each other in the grid, so the list is ordered with
 // that in mind as well.
+//
+// At thirty missions the grid is five columns wide (see portal.css), and that
+// changed every adjacency in it — a neighbour used to be three rows away and is
+// now one. The placement was solved rather than eyeballed, under three rules: no
+// two orthogonal neighbours share a colour, amber stays the action colour by
+// appearing exactly once here, and as few existing missions as possible move.
+// The minimum turned out to be two — Ruimtegeheugen and Maanhockey — and no
+// arrangement of the six new missions inside their own age bands avoids it.
 //
 // `maxPlayers` is a number rather than the old `supportsTwoPlayers` boolean.
 // Raketrace is the reason: it wants three or four children at a 75" board, and
@@ -86,7 +94,7 @@ export const GAMES = [
     icon: '🪐',
     ageLabel: '3–6 jr',
     maxPlayers: 2,
-    color: '#ff6b6b',
+    color: '#d08c4a',
     load: () => import('./geheugenspel/index.js'),
   },
   {
@@ -122,7 +130,7 @@ export const GAMES = [
     icon: '🏒',
     ageLabel: '3–7 jr',
     maxPlayers: 2,
-    color: '#7ee787',
+    color: '#5fe3c4',
     load: () => import('./maanhockey/index.js'),
   },
   {
@@ -153,6 +161,33 @@ export const GAMES = [
     load: () => import('./toren-bouwen/index.js'),
   },
   {
+    slug: 'lopende-band',
+    title: 'Lopende Band',
+    icon: '🗂️',
+    ageLabel: '3–7 jr',
+    maxPlayers: 2,
+    color: '#ff8fc7',
+    load: () => import('./lopende-band/index.js'),
+  },
+  {
+    slug: 'doolhof',
+    title: 'Sterrendoolhof',
+    icon: '🌀',
+    ageLabel: '3–7 jr',
+    maxPlayers: 1,
+    color: '#7ee787',
+    load: () => import('./doolhof/index.js'),
+  },
+  {
+    slug: 'kleurenlab',
+    title: 'Kleurenlab',
+    icon: '🧪',
+    ageLabel: '3–7 jr',
+    maxPlayers: 2,
+    color: '#ffa14a',
+    load: () => import('./kleurenlab/index.js'),
+  },
+  {
     slug: 'gekke-machine',
     title: 'Gekke Machine',
     icon: '⚙️',
@@ -169,6 +204,24 @@ export const GAMES = [
     maxPlayers: 1,
     color: '#8fd6ff',
     load: () => import('./leidingen/index.js'),
+  },
+  {
+    slug: 'sterrenschrift',
+    title: 'Sterrenschrift',
+    icon: '✍️',
+    ageLabel: '4–7 jr',
+    maxPlayers: 2,
+    color: '#ff6b6b',
+    load: () => import('./sterrenschrift/index.js'),
+  },
+  {
+    slug: 'sluisdeuren',
+    title: 'Sluisdeuren',
+    icon: '🤝',
+    ageLabel: '4–7 jr',
+    maxPlayers: 2,
+    color: '#b98cff',
+    load: () => import('./sluisdeuren/index.js'),
   },
   {
     slug: 'raketrace',
@@ -232,6 +285,15 @@ export const GAMES = [
     maxPlayers: 2,
     color: '#d08c4a',
     load: () => import('./blokken-brekker/index.js'),
+  },
+  {
+    slug: 'spiegelstralen',
+    title: 'Spiegelstralen',
+    icon: '🪞',
+    ageLabel: '6–7 jr',
+    maxPlayers: 1,
+    color: '#8fd6ff',
+    load: () => import('./spiegelstralen/index.js'),
   },
 ];
 

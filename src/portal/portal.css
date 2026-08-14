@@ -321,17 +321,22 @@
    the name, the age and the progress on one reading line, so the eye scans
    down a column instead of decoding a tile.
 
-   Twenty-four of them go in four columns of six. The archive has to be one
-   screen — a grid that scrolls is a grid where a child never finds the last
-   mission — and six rows only fit because the row got shorter: the porthole is
-   8vmin here rather than 10.
+   Thirty of them go in five columns of six. The archive has to be one screen —
+   a grid that scrolls is a grid where a child never finds the last mission — and
+   six rows only fit because the row got shorter: the porthole is 8vmin here
+   rather than 10.
 
-   Four columns rather than five, even though five would need only five rows.
-   At five columns a 1080p board gives each one about 350px, and "Rover
-   Programmeren" then wraps onto a second line, which costs back the row height
-   the extra column saved and turns a scannable list into a wall of two-line
-   blocks. A wide row with a smaller porthole reads faster than a narrow row
-   with a big one. */
+   Five columns, having argued for four at twenty-four missions. The argument
+   then was that five columns give each one about 350px on a 1080p board and
+   "Rover Programmeren" wraps onto a second line. That is still true, and it is
+   now the lesser problem: thirty missions in four columns is eight rows, eight
+   rows means a row height of about 9.5vmin, and at that height the row stops
+   clearing the 88px touch floor on a 1080p panel. A wrapped title costs
+   legibility; a row a child cannot reliably hit costs the mission. So the
+   columns went to five and the title went down one step to --fs-label, which
+   keeps every one of the thirty on a single line — including the three longest,
+   "Alien Verstoppertje", "Rover Programmeren" and "Brandstof Sorteren". On the
+   real 3840x2160 board that label is still 38px. */
 
 .missions {
   width: 100%;
@@ -346,13 +351,13 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   /* Content-height rows spread down the column. Stretched 1fr rows made each
      mission a 250px-tall box, so the highlight on the last-played one read as
      a panel rather than as a lit row. */
   grid-auto-rows: max-content;
   align-content: space-evenly;
-  gap: var(--sp-2) var(--sp-4);
+  gap: var(--sp-2) var(--sp-3);
 }
 
 .mission {
@@ -413,6 +418,9 @@
   width: clamp(46px, 8vmin, 180px);
   height: clamp(46px, 8vmin, 180px);
   font-size: clamp(21px, 3.8vmin, 86px);
+  /* The porthole is the row's minimum size and five columns leave it no slack,
+     so it must not be squeezed by a long title. */
+  flex: 0 0 auto;
 }
 
 .mission__text {
@@ -422,10 +430,16 @@
   min-width: 0;
 }
 
+/* --fs-label rather than --fs-body: one step down is what fits the longest
+   mission name in a fifth of the screen on a single line. See the note at the
+   top of this section for why that trade was worth making. */
 .mission__name {
-  font-size: var(--fs-body);
+  font-size: var(--fs-label);
   font-weight: 700;
   line-height: 1.1;
+  /* Deliberately not `nowrap`: that would turn a title that does not fit into
+     one that overflows its row, which is harder to see and worse to look at than
+     a wrap. The harness checks for two-line titles instead. */
 }
 
 .mission.is-recent .mission__name { color: var(--cream-hi); }

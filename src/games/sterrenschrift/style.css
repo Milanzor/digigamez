@@ -1,0 +1,48 @@
+/* Andika again, and for the same reason Letterplaneten uses it: this is the
+   second mission where the letter itself is the content, so it has to be the
+   letter a beginning reader is taught — a single-storey `a`, and a `b` and `d`
+   that are not each other's mirror by accident.
+
+   The two files live in Letterplaneten's folder and are referenced from here, so
+   there is one copy in the build (Vite hashes by content) and neither mission
+   pulls them in until it is opened. The portal is still two fonts big. */
+@font-face {
+  font-family: 'Andika';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../letterplaneten/fonts/andika-400.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Andika';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../letterplaneten/fonts/andika-700.woff2') format('woff2');
+}
+
+.trace-stage {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: var(--void-deep);
+}
+
+.trace-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  /* The whole game is one long drag. Without this the board treats it as a
+     scroll and the comet stops a third of the way through the letter. */
+  touch-action: none;
+}
+
+.trace-hint {
+  position: absolute;
+  left: 50%;
+  bottom: var(--sp-3);
+  transform: translateX(-50%);
+  pointer-events: none;
+  white-space: nowrap;
+}
