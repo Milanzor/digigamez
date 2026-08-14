@@ -81,7 +81,13 @@ const PARTS = {
   hole: { icon: '🕳️', name: 'Zwart gat' },
   stroop: { icon: '🍯', name: 'Stroop' },
   bomb: { icon: '💣', name: 'Bom' },
-  fountain: { icon: '⛲', name: 'Knikkerkraan' },
+  // The two taps that keep a machine fed. `drops` is what makes them one thing
+  // rather than two: the spawn interval, the push it leaves with, and the colour
+  // of the housing all come from here, so the second tap needed no new branch in
+  // the simulation and no new case in the painter. The mouth is drawn from the
+  // ball's own radius, which is why the marble's has always been 22.
+  fountain: { icon: '⛲', name: 'Knikkerkraan', drops: { body: 'marble', every: 0.85, vy: 140, tint: '#8fd6ff' } },
+  hopper: { icon: '🚰', name: 'Stuiterkraan', drops: { body: 'bouncy', every: 1.05, vy: 110, tint: '#ff8a3d' } },
   beam: { icon: '🛸', name: 'Beamer — zet er twee neer' },
   basket: { icon: '🪣', name: 'Emmer' },
 };
@@ -90,7 +96,7 @@ const PART_ORDER = [
   'marble', 'bouncy', 'balloon', 'rocket',
   'plank', 'tramp', 'belt', 'wip', 'spinner', 'kegel', 'bel',
   'fan', 'kanon', 'magnet', 'hole', 'stroop', 'bomb',
-  'fountain', 'beam', 'basket',
+  'fountain', 'hopper', 'beam', 'basket',
 ];
 
 const SAVE_KEY = 'gekke-machine';
@@ -313,10 +319,17 @@ const PRESETS = [
   },
   {
     // Flat trajectory on purpose: the shot lands short of the pins and rolls
-    // through the whole set instead of dropping on top of one.
+    // through the whole set instead of dropping on top of one. The bouncy tap
+    // sits over the high end of the ramp, so there is a second stream of balls
+    // arriving at the pins from above while the cannon works on them from the
+    // side — and it is where a child meets the orange tap without going looking
+    // for it.
     name: 'Kegelkanon 💥',
     parts: [
       ['kanon', { x: 190, y: 700, a: -0.12 }],
+      // Over the middle of the ramp, not its top end: at the top a ball lands on
+      // the very tip and sits there with nowhere to roll.
+      ['hopper', { x: 1150, y: 175 }],
       ['plank', { x: 900, y: 300, x2: 1500, y2: 420 }],
       ['kegel', { x: 1150, y: FLOOR_Y - 56 }],
       ['kegel', { x: 1290, y: FLOOR_Y - 56 }],
@@ -596,13 +609,30 @@ function step(dt) {
   const parts = G.parts;
 
   for (const p of parts) {
-    // Fountains and cannons keep the machine fed.
-    if (p.type === 'fountain') {
+    // Taps and cannons keep the machine fed. Both taps run through the same
+    // branch off their `drops` spec, so the bouncy one differs from the marble
+    // one only in what it drops and how often.
+    const drops = PARTS[p.type].drops;
+    if (drops) {
       p.nextDrop = (p.nextDrop || 0) - dt;
       if (p.nextDrop <= 0) {
-        p.nextDrop = 0.85;
-        const b = spawnBody('marble', p.x, p.y + 60);
-        if (b) b.vy = 140;
+        // Clear of the mouth by the ball's own radius, or a wide ball is born
+        // half inside the housing and shoves itself out sideways.
+        const r = PARTS[drops.body].body.r;
+        const dropY = p.y + 40 + r + 6;
+        // And never onto a ball that has not gone yet. A tap standing just above
+        // a ramp catches what it dropped, and without this the next one is born
+        // inside it: the pair shove each other back up into the mouth and the tap
+        // builds a tower into itself. Retried shortly rather than skipped, so the
+        // tap resumes the moment the way is clear.
+        const blocked = G.bodies.some((b) => Math.hypot(b.x - p.x, b.y - dropY) < b.r + r);
+        if (blocked) {
+          p.nextDrop = 0.12;
+        } else {
+          p.nextDrop = drops.every;
+          const b = spawnBody(drops.body, p.x, dropY);
+          if (b) b.vy = drops.vy;
+        }
       }
     } else if (p.type === 'kanon') {
       p.nextDrop = (p.nextDrop || 0) - dt;
@@ -1396,15 +1426,19 @@ function drawPart(ctx, p) {
       ctx.restore();
       break;
     }
-    case 'fountain': {
-      ctx.fillStyle = '#8fd6ff';
+    case 'fountain':
+    case 'hopper': {
+      const spec = PARTS[p.type];
+      ctx.fillStyle = spec.drops.tint;
       roundRect(ctx, p.x - 54, p.y - 40, 108, 74, 16);
       ctx.fill();
+      // The mouth is as wide as what comes out of it, so a child can see which
+      // tap gives the big orange ball before they press ▶.
       ctx.fillStyle = '#0d0c22';
       ctx.beginPath();
-      ctx.arc(p.x, p.y + 40, 22, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y + 40, PARTS[spec.drops.body].body.r - 4, 0, Math.PI * 2);
       ctx.fill();
-      emoji(ctx, '⛲', p.x, p.y - 6, 54);
+      emoji(ctx, spec.icon, p.x, p.y - 6, 54);
       break;
     }
     case 'bomb': {
